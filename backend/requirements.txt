@@ -11,3 +11,7 @@ python-dotenv==1.0.1
 pydantic==2.5.3
 aiofiles==23.2.1
 PyPDF2==3.0.1
+psycopg[binary]>=3.1.0
+alembic==1.13.1
+resend==2.0.0
+email-validator>=2.0.0

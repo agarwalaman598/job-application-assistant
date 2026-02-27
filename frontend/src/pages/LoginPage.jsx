@@ -50,7 +50,14 @@ export default function LoginPage() {
           <div style={{
             padding: '10px 14px', marginBottom: '1rem', borderRadius: '8px', fontSize: '0.8rem',
             background: 'rgba(217, 79, 79, 0.08)', border: '1px solid rgba(217, 79, 79, 0.2)', color: '#d94f4f',
-          }}>{error}</div>
+          }}>
+            {error}
+            {error.toLowerCase().includes('verif') && (
+              <div style={{ marginTop: '6px' }}>
+                <Link to="/forgot-password" style={{ color: '#d4942e', fontSize: '0.78rem' }}>Resend verification email →</Link>
+              </div>
+            )}
+          </div>
         )}
 
         <form onSubmit={handleSubmit}>
@@ -62,9 +69,13 @@ export default function LoginPage() {
               className="input-field" placeholder="you@example.com" required />
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: '#8b8b92', marginBottom: '6px' }}>
-              Password
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: 500, color: '#8b8b92' }}>Password</label>
+              <Link to="/forgot-password" style={{ fontSize: '0.75rem', color: '#5a5a63', textDecoration: 'none' }}
+                onMouseOver={e => e.target.style.color='#d4942e'} onMouseOut={e => e.target.style.color='#5a5a63'}>
+                Forgot password?
+              </Link>
+            </div>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               className="input-field" placeholder="••••••••" required />
           </div>

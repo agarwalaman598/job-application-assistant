@@ -3,9 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
 from app.routers import auth_router, profile_router, resume_router, application_router, ai_router
+from app.routers.auth_email_router import router as auth_email_router
 
-# Create all tables
-Base.metadata.create_all(bind=engine)
+# Tables are managed by Alembic migrations
+# Base.metadata.create_all(bind=engine)  # uncomment only for quick local dev w/o Alembic
 
 app = FastAPI(
     title="AI Smart Job Application Assistant",
@@ -24,6 +25,7 @@ app.add_middleware(
 
 # Mount routers
 app.include_router(auth_router.router)
+app.include_router(auth_email_router)          # email verification + password reset
 app.include_router(profile_router.router)
 app.include_router(resume_router.router)
 app.include_router(application_router.router)
