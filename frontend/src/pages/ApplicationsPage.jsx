@@ -1,22 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../api';
-import { Plus, Edit2, Trash2, X, Loader2, Briefcase, ExternalLink } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Loader2, Briefcase, ExternalLink, Search, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { StatusBadge } from '../components/StatusBadge';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 const STATUS_OPTIONS = ['draft', 'applied', 'interview', 'offer', 'rejected'];
+const STATUS_ORDER = { draft: 0, applied: 1, interview: 2, offer: 3, rejected: 4 };
 const EMPTY_FORM = { company: '', position: '', status: 'applied', url: '', notes: '' };
+
+const SORT_OPTIONS = [
+  { key: 'date-desc',    label: 'Date',    sub: 'Newest first',   field: 'date',    dir: 'desc' },
+  { key: 'date-asc',    label: 'Date',    sub: 'Oldest first',   field: 'date',    dir: 'asc'  },
+  { key: 'company-asc', label: 'Company', sub: 'A → Z',          field: 'company', dir: 'asc'  },
+  { key: 'company-desc',label: 'Company', sub: 'Z → A',          field: 'company', dir: 'desc' },
+  { key: 'status-asc',  label: 'Status',  sub: 'Draft → Offer',  field: 'status',  dir: 'asc'  },
+  { key: 'status-desc', label: 'Status',  sub: 'Offer → Draft',  field: 'status',  dir: 'desc' },
+];
 
 export default function ApplicationsPage() {
   const [apps, setApps]           = useState([]);
   const [filter, setFilter]       = useState('');
+  const [search, setSearch]       = useState('');
+  const [sortKey, setSortKey]     = useState('date-desc');
+  const [sortOpen, setSortOpen]   = useState(false);
+  const sortRef                   = useRef(null);
   const [showForm, setShowForm]   = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm]           = useState(EMPTY_FORM);
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);
+  const [confirmId, setConfirmId] = useState(null);
+
+  // Close sort dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => { if (sortRef.current && !sortRef.current.contains(e.target)) setSortOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const fetchApps = async () => {
     setLoading(true);
@@ -46,11 +69,34 @@ export default function ApplicationsPage() {
     finally { setSaving(false); }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this application?')) return;
-    await api.delete(`/applications/${id}`);
+  const handleDelete = (id) => setConfirmId(id);
+
+  const confirmDelete = async () => {
+    await api.delete(`/applications/${confirmId}`);
+    setConfirmId(null);
     fetchApps();
   };
+
+  // Filter + sort
+  const activeSort = SORT_OPTIONS.find(o => o.key === sortKey);
+  const displayedApps = [...apps]
+    .filter(a => {
+      const q = search.toLowerCase();
+      return !q || a.company.toLowerCase().includes(q) || a.position.toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      const dir = activeSort.dir === 'asc' ? 1 : -1;
+      if (activeSort.field === 'date') {
+        return dir * (new Date(a.applied_at + 'Z') - new Date(b.applied_at + 'Z'));
+      }
+      if (activeSort.field === 'company') {
+        return dir * a.company.localeCompare(b.company);
+      }
+      if (activeSort.field === 'status') {
+        return dir * ((STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99));
+      }
+      return 0;
+    });
 
   return (
     <div className="px-8 py-8 max-w-5xl mx-auto">
@@ -58,7 +104,7 @@ export default function ApplicationsPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Applications</h1>
-          <p className="text-sm text-[var(--muted-foreground)] mt-0.5">{apps.length} tracked</p>
+          <p className="text-sm text-[var(--muted-foreground)] mt-0.5">{search ? `${displayedApps.length} of ${apps.length}` : apps.length} tracked</p>
         </div>
         <Button onClick={openNew} className="gap-2">
           <Plus className="h-4 w-4" /> New application
@@ -66,7 +112,7 @@ export default function ApplicationsPage() {
       </div>
 
       {/* Status filter tabs */}
-      <div className="flex items-center gap-1 mb-6 p-1 rounded-lg" style={{ background: 'var(--muted)', width: 'fit-content' }}>
+      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--muted)', width: 'fit-content' }}>
         {['', ...STATUS_OPTIONS].map(s => (
           <button key={s} onClick={() => setFilter(s)}
             className="px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border-none"
@@ -80,22 +126,97 @@ export default function ApplicationsPage() {
         ))}
       </div>
 
+      {/* Search + Sort row */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        {/* Search */}
+        <div style={{ position: 'relative', flex: 1 }}>
+          <Search style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', height: 14, width: 14, color: 'var(--muted-foreground)', pointerEvents: 'none' }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search by company or role…"
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10,
+              color: 'var(--foreground)', fontSize: '0.82rem', fontFamily: 'inherit',
+              padding: '7px 12px 7px 32px', outline: 'none',
+            }}
+            onFocus={e => e.target.style.borderColor = '#3a3a3a'}
+            onBlur={e => e.target.style.borderColor = 'var(--border)'}
+          />
+        </div>
+
+        {/* Sort dropdown */}
+        <div ref={sortRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setSortOpen(v => !v)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10,
+              padding: '7px 13px', fontSize: '0.82rem', fontWeight: 600,
+              color: 'var(--muted-foreground)', cursor: 'pointer', fontFamily: 'inherit',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--foreground)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--muted-foreground)'}
+          >
+            <ArrowUpDown style={{ height: 13, width: 13 }} />
+            Sort: {activeSort.label} {activeSort.dir === 'asc' ? '↑' : '↓'}
+          </button>
+
+          {sortOpen && (
+            <div
+              className="animate-modal"
+              style={{
+                position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 200,
+                background: '#141414', border: '1px solid #2a2a2a', borderRadius: 12,
+                boxShadow: '0 12px 40px rgba(0,0,0,0.5)', overflow: 'hidden', minWidth: 200,
+              }}
+            >
+              {SORT_OPTIONS.map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => { setSortKey(opt.key); setSortOpen(false); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    width: '100%', padding: '9px 14px', background: sortKey === opt.key ? 'rgba(255,255,255,0.05)' : 'transparent',
+                    border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                    borderBottom: '1px solid #1f1f1f',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+                  onMouseLeave={e => e.currentTarget.style.background = sortKey === opt.key ? 'rgba(255,255,255,0.05)' : 'transparent'}
+                >
+                  <div>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--foreground)' }}>{opt.label}</span>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--muted-foreground)', marginLeft: 8 }}>{opt.sub}</span>
+                  </div>
+                  {opt.dir === 'asc'
+                    ? <ChevronUp style={{ height: 13, width: 13, color: 'var(--muted-foreground)' }} />
+                    : <ChevronDown style={{ height: 13, width: 13, color: 'var(--muted-foreground)' }} />
+                  }
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* List */}
       {loading ? (
         <div className="flex justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-[var(--muted-foreground)]" />
         </div>
-      ) : apps.length === 0 ? (
+      ) : displayedApps.length === 0 ? (
         <div className="card p-16 text-center">
           <Briefcase className="h-10 w-10 text-[var(--muted-foreground)] mx-auto mb-3 opacity-30" />
-          <p className="text-sm text-[var(--muted-foreground)]">No applications yet. Add your first one!</p>
-          <Button variant="secondary" className="mt-4" onClick={openNew}>
+          <p className="text-sm text-[var(--muted-foreground)]">{search ? 'No results found.' : 'No applications yet. Add your first one!'}</p>
+          {!search && <Button variant="secondary" className="mt-4" onClick={openNew}>
             <Plus className="h-3.5 w-3.5 mr-1.5" /> Add application
-          </Button>
+          </Button>}
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {apps.map((app, i) => (
+          {displayedApps.map((app, i) => (
             <div key={app.id} className="card px-5 py-4 flex items-center gap-4 animate-fade-in"
               style={{ animationDelay: `${i * 0.04}s` }}>
               {/* Serial number */}
@@ -198,6 +319,16 @@ export default function ApplicationsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmId !== null}
+        title="Delete application"
+        message="This will permanently remove the application from your tracker."
+        confirmLabel="Delete"
+        danger
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmId(null)}
+      />
     </div>
   );
 }

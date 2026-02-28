@@ -2,11 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../api';
 import { Upload, FileText, Star, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 export default function ResumePage() {
   const [resumes, setResumes] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [alertMsg, setAlertMsg] = useState(null);
 
   const fetchResumes = async () => {
     try {
@@ -18,7 +21,7 @@ export default function ResumePage() {
   useEffect(() => { fetchResumes(); }, []);
 
   const handleUpload = async (file) => {
-    if (!file || file.type !== 'application/pdf') return alert('Only PDF files');
+    if (!file || file.type !== 'application/pdf') return setAlertMsg('Only PDF files are supported. Please upload a .pdf file.');
     const fd = new FormData();
     fd.append('file', file);
     setUploading(true);
@@ -40,9 +43,11 @@ export default function ResumePage() {
     fetchResumes();
   };
 
-  const deleteResume = async (id) => {
-    if (!confirm('Delete this resume?')) return;
-    await api.delete(`/resumes/${id}`);
+  const deleteResume = (id) => setConfirmDeleteId(id);
+
+  const confirmDeleteResume = async () => {
+    await api.delete(`/resumes/${confirmDeleteId}`);
+    setConfirmDeleteId(null);
     fetchResumes();
   };
 
@@ -116,6 +121,24 @@ export default function ResumePage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Delete resume"
+        message="This will permanently remove the resume from your account."
+        confirmLabel="Delete"
+        danger
+        onConfirm={confirmDeleteResume}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
+
+      <ConfirmDialog
+        open={!!alertMsg}
+        title="Heads up"
+        message={alertMsg}
+        confirmLabel="Got it"
+        onConfirm={() => setAlertMsg(null)}
+      />
     </div>
   );
 }

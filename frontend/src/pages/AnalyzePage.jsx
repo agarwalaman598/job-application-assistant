@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import api from '../api';
 import MatchScoreGauge from '../components/MatchScoreGauge';
 import { Search, CheckCircle, XCircle, Loader2, FileText, MessageSquare, Sparkles, FileCheck, Maximize2, X, Check } from 'lucide-react';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 export default function AnalyzePage() {
   const [jd, setJd] = useState('');
@@ -20,6 +21,7 @@ export default function AnalyzePage() {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [genLoading, setGenLoading] = useState(false);
+  const [alertMsg, setAlertMsg] = useState(null);
 
   const handleAnalyze = async () => {
     if (!jd.trim()) return;
@@ -35,7 +37,7 @@ export default function AnalyzePage() {
       setMatchResult(matchRes.data);
       setJdAnalysis(analyzeRes.data);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Analysis failed. Fill out your Profile first.');
+      setAlertMsg(err.response?.data?.detail || 'Analysis failed. Fill out your Profile first.');
     } finally {
       setLoading(false);
     }
@@ -317,6 +319,14 @@ export default function AnalyzePage() {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!alertMsg}
+        title="Analysis failed"
+        message={alertMsg}
+        confirmLabel="Got it"
+        onConfirm={() => setAlertMsg(null)}
+      />
     </div>
   );
 }

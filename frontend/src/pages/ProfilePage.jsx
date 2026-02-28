@@ -78,7 +78,7 @@ export default function ProfilePage() {
   };
 
   const addEducation = () => {
-    setProfile({ ...profile, education: [...profile.education, { degree: '', institution: '', year: '' }] });
+    setProfile({ ...profile, education: [...profile.education, { degree: '', major: '', institution: '', start_year: '', end_year: '' }] });
   };
   const updateEducation = (i, field, val) => {
     const edu = [...profile.education];
@@ -376,27 +376,63 @@ export default function ProfilePage() {
             <Plus size={12} /> Add
           </button>
         </div>
-        {profile.education.map((edu, i) => (
-          <div key={i} style={{
-            padding: '12px', marginBottom: '8px', borderRadius: '8px',
-            background: 'var(--muted)', border: '1px solid var(--border)',
-            position: 'relative',
-          }}>
-            <button onClick={() => removeEducation(i)}
-              className="bg-transparent border-none cursor-pointer"
-              style={{ position: 'absolute', top: '8px', right: '8px', color: 'var(--muted-foreground)' }}>
-              <X size={14} />
-            </button>
-            <div className="grid grid-cols-3 gap-2">
-              <input value={edu.degree} onChange={(e) => updateEducation(i, 'degree', e.target.value)}
-                className="input-field" placeholder="Degree" />
-              <input value={edu.institution} onChange={(e) => updateEducation(i, 'institution', e.target.value)}
-                className="input-field" placeholder="Institution" />
-              <input value={edu.year} onChange={(e) => updateEducation(i, 'year', e.target.value)}
-                className="input-field" placeholder="Year" />
+        {profile.education.map((edu, i) => {
+          const labelSt = { display: 'block', fontSize: '0.7rem', fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 };
+          return (
+            <div key={i} style={{
+              padding: '16px', marginBottom: '10px', borderRadius: '10px',
+              background: 'var(--muted)', border: '1px solid var(--border)',
+              position: 'relative',
+            }}>
+              <button onClick={() => removeEducation(i)}
+                className="bg-transparent border-none cursor-pointer"
+                style={{ position: 'absolute', top: '10px', right: '10px', color: 'var(--muted-foreground)' }}>
+                <X size={14} />
+              </button>
+
+              {/* Row 1: Degree + Major */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10, paddingRight: 24 }}>
+                <div>
+                  <label style={labelSt}>Degree</label>
+                  <input value={edu.degree} onChange={(e) => updateEducation(i, 'degree', e.target.value)}
+                    className="input-field" placeholder="e.g. B.Tech, B.Sc, MBA" />
+                </div>
+                <div>
+                  <label style={labelSt}>Major / Specialization</label>
+                  <input value={edu.major || ''} onChange={(e) => updateEducation(i, 'major', e.target.value)}
+                    className="input-field" placeholder="e.g. Computer Science, Finance" />
+                </div>
+              </div>
+
+              {/* Row 2: Institution */}
+              <div style={{ marginBottom: 10 }}>
+                <label style={labelSt}>Institution</label>
+                <input value={edu.institution} onChange={(e) => updateEducation(i, 'institution', e.target.value)}
+                  className="input-field" placeholder="e.g. Kalinga Institute of Industrial Technology" />
+              </div>
+
+              {/* Row 3: Start Year + End Year */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={labelSt}>Start Year</label>
+                  <input
+                    type="number" min="1900" max="2100"
+                    value={edu.start_year || ''}
+                    onChange={(e) => updateEducation(i, 'start_year', e.target.value)}
+                    className="input-field" placeholder="e.g. 2023" />
+                </div>
+                <div>
+                  <label style={labelSt}>End Year <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(or expected)</span></label>
+                  <input
+                    type="number" min="1900" max="2100"
+                    value={edu.end_year || ''}
+                    onChange={(e) => updateEducation(i, 'end_year', e.target.value)}
+                    className="input-field" placeholder="e.g. 2027" />
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Saved Answers */}

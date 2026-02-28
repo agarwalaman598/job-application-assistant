@@ -49,41 +49,62 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
       style={{ background: 'var(--sidebar)', borderRight: '1px solid var(--sidebar-border)' }}
     >
       {/* Logo row */}
-      <div className={cn('flex h-16 items-center border-b border-[var(--sidebar-border)] shrink-0', collapsed ? 'justify-center px-2' : 'gap-3 px-4')}>
-        <div className="flex h-9 w-9 items-center justify-center shrink-0">
-          <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="12" fill="#232323"/>
-            <path d="M14 16V14.8C14 13.53 15.03 12.5 16.3 12.5H23.7C24.97 12.5 26 13.53 26 14.8V16"
-                  stroke="white" strokeWidth="2" strokeLinecap="round"/>
-            <rect x="9" y="16" width="22" height="14" rx="3.5"
-                  stroke="white" strokeWidth="2" strokeLinejoin="round"/>
-          </svg>
+      {collapsed ? (
+        /* Collapsed: stack logo and toggle vertically */
+        <div className="flex flex-col items-center border-b border-[var(--sidebar-border)] shrink-0 py-2 gap-1">
+          <div className="flex h-9 w-9 items-center justify-center shrink-0">
+            <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="40" height="40" rx="12" fill="#232323"/>
+              <path d="M14 16V14.8C14 13.53 15.03 12.5 16.3 12.5H23.7C24.97 12.5 26 13.53 26 14.8V16"
+                    stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              <rect x="9" y="16" width="22" height="14" rx="3.5"
+                    stroke="white" strokeWidth="2" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          {onToggle && (
+            <button
+              onClick={onToggle}
+              className="hidden md:flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-accent)] transition-colors shrink-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          )}
         </div>
-        {!collapsed && (
+      ) : (
+        /* Expanded: logo + name + toggle in a row */
+        <div className="flex h-16 items-center gap-3 px-4 border-b border-[var(--sidebar-border)] shrink-0">
+          <div className="flex h-9 w-9 items-center justify-center shrink-0">
+            <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="40" height="40" rx="12" fill="#232323"/>
+              <path d="M14 16V14.8C14 13.53 15.03 12.5 16.3 12.5H23.7C24.97 12.5 26 13.53 26 14.8V16"
+                    stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              <rect x="9" y="16" width="22" height="14" rx="3.5"
+                    stroke="white" strokeWidth="2" strokeLinejoin="round"/>
+            </svg>
+          </div>
           <div className="leading-tight flex-1 min-w-0">
             <p className="text-sm font-semibold text-[var(--sidebar-foreground)] truncate">JobAssist AI</p>
             <p className="text-[11px] text-[var(--muted-foreground)]">Tracker</p>
           </div>
-        )}
-        {/* Desktop collapse toggle */}
-        {onToggle && (
-          <button
-            onClick={onToggle}
-            className="hidden md:flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-accent)] transition-colors shrink-0"
-          >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
-        )}
-        {/* Mobile close button */}
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="md:hidden flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-accent)] transition-colors shrink-0"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
+          {onToggle && (
+            <button
+              onClick={onToggle}
+              className="hidden md:flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-accent)] transition-colors shrink-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          )}
+          {/* Mobile close button */}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="md:hidden flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-accent)] transition-colors shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Nav */}
       <nav className={cn('flex-1 overflow-y-auto py-4 space-y-0.5', collapsed ? 'px-2' : 'px-3')}>
