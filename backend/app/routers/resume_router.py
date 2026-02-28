@@ -2,11 +2,20 @@ import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from typing import Optional
 
 from app.database import get_db
 from app.models import User, Resume
 from app.schemas import ResumeOut
 from app.auth import get_current_user
+
+class AddLinkPayload(BaseModel):
+    title: str
+    url: str
+
+class UpdateLinkPayload(BaseModel):
+    drive_link: Optional[str] = None
 
 router = APIRouter(prefix="/api/resumes", tags=["Resumes"])
 
@@ -17,6 +26,44 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @router.get("", response_model=list[ResumeOut])
 def list_resumes(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return db.query(Resume).filter(Resume.user_id == current_user.id).order_by(Resume.uploaded_at.desc()).all()
+
+
+@router.post("/link", response_model=ResumeOut)
+def add_resume_link(
+    payload: AddLinkPayload,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create a link-only resume entry (no PDF upload)."""
+    existing_count = db.query(Resume).filter(Resume.user_id == current_user.id).count()
+    resume = Resume(
+        user_id=current_user.id,
+        filename=payload.title,
+        filepath="",
+        drive_link=payload.url,
+        is_default=existing_count == 0,
+    )
+    db.add(resume)
+    db.commit()
+    db.refresh(resume)
+    return resume
+
+
+@router.patch("/{resume_id}/link", response_model=ResumeOut)
+def update_resume_link(
+    resume_id: int,
+    payload: UpdateLinkPayload,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Add or update the Google Drive link on an existing resume."""
+    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    resume.drive_link = payload.drive_link or None
+    db.commit()
+    db.refresh(resume)
+    return resume
 
 
 @router.post("/upload", response_model=ResumeOut)
@@ -78,7 +125,7 @@ def delete_resume(
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
 
-    if os.path.exists(resume.filepath):
+    if resume.filepath and os.path.exists(resume.filepath):
         os.remove(resume.filepath)
 
     db.delete(resume)

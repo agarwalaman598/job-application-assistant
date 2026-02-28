@@ -122,6 +122,12 @@ def auto_map(
         raise HTTPException(status_code=404, detail="Profile not found.")
 
     fields = payload.get("fields", [])
+    # Get default resume for drive_link
+    default_resume = db.query(Resume).filter(
+        Resume.user_id == current_user.id,
+        Resume.is_default == True,
+    ).first()
+
     profile_data = {
         "summary": profile.summary or "",
         "phone": profile.phone or "",
@@ -134,6 +140,9 @@ def auto_map(
         "email": current_user.email,
         "full_name": current_user.full_name,
     }
+
+    if default_resume and default_resume.drive_link:
+        profile_data["resume_link"] = default_resume.drive_link
 
     # Load previously saved answers for this user
     saved_pairs = db.query(QAPair).filter(QAPair.user_id == current_user.id).all()

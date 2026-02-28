@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../api';
-import { Upload, FileText, Star, Trash2, Loader2 } from 'lucide-react';
+import { Upload, FileText, Star, Trash2, Loader2, Link2, Copy, Check, ExternalLink, Plus, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
@@ -10,6 +10,19 @@ export default function ResumePage() {
   const [dragOver, setDragOver] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [alertMsg, setAlertMsg] = useState(null);
+
+  // Link-only resume form
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [linkTitle, setLinkTitle] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [addingLink, setAddingLink] = useState(false);
+
+  // Inline drive-link editing per resume
+  const [editingLinkId, setEditingLinkId] = useState(null);
+  const [editLinkVal, setEditLinkVal] = useState('');
+
+  // Copy feedback per resume
+  const [copiedId, setCopiedId] = useState(null);
 
   const fetchResumes = async () => {
     try {
@@ -51,12 +64,55 @@ export default function ResumePage() {
     fetchResumes();
   };
 
+  const handleAddLink = async () => {
+    if (!linkTitle.trim() || !linkUrl.trim()) return;
+    setAddingLink(true);
+    try {
+      await api.post('/resumes/link', { title: linkTitle.trim(), url: linkUrl.trim() });
+      setLinkTitle('');
+      setLinkUrl('');
+      setShowLinkForm(false);
+      fetchResumes();
+    } catch (err) { console.error(err); }
+    finally { setAddingLink(false); }
+  };
+
+  const startEditLink = (r) => {
+    setEditingLinkId(r.id);
+    setEditLinkVal(r.drive_link || '');
+  };
+
+  const saveEditLink = async (id) => {
+    try {
+      await api.patch(`/resumes/${id}/link`, { drive_link: editLinkVal.trim() || null });
+      setEditingLinkId(null);
+      fetchResumes();
+    } catch (err) { console.error(err); }
+  };
+
+  const copyLink = (r) => {
+    navigator.clipboard.writeText(r.drive_link);
+    setCopiedId(r.id);
+    setTimeout(() => setCopiedId(null), 1800);
+  };
+
+  const inputStyle = {
+    background: 'var(--input)',
+    border: '1px solid var(--border)',
+    borderRadius: 7,
+    color: 'var(--foreground)',
+    fontSize: '0.82rem',
+    padding: '6px 10px',
+    outline: 'none',
+    width: '100%',
+  };
+
   return (
     <div className="px-8 py-8 max-w-3xl mx-auto">
       <h1 className="text-2xl font-semibold tracking-tight mb-6">Resumes</h1>
 
       {/* Upload area */}
-      <div className="card p-8 mb-6 animate-enter"
+      <div className="card p-8 mb-3 animate-enter"
         style={{
           textAlign: 'center',
           border: dragOver ? '2px dashed var(--primary)' : '1px solid var(--border)',
@@ -79,46 +135,162 @@ export default function ResumePage() {
         )}
       </div>
 
+      {/* Add link-only resume */}
+      <div className="card mb-6 animate-enter" style={{ overflow: 'hidden' }}>
+        <button
+          onClick={() => setShowLinkForm(v => !v)}
+          className="flex items-center gap-2 w-full"
+          style={{ padding: '12px 16px', fontSize: '0.82rem', color: 'var(--muted-foreground)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+        >
+          <Link2 size={14} />
+          <span>Add a link-only resume</span>
+          <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--muted-foreground)', opacity: 0.6 }}>{showLinkForm ? '▲' : '▼'}</span>
+        </button>
+        {showLinkForm && (
+          <div style={{ padding: '0 16px 14px', borderTop: '1px solid var(--border)' }}>
+            <p style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', margin: '10px 0 8px' }}>No PDF needed — just a title and a Google Drive (or other) link.</p>
+            <div className="flex flex-col gap-2">
+              <input
+                style={inputStyle}
+                placeholder="Title (e.g. SWE Resume 2025)"
+                value={linkTitle}
+                onChange={e => setLinkTitle(e.target.value)}
+              />
+              <input
+                style={inputStyle}
+                placeholder="URL (Google Drive share link)"
+                value={linkUrl}
+                onChange={e => setLinkUrl(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAddLink()}
+              />
+              <div className="flex gap-2 justify-end mt-1">
+                <button onClick={() => setShowLinkForm(false)} style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                <button
+                  onClick={handleAddLink}
+                  disabled={addingLink || !linkTitle.trim() || !linkUrl.trim()}
+                  className="btn-primary flex items-center gap-1"
+                  style={{ fontSize: '0.78rem', padding: '5px 13px', opacity: (!linkTitle.trim() || !linkUrl.trim()) ? 0.5 : 1 }}
+                >
+                  {addingLink ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Resume list */}
       {resumes.length === 0 ? (
         <div className="card p-8" style={{ textAlign: 'center' }}>
           <FileText size={28} style={{ color: 'var(--muted-foreground)', margin: '0 auto 8px', opacity: 0.3 }} />
-          <p style={{ color: 'var(--muted-foreground)', fontSize: '0.85rem' }}>No resumes uploaded yet</p>
+          <p style={{ color: 'var(--muted-foreground)', fontSize: '0.85rem' }}>No resumes yet. Upload a PDF or add a link above.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {resumes.map((r, i) => (
-            <div key={r.id} className="card p-4 flex items-center justify-between animate-enter"
-              style={{ animationDelay: `${i * 0.04}s` }}>
-              <div className="flex items-center gap-3">
-                <FileText size={18} style={{ color: 'var(--muted-foreground)', flexShrink: 0 }} />
-                <div>
-                  <p style={{ fontSize: '0.85rem', fontWeight: 500 }}>{r.filename}</p>
-                  <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)' }}>
-                    {new Date(r.uploaded_at).toLocaleDateString()}
-                    {r.is_default && (
-                      <span style={{
-                        marginLeft: 8, fontSize: '0.7rem', fontWeight: 600,
-                        color: 'var(--foreground)', letterSpacing: '-0.01em',
-                        background: '#252525', border: '1px solid #303030',
-                        padding: '1px 7px', borderRadius: 5,
-                      }}>★ Default</span>
+          {resumes.map((r, i) => {
+            const isLinkOnly = !r.filepath || r.filepath === '';
+            return (
+              <div key={r.id} className="card animate-enter" style={{ animationDelay: `${i * 0.04}s` }}>
+                {/* Main row */}
+                <div className="flex items-center justify-between" style={{ padding: '12px 16px' }}>
+                  <div className="flex items-center gap-3" style={{ minWidth: 0 }}>
+                    {isLinkOnly
+                      ? <Link2 size={16} style={{ color: 'var(--muted-foreground)', flexShrink: 0 }} />
+                      : <FileText size={16} style={{ color: 'var(--muted-foreground)', flexShrink: 0 }} />
+                    }
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.filename}</p>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)' }}>
+                        {new Date(r.uploaded_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {r.is_default && (
+                          <span style={{
+                            marginLeft: 8, fontSize: '0.7rem', fontWeight: 600,
+                            color: 'var(--foreground)', letterSpacing: '-0.01em',
+                            background: '#252525', border: '1px solid #303030',
+                            padding: '1px 7px', borderRadius: 5,
+                          }}>★ Default</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2" style={{ flexShrink: 0 }}>
+                    {!r.is_default && (
+                      <button onClick={() => setDefault(r.id)} title="Set as default" className="btn-secondary text-xs flex items-center gap-1">
+                        <Star size={12} /> Set default
+                      </button>
                     )}
-                  </p>
+                    {/* Link icon: opens drive_link */}
+                    {r.drive_link && (
+                      <a href={r.drive_link} target="_blank" rel="noopener noreferrer" title="Open link" style={{ color: 'var(--muted-foreground)', display: 'flex' }}>
+                        <ExternalLink size={14} />
+                      </a>
+                    )}
+                    {/* Edit / add link button (for PDF resumes without a link, or link-only) */}
+                    <button
+                      onClick={() => editingLinkId === r.id ? setEditingLinkId(null) : startEditLink(r)}
+                      title={r.drive_link ? 'Edit link' : 'Add link'}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex' }}
+                    >
+                      <Link2 size={14} style={{ opacity: r.drive_link ? 1 : 0.45 }} />
+                    </button>
+                    {r.drive_link && (
+                      <button
+                        onClick={() => copyLink(r)}
+                        title="Copy link"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex' }}
+                      >
+                        {copiedId === r.id
+                          ? <Check size={14} style={{ color: '#4ade80' }} />
+                          : <Copy size={14} />
+                        }
+                      </button>
+                    )}
+                    <button onClick={() => deleteResume(r.id)} title="Delete resume" className="btn-danger flex items-center gap-1 text-xs">
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {!r.is_default && (
-                  <button onClick={() => setDefault(r.id)} className="btn-secondary text-xs flex items-center gap-1">
-                    <Star size={12} /> Set default
-                  </button>
+
+                {/* Inline drive-link editor */}
+                {editingLinkId === r.id && (
+                  <div style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <Link2 size={13} style={{ color: 'var(--muted-foreground)', flexShrink: 0 }} />
+                    <input
+                      style={{ ...inputStyle, flex: 1 }}
+                      placeholder="Paste Google Drive or other link"
+                      value={editLinkVal}
+                      onChange={e => setEditLinkVal(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveEditLink(r.id); if (e.key === 'Escape') setEditingLinkId(null); }}
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveEditLink(r.id)}
+                      className="btn-primary"
+                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap' }}
+                    >Save</button>
+                    <button
+                      onClick={() => setEditingLinkId(null)}
+                      title="Cancel"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', display: 'flex', padding: '2px' }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 )}
-                <button onClick={() => deleteResume(r.id)} title="Delete resume" className="btn-danger flex items-center gap-1 text-xs">
-                  <Trash2 size={12} />
-                </button>
+
+                {/* Drive link chip display (when not editing) */}
+                {r.drive_link && editingLinkId !== r.id && (
+                  <div style={{ borderTop: '1px solid var(--border)', padding: '7px 16px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Link2 size={11} style={{ color: 'var(--muted-foreground)', flexShrink: 0, opacity: 0.7 }} />
+                    <span style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                      {r.drive_link}
+                    </span>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -142,3 +314,4 @@ export default function ResumePage() {
     </div>
   );
 }
+

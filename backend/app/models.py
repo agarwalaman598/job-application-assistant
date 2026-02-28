@@ -52,7 +52,8 @@ class Resume(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     filename = Column(String(255), nullable=False)
-    filepath = Column(String(500), nullable=False)
+    filepath = Column(String(500), nullable=False, default="")
+    drive_link = Column(String(1000), nullable=True)
     is_default = Column(Boolean, default=False)
     uploaded_at = Column(DateTime, default=datetime.datetime.utcnow)
 
