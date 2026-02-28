@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../api';
-import { Save, Plus, X, Loader2, Briefcase, GraduationCap, Globe, BookOpen, Pencil, Trash2, Check } from 'lucide-react';
+import { Save, Plus, X, Loader2, Briefcase, GraduationCap, Globe, BookOpen, Pencil, Trash2, Check, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState({
@@ -10,6 +10,16 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [skillInput, setSkillInput] = useState('');
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [summaryModalOpen, setSummaryModalOpen] = useState(false);
+  const [summaryClosing, setSummaryClosing] = useState(false);
+  const [summaryDraft, setSummaryDraft] = useState('');
+  const summaryTextareaRef = useRef(null);
+
+  const closeSummaryModal = () => {
+    setSummaryClosing(true);
+    setTimeout(() => { setSummaryModalOpen(false); setSummaryClosing(false); }, 185);
+  };
 
   // Saved answers state
   const [savedAnswers, setSavedAnswers] = useState([]);
@@ -115,11 +125,156 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* Summary */}
+      {/* Summary Modal */}
+      {summaryModalOpen && (
+        <div
+          className={summaryClosing ? 'animate-modal-bg-out' : 'animate-modal-bg'}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+          onClick={e => { if (e.target === e.currentTarget) closeSummaryModal(); }}
+        >
+          <div
+            className={summaryClosing ? 'animate-modal-out' : 'animate-modal'}
+            style={{
+            background: '#141414', border: '1px solid #2a2a2a', borderRadius: 18,
+            width: '100%', maxWidth: 680, boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+            display: 'flex', flexDirection: 'column', gap: 0, overflow: 'hidden',
+          }}>
+            {/* Modal header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid #1f1f1f' }}>
+              <div>
+                <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.01em' }}>Professional Summary</h2>
+                <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: 3 }}>Write a concise overview of your background and goals</p>
+              </div>
+              <button onClick={closeSummaryModal}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', display: 'flex', alignItems: 'center', padding: 4, borderRadius: 6 }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--foreground)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--muted-foreground)'}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Textarea */}
+            <div style={{ padding: '1.25rem 1.5rem' }}>
+              <textarea
+                ref={summaryTextareaRef}
+                value={summaryDraft}
+                onChange={e => setSummaryDraft(e.target.value)}
+                placeholder="Describe your professional background, key skills, and career goals..."
+                rows={10}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  background: '#0e0e0e', border: '1px solid #2a2a2a', borderRadius: 10,
+                  color: 'var(--foreground)', fontSize: '0.875rem', fontFamily: 'inherit',
+                  lineHeight: 1.7, padding: '0.875rem 1rem',
+                  resize: 'vertical', outline: 'none',
+                  letterSpacing: '-0.01em',
+                }}
+                onFocus={e => e.target.style.borderColor = '#4a4a5a'}
+                onBlur={e => e.target.style.borderColor = '#2a2a2a'}
+              />
+              <p style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', marginTop: 6, textAlign: 'right' }}>
+                {summaryDraft.length} characters
+              </p>
+            </div>
+
+            {/* Modal footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '1rem 1.5rem', borderTop: '1px solid #1f1f1f' }}>
+              <button onClick={closeSummaryModal}
+                style={{ padding: '7px 16px', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 9, fontSize: '0.82rem', fontWeight: 600, color: 'var(--muted-foreground)', cursor: 'pointer', fontFamily: 'inherit' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = '#3a3a3a'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = '#2a2a2a'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setProfile(p => ({ ...p, summary: summaryDraft })); closeSummaryModal(); }}
+                style={{ padding: '7px 18px', background: '#202020', border: '1px solid #303030', borderRadius: 9, fontSize: '0.82rem', fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}
+                onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
+                onMouseLeave={e => e.currentTarget.style.background = '#202020'}
+              >
+                <Check size={14} /> Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Card */}
       <div className="card p-5 mb-4 animate-enter">
-        <label className="section-label" style={{ marginBottom: '8px', display: 'block' }}>Professional Summary</label>
-        <textarea value={profile.summary} onChange={(e) => setProfile({ ...profile, summary: e.target.value })}
-          className="input-field" rows={3} placeholder="Describe your professional background..." />
+        {/* Header row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <label className="section-label" style={{ margin: 0 }}>Professional Summary</label>
+          <button
+            onClick={() => { setSummaryDraft(profile.summary); setSummaryModalOpen(true); setTimeout(() => summaryTextareaRef.current?.focus(), 50); }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8,
+              padding: '4px 11px', fontSize: '0.75rem', fontWeight: 600,
+              color: 'var(--muted-foreground)', cursor: 'pointer', fontFamily: 'inherit',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#3a3a3a'; e.currentTarget.style.color = 'var(--foreground)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = 'var(--muted-foreground)'; }}
+          >
+            <Maximize2 size={12} /> Edit
+          </button>
+        </div>
+
+        {/* Preview area */}
+        {profile.summary ? (
+          <div>
+            <div style={{
+              position: 'relative',
+              overflow: 'hidden',
+              maxHeight: summaryExpanded ? 'none' : '4.8em',
+              transition: 'max-height 0.3s ease',
+            }}>
+              <p style={{
+                fontSize: '0.875rem', lineHeight: 1.75, color: 'var(--foreground)',
+                fontFamily: 'inherit', letterSpacing: '-0.01em', margin: 0,
+                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+              }}>
+                {profile.summary}
+              </p>
+              {!summaryExpanded && (
+                <div style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0, height: '2.4em',
+                  background: 'linear-gradient(to bottom, transparent, var(--card))',
+                  pointerEvents: 'none',
+                }} />
+              )}
+            </div>
+            <button
+              onClick={() => setSummaryExpanded(v => !v)}
+              style={{
+                marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                fontSize: '0.75rem', fontWeight: 600, color: '#818cf8', fontFamily: 'inherit',
+              }}
+            >
+              {summaryExpanded ? <><ChevronUp size={13} /> Show less</> : <><ChevronDown size={13} /> Read more</>}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => { setSummaryDraft(''); setSummaryModalOpen(true); setTimeout(() => summaryTextareaRef.current?.focus(), 50); }}
+            style={{
+              width: '100%', padding: '1.5rem', background: 'rgba(99,102,241,0.05)',
+              border: '1.5px dashed rgba(99,102,241,0.25)', borderRadius: 10,
+              color: 'var(--muted-foreground)', fontSize: '0.83rem', fontFamily: 'inherit',
+              cursor: 'pointer', textAlign: 'center', transition: 'border-color 0.15s, background 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)'; e.currentTarget.style.background = 'rgba(99,102,241,0.09)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.25)'; e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
+          >
+            + Click to write your professional summary
+          </button>
+        )}
       </div>
 
       {/* Contact */}

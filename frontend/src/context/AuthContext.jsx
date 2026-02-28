@@ -24,9 +24,9 @@ export function AuthProvider({ children }) {
     localStorage.setItem('token', access_token);
     setToken(access_token);
 
-    // Decode user info from token (basic)
+    // Decode user info from token
     const payload = JSON.parse(atob(access_token.split('.')[1]));
-    const userData = { id: payload.sub, email };
+    const userData = { id: payload.sub, email: payload.email || email, full_name: payload.full_name || '' };
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     return res.data;

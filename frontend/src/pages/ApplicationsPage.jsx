@@ -98,9 +98,29 @@ export default function ApplicationsPage() {
           {apps.map((app, i) => (
             <div key={app.id} className="card px-5 py-4 flex items-center gap-4 animate-fade-in"
               style={{ animationDelay: `${i * 0.04}s` }}>
+              {/* Serial number */}
+              <div style={{
+                height: 32, width: 32, borderRadius: 8, flexShrink: 0,
+                background: '#1a1a1a', border: '1px solid #2a2a2a',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted-foreground)',
+                fontFamily: 'inherit', letterSpacing: '-0.01em',
+              }}>
+                {i + 1}
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{app.position}</p>
-                <p className="text-xs text-[var(--muted-foreground)] mt-0.5 truncate">{app.company}</p>
+                <p className="font-medium text-sm truncate">{app.company}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.2rem', flexWrap: 'wrap' }}>
+                  <p className="text-xs text-[var(--muted-foreground)]">{app.position}</p>
+                  {app.applied_at && (
+                    <>
+                      <span style={{ color: 'var(--muted-foreground)', fontSize: '0.55rem' }}>●</span>
+                      <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap">
+                        {new Date(app.applied_at + 'Z').toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' })}
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
               <StatusBadge status={app.status} />
               {app.url && (

@@ -67,7 +67,7 @@ export default function ResumePage() {
           <>
             <Upload size={28} style={{ color: 'var(--muted-foreground)', margin: '0 auto 8px' }} />
             <p style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>
-              Drop a PDF here or <span style={{ color: 'var(--primary)', fontWeight: 500 }}>browse</span>
+              Drop a PDF here or <span style={{ color: 'var(--foreground)', fontWeight: 600, textDecoration: 'underline', textDecorationColor: '#3a3a3a', textUnderlineOffset: '3px' }}>browse</span>
             </p>
             <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '4px' }}>PDF only, max 10MB</p>
           </>
@@ -86,12 +86,19 @@ export default function ResumePage() {
             <div key={r.id} className="card p-4 flex items-center justify-between animate-enter"
               style={{ animationDelay: `${i * 0.04}s` }}>
               <div className="flex items-center gap-3">
-                <FileText size={18} style={{ color: 'var(--primary)' }} />
+                <FileText size={18} style={{ color: 'var(--muted-foreground)', flexShrink: 0 }} />
                 <div>
                   <p style={{ fontSize: '0.85rem', fontWeight: 500 }}>{r.filename}</p>
                   <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)' }}>
                     {new Date(r.uploaded_at).toLocaleDateString()}
-                    {r.is_default && <span style={{ color: 'var(--primary)', marginLeft: '8px', fontWeight: 600 }}>★ Default</span>}
+                    {r.is_default && (
+                      <span style={{
+                        marginLeft: 8, fontSize: '0.7rem', fontWeight: 600,
+                        color: 'var(--foreground)', letterSpacing: '-0.01em',
+                        background: '#252525', border: '1px solid #303030',
+                        padding: '1px 7px', borderRadius: 5,
+                      }}>★ Default</span>
+                    )}
                   </p>
                 </div>
               </div>

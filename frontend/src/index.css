@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -27,14 +27,22 @@
   --radius-lg: var(--radius);
 }
 
-@keyframes fade-in  { from { opacity:0 } to { opacity:1 } }
-@keyframes slide-up { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
-@keyframes scale-in { from { opacity:0; transform:scale(0.9) } to { opacity:1; transform:scale(1) } }
+@keyframes fade-in     { from { opacity:0 } to { opacity:1 } }
+@keyframes slide-up    { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
+@keyframes scale-in    { from { opacity:0; transform:scale(0.9) } to { opacity:1; transform:scale(1) } }
+@keyframes modal-bg    { from { opacity:0 } to { opacity:1 } }
+@keyframes modal-card  { from { opacity:0; transform:scale(0.94) translateY(14px) } to { opacity:1; transform:scale(1) translateY(0) } }
+@keyframes modal-bg-out   { from { opacity:1 } to { opacity:0 } }
+@keyframes modal-card-out { from { opacity:1; transform:scale(1) translateY(0) } to { opacity:0; transform:scale(0.94) translateY(14px) } }
 
 .animate-fade-in  { animation: fade-in  0.4s ease-out both; }
 .animate-slide-up { animation: slide-up 0.4s ease-out both; }
 .animate-scale-in { animation: scale-in 0.3s ease-out both; }
 .animate-enter    { animation: slide-up 0.35s ease-out both; }
+.animate-modal-bg     { animation: modal-bg      0.2s ease-out both; }
+.animate-modal        { animation: modal-card    0.25s cubic-bezier(0.34,1.2,0.64,1) both; }
+.animate-modal-bg-out { animation: modal-bg-out  0.18s ease-in  both; }
+.animate-modal-out    { animation: modal-card-out 0.18s ease-in  both; }
 .animate-pulse    { animation: pulse    1.5s ease-in-out infinite; }
 
 @layer base {
@@ -56,23 +64,25 @@
     --border: #1f1f1f;
     --input: #1a1a1a;
     --ring: #6366f1;
-    --sidebar: #0f0f0f;
+    --sidebar: #181818;
     --sidebar-foreground: #f4f4f5;
     --sidebar-primary: #6366f1;
-    --sidebar-accent: #1a1a1a;
-    --sidebar-border: #1f1f1f;
+    --sidebar-accent: #222222;
+    --sidebar-border: #2a2a2a;
     --radius: 0.5rem;
   }
 
   * { margin:0; padding:0; box-sizing:border-box; border-color:var(--border); }
 
   body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     background: var(--background);
     color: var(--foreground);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
-    letter-spacing: -0.01em;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.015em;
+    zoom: 1.12;
   }
 
   #root { min-height: 100vh; }
@@ -95,11 +105,11 @@
 .input-field::placeholder { color:var(--muted-foreground); }
 
 .btn-primary {
-  padding:10px 22px; background:var(--primary); color:var(--primary-foreground);
-  border:none; border-radius:var(--radius); font-weight:600; font-size:0.9rem;
+  padding:10px 22px; background:#202020; color:#ffffff;
+  border:1px solid #303030; border-radius:var(--radius); font-weight:600; font-size:0.9rem;
   cursor:pointer; transition:background 0.2s,transform 0.1s; font-family:inherit;
 }
-.btn-primary:hover { background:#4f46e5; }
+.btn-primary:hover { background:#2a2a2a; border-color:#3a3a3a; }
 .btn-primary:active { transform:scale(0.98); }
 .btn-primary:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
 

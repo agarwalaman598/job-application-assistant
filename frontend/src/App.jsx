@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Sidebar } from './components/Sidebar';
@@ -16,12 +18,39 @@ import ApplicationsPage from './pages/ApplicationsPage';
 import './index.css';
 
 function AppLayout({ children }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
-      <main className="flex-1 pl-60 min-h-screen overflow-auto">
-        {children}
-      </main>
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(c => !c)}
+        mobileOpen={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+      />
+
+      <div
+        className={`flex flex-col flex-1 min-h-screen overflow-auto transition-all duration-200 ${collapsed ? 'md:ml-16' : 'md:ml-64'}`}
+      >
+        {/* Mobile top bar */}
+        <header
+          className="md:hidden flex items-center gap-3 h-14 px-4 border-b sticky top-0 z-20"
+          style={{ background: 'var(--sidebar)', borderColor: 'var(--sidebar-border)' }}
+        >
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-accent)] transition-colors"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <span className="text-sm font-semibold text-[var(--foreground)]">JobAssist AI</span>
+        </header>
+
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

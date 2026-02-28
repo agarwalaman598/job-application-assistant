@@ -1,16 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Eye, EyeOff } from 'lucide-react';
 import api from '../api';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
 
 export default function LoginPage() {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [showPwd, setShowPwd]   = useState(false);
   const [error, setError]       = useState('');
   const [message, setMessage]   = useState('');
   const [loading, setLoading]   = useState(false);
@@ -43,24 +38,45 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'var(--background)' }}>
-      <div className="animate-slide-up w-full max-w-sm">
-        {/* Logo */}
-        <div className="text-center mb-10">
-          <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--primary)] mb-4">
-            <Sparkles className="h-5 w-5 text-white" />
-          </div>
-          <h1 className="text-xl font-semibold text-[var(--foreground)] tracking-tight">Welcome back</h1>
-          <p className="text-sm text-[var(--muted-foreground)] mt-1">Sign in to your JobAssist AI account</p>
-        </div>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--background)',
+      padding: '1.5rem',
+    }}>
+      {/* Title above card */}
+      <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.02em', marginBottom: '0.4rem' }}>
+          JobAssist AI
+        </h1>
+        <p style={{ fontSize: '0.9rem', color: 'var(--muted-foreground)' }}>
+          Track your job applications effortlessly
+        </p>
+      </div>
 
+      {/* Card */}
+      <div style={{
+        width: '100%',
+        maxWidth: '420px',
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        borderRadius: '16px',
+        padding: '2rem',
+      }}>
         {/* Error */}
         {error && (
-          <div className="mb-4 p-3 rounded-lg text-sm bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)] text-[#f87171]">
+          <div style={{
+            marginBottom: '1rem', padding: '10px 14px', borderRadius: '8px', fontSize: '0.82rem',
+            background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171',
+          }}>
             {error}
             {unverifiedError && (
               <button type="button" onClick={handleResend} disabled={resending}
-                className="block mt-1.5 text-[var(--primary)] text-xs hover:underline disabled:opacity-50">
+                style={{ display: 'block', marginTop: '6px', background: 'none', border: 'none', padding: 0,
+                  color: 'var(--primary)', fontSize: '0.78rem', cursor: 'pointer', opacity: resending ? 0.5 : 1 }}>
                 {resending ? 'Sending…' : 'Resend verification email →'}
               </button>
             )}
@@ -69,49 +85,83 @@ export default function LoginPage() {
 
         {/* Success */}
         {message && (
-          <div className="mb-4 p-3 rounded-lg text-sm bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.2)] text-[#34d399]">
+          <div style={{
+            marginBottom: '1rem', padding: '10px 14px', borderRadius: '8px', fontSize: '0.82rem',
+            background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#34d399',
+          }}>
             {message}
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="you@example.com" value={email}
-              onChange={e => setEmail(e.target.value)} required autoFocus />
+        <form onSubmit={handleSubmit}>
+          {/* Email */}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--foreground)', marginBottom: '0.5rem' }}>
+              Email
+            </label>
+            <input
+              type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="you@example.com" required autoFocus
+              style={{
+                width: '100%', padding: '10px 16px',
+                background: 'var(--input)', border: '1px solid var(--border)',
+                borderRadius: '9999px', color: 'var(--foreground)',
+                fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit',
+                boxSizing: 'border-box',
+              }}
+              onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border)'}
+            />
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <Label htmlFor="password" className="mb-0">Password</Label>
-              <Link to="/forgot-password"
-                className="text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-colors uppercase tracking-wide">
-                Forgot?
+          {/* Password */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--foreground)' }}>
+                Password
+              </label>
+              <Link to="/forgot-password" style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', textDecoration: 'none' }}>
+                Forgot password?
               </Link>
             </div>
-            <div className="relative">
-              <Input id="password" type={showPwd ? 'text' : 'password'} placeholder="••••••••"
-                value={password} onChange={e => setPassword(e.target.value)} required />
-              <button type="button" onClick={() => setShowPwd(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
-                {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
+            <input
+              type="password" value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••" required
+              style={{
+                width: '100%', padding: '10px 16px',
+                background: 'var(--input)', border: '1px solid var(--border)',
+                borderRadius: '9999px', color: 'var(--foreground)',
+                fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit',
+                boxSizing: 'border-box',
+              }}
+              onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border)'}
+            />
           </div>
 
-          <Button type="submit" className="w-full mt-2" disabled={loading} size="lg">
+          {/* Submit */}
+          <button type="submit" disabled={loading} style={{
+            width: '100%', padding: '11px',
+            background: loading ? 'var(--muted)' : '#1f1f1f',
+            color: 'var(--foreground)', border: '1px solid #2e2e2e',
+            borderRadius: '9999px', fontWeight: 700, fontSize: '0.95rem',
+            cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+            transition: 'background 0.15s',
+          }}>
             {loading ? 'Signing in…' : 'Sign in'}
-          </Button>
+          </button>
         </form>
 
-        <p className="text-center mt-6 text-sm text-[var(--muted-foreground)]">
-          No account?{' '}
-          <Link to="/register" className="text-[var(--primary)] font-medium hover:underline">
-            Create one
+        <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.875rem', color: 'var(--muted-foreground)' }}>
+          Don&apos;t have an account?{' '}
+          <Link to="/register" style={{ color: 'var(--muted-foreground)', textDecoration: 'none' }}
+            onMouseOver={e => e.target.style.color = 'var(--foreground)'}
+            onMouseOut={e => e.target.style.color = 'var(--muted-foreground)'}>
+            Sign up
           </Link>
         </p>
       </div>
     </div>
   );
 }
+

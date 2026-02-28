@@ -1,10 +1,19 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import api from '../api';
 import MatchScoreGauge from '../components/MatchScoreGauge';
-import { Search, CheckCircle, XCircle, Loader2, FileText, MessageSquare, Sparkles, FileCheck } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Loader2, FileText, MessageSquare, Sparkles, FileCheck, Maximize2, X, Check } from 'lucide-react';
 
 export default function AnalyzePage() {
   const [jd, setJd] = useState('');
+  const [jdModalOpen, setJdModalOpen] = useState(false);
+  const [jdClosing, setJdClosing] = useState(false);
+  const [jdDraft, setJdDraft] = useState('');
+  const jdTextareaRef = useRef(null);
+
+  const closeJdModal = () => {
+    setJdClosing(true);
+    setTimeout(() => { setJdModalOpen(false); setJdClosing(false); }, 185);
+  };
   const [matchResult, setMatchResult] = useState(null);
   const [jdAnalysis, setJdAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -51,15 +60,114 @@ export default function AnalyzePage() {
         </p>
       </div>
 
-      {/* Input */}
+      {/* JD Modal */}
+      {jdModalOpen && (
+        <div
+          className={jdClosing ? 'animate-modal-bg-out' : 'animate-modal-bg'}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+          onClick={e => { if (e.target === e.currentTarget) closeJdModal(); }}
+        >
+          <div
+            className={jdClosing ? 'animate-modal-out' : 'animate-modal'}
+            style={{
+              background: '#141414', border: '1px solid #2a2a2a', borderRadius: 18,
+              width: '100%', maxWidth: 720, boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+              display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            }}
+          >
+            {/* Modal header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid #1f1f1f' }}>
+              <div>
+                <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.01em' }}>Job Description</h2>
+                <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: 3 }}>Paste the full job description to analyze against your profile</p>
+              </div>
+              <button onClick={closeJdModal}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', display: 'flex', alignItems: 'center', padding: 4, borderRadius: 6 }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--foreground)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--muted-foreground)'}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Textarea */}
+            <div style={{ padding: '1.25rem 1.5rem' }}>
+              <textarea
+                ref={jdTextareaRef}
+                value={jdDraft}
+                onChange={e => setJdDraft(e.target.value)}
+                placeholder="Paste the full job description here..."
+                rows={14}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  background: '#0e0e0e', border: '1px solid #2a2a2a', borderRadius: 10,
+                  color: 'var(--foreground)', fontSize: '0.875rem', fontFamily: 'inherit',
+                  lineHeight: 1.7, padding: '0.875rem 1rem',
+                  resize: 'vertical', outline: 'none', letterSpacing: '-0.01em',
+                }}
+                onFocus={e => e.target.style.borderColor = '#4a4a5a'}
+                onBlur={e => e.target.style.borderColor = '#2a2a2a'}
+              />
+              <p style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', marginTop: 6, textAlign: 'right' }}>
+                {jdDraft.length} characters
+              </p>
+            </div>
+
+            {/* Modal footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '1rem 1.5rem', borderTop: '1px solid #1f1f1f' }}>
+              <button onClick={closeJdModal}
+                style={{ padding: '7px 16px', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 9, fontSize: '0.82rem', fontWeight: 600, color: 'var(--muted-foreground)', cursor: 'pointer', fontFamily: 'inherit' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = '#3a3a3a'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = '#2a2a2a'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setJd(jdDraft); closeJdModal(); }}
+                style={{ padding: '7px 18px', background: '#202020', border: '1px solid #303030', borderRadius: 9, fontSize: '0.82rem', fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}
+                onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
+                onMouseLeave={e => e.currentTarget.style.background = '#202020'}
+              >
+                <Check size={14} /> Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* JD Input card */}
       <div className="card p-5 mb-5 animate-enter">
-        <label className="section-label" style={{ marginBottom: '8px', display: 'block' }}>
-          <FileText size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
-          Job Description
-        </label>
-        <textarea value={jd} onChange={(e) => setJd(e.target.value)}
-          className="input-field" rows={7}
-          placeholder="Paste the full job description here..." />
+        {/* Card header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <label className="section-label" style={{ margin: 0 }}>
+            <FileText size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+            Job Description
+          </label>
+          <button
+            onClick={() => { setJdDraft(jd); setJdModalOpen(true); setTimeout(() => jdTextareaRef.current?.focus(), 50); }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 8,
+              padding: '4px 11px', fontSize: '0.75rem', fontWeight: 600,
+              color: 'var(--muted-foreground)', cursor: 'pointer', fontFamily: 'inherit',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#3a3a3a'; e.currentTarget.style.color = 'var(--foreground)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = 'var(--muted-foreground)'; }}
+          >
+            <Maximize2 size={12} /> Expand
+          </button>
+        </div>
+
+        {/* Inline textarea (still usable directly) */}
+        <textarea value={jd} onChange={e => setJd(e.target.value)}
+          className="input-field" rows={5}
+          placeholder="Paste the job description here, or click Expand for a larger editor..." />
+
         <button onClick={handleAnalyze} disabled={loading || !jd.trim()}
           className="btn-primary flex items-center gap-2 mt-3">
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}

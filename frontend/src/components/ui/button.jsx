@@ -6,7 +6,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:   'bg-[var(--primary)] text-white hover:bg-indigo-600 active:scale-[0.98]',
+        default:   'bg-[#202020] text-white border border-[#303030] hover:bg-[#2a2a2a] hover:border-[#3a3a3a] active:scale-[0.98]',
         secondary: 'bg-transparent text-[var(--muted-foreground)] border border-[var(--border)] hover:border-[#3a3a3a] hover:text-[var(--foreground)] hover:bg-[var(--muted)]',
         ghost:     'bg-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]',
         danger:    'bg-transparent text-[var(--destructive)] border border-[rgba(239,68,68,0.3)] hover:bg-[rgba(239,68,68,0.08)] hover:border-[rgba(239,68,68,0.5)]',

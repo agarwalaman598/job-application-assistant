@@ -74,5 +74,5 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
             detail="Please verify your email before logging in. Check your inbox for the verification link.",
         )
 
-    token = create_access_token(data={"sub": user.id})
+    token = create_access_token(data={"sub": user.id, "email": user.email, "full_name": user.full_name or ""})
     return {"access_token": token, "token_type": "bearer"}
