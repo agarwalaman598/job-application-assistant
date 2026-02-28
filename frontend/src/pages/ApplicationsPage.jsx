@@ -245,17 +245,17 @@ export default function ApplicationsPage() {
               </div>
               <StatusBadge status={app.status} />
               {app.url && (
-                <a href={app.url} target="_blank" rel="noreferrer"
+                <a href={app.url} target="_blank" rel="noreferrer" title="Open link"
                   className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               )}
               <div className="flex items-center gap-1">
-                <button onClick={() => openEdit(app)}
+                <button onClick={() => openEdit(app)} title="Edit"
                   className="h-7 w-7 rounded-md flex items-center justify-center bg-transparent border-none cursor-pointer text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-all">
                   <Edit2 className="h-3.5 w-3.5" />
                 </button>
-                <button onClick={() => handleDelete(app.id)}
+                <button onClick={() => handleDelete(app.id)} title="Delete"
                   className="h-7 w-7 rounded-md flex items-center justify-center bg-transparent border-none cursor-pointer text-[var(--muted-foreground)] hover:text-[var(--destructive)] hover:bg-[rgba(239,68,68,0.08)] transition-all">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -273,7 +273,7 @@ export default function ApplicationsPage() {
           <div className="card p-6 w-full max-w-md animate-slide-up">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-semibold">{editingId ? 'Edit' : 'New'} application</h2>
-              <button onClick={closeForm}
+              <button onClick={closeForm} title="Close"
                 className="h-7 w-7 flex items-center justify-center rounded-md bg-transparent border-none cursor-pointer text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-all">
                 <X className="h-4 w-4" />
               </button>

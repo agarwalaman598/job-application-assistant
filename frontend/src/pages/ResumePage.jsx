@@ -113,7 +113,7 @@ export default function ResumePage() {
                     <Star size={12} /> Set default
                   </button>
                 )}
-                <button onClick={() => deleteResume(r.id)} className="btn-danger flex items-center gap-1 text-xs">
+                <button onClick={() => deleteResume(r.id)} title="Delete resume" className="btn-danger flex items-center gap-1 text-xs">
                   <Trash2 size={12} />
                 </button>
               </div>

@@ -88,7 +88,7 @@ export default function AnalyzePage() {
                 <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.01em' }}>Job Description</h2>
                 <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: 3 }}>Paste the full job description to analyze against your profile</p>
               </div>
-              <button onClick={closeJdModal}
+              <button onClick={closeJdModal} title="Close"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', display: 'flex', alignItems: 'center', padding: 4, borderRadius: 6 }}
                 onMouseEnter={e => e.currentTarget.style.color = 'var(--foreground)'}
                 onMouseLeave={e => e.currentTarget.style.color = 'var(--muted-foreground)'}

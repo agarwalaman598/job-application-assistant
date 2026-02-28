@@ -64,6 +64,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
           {onToggle && (
             <button
               onClick={onToggle}
+              title="Expand sidebar"
               className="hidden md:flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-accent)] transition-colors shrink-0"
             >
               <ChevronRight className="h-4 w-4" />
@@ -89,6 +90,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
           {onToggle && (
             <button
               onClick={onToggle}
+              title="Collapse sidebar"
               className="hidden md:flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-accent)] transition-colors shrink-0"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -98,6 +100,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
           {onClose && (
             <button
               onClick={onClose}
+              title="Close menu"
               className="md:hidden flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-accent)] transition-colors shrink-0"
             >
               <X className="h-4 w-4" />

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api';
 import { Save, Plus, X, Loader2, Briefcase, GraduationCap, Globe, BookOpen, Pencil, Trash2, Check, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState({
@@ -25,6 +26,7 @@ export default function ProfilePage() {
   const [savedAnswers, setSavedAnswers] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [confirmAnswerId, setConfirmAnswerId] = useState(null);
 
   useEffect(() => {
     api.get('/profile').then(res => {
@@ -101,10 +103,11 @@ export default function ProfilePage() {
       setEditingId(null);
     } catch (err) { console.error(err); }
   };
-  const deleteAnswer = async (id) => {
+  const deleteAnswer = async () => {
     try {
-      await api.delete(`/profile/saved-answers/${id}`);
-      setSavedAnswers(savedAnswers.filter(a => a.id !== id));
+      await api.delete(`/profile/saved-answers/${confirmAnswerId}`);
+      setSavedAnswers(savedAnswers.filter(a => a.id !== confirmAnswerId));
+      setConfirmAnswerId(null);
     } catch (err) { console.error(err); }
   };
 
@@ -150,7 +153,7 @@ export default function ProfilePage() {
                 <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.01em' }}>Professional Summary</h2>
                 <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: 3 }}>Write a concise overview of your background and goals</p>
               </div>
-              <button onClick={closeSummaryModal}
+              <button onClick={closeSummaryModal} title="Close"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', display: 'flex', alignItems: 'center', padding: 4, borderRadius: 6 }}
                 onMouseEnter={e => e.currentTarget.style.color = 'var(--foreground)'}
                 onMouseLeave={e => e.currentTarget.style.color = 'var(--muted-foreground)'}
@@ -346,7 +349,7 @@ export default function ProfilePage() {
             background: 'var(--muted)', border: '1px solid var(--border)',
             position: 'relative',
           }}>
-            <button onClick={() => removeExperience(i)}
+            <button onClick={() => removeExperience(i)} title="Remove"
               className="bg-transparent border-none cursor-pointer"
               style={{ position: 'absolute', top: '8px', right: '8px', color: 'var(--muted-foreground)' }}>
               <X size={14} />
@@ -384,7 +387,7 @@ export default function ProfilePage() {
               background: 'var(--muted)', border: '1px solid var(--border)',
               position: 'relative',
             }}>
-              <button onClick={() => removeEducation(i)}
+              <button onClick={() => removeEducation(i)} title="Remove"
                 className="bg-transparent border-none cursor-pointer"
                 style={{ position: 'absolute', top: '10px', right: '10px', color: 'var(--muted-foreground)' }}>
                 <X size={14} />
@@ -463,19 +466,19 @@ export default function ProfilePage() {
                   <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', fontWeight: 500 }}>{item.question}</span>
                   <div className="flex items-center gap-1">
                     {editingId === item.id ? (
-                      <button onClick={() => saveEdit(item.id)}
+                      <button onClick={() => saveEdit(item.id)} title="Save"
                         className="bg-transparent border-none cursor-pointer"
                         style={{ color: '#10b981', padding: '2px' }}>
                         <Check size={14} />
                       </button>
                     ) : (
-                      <button onClick={() => startEdit(item)}
+                      <button onClick={() => startEdit(item)} title="Edit"
                         className="bg-transparent border-none cursor-pointer"
                         style={{ color: 'var(--muted-foreground)', padding: '2px' }}>
                         <Pencil size={12} />
                       </button>
                     )}
-                    <button onClick={() => deleteAnswer(item.id)}
+                    <button onClick={() => setConfirmAnswerId(item.id)} title="Delete"
                       className="bg-transparent border-none cursor-pointer"
                       style={{ color: 'var(--muted-foreground)', padding: '2px' }}>
                       <Trash2 size={12} />
@@ -495,6 +498,16 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmAnswerId !== null}
+        title="Delete saved answer"
+        message="This answer will be permanently removed and won't be available for future autofills."
+        confirmLabel="Delete"
+        danger
+        onConfirm={deleteAnswer}
+        onCancel={() => setConfirmAnswerId(null)}
+      />
     </div>
   );
 }
