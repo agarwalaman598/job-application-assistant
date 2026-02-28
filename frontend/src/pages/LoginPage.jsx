@@ -2,18 +2,24 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, Zap } from 'lucide-react';
+import api from '../api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const unverifiedError = error.toLowerCase().includes('verify');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setMessage('');
     setLoading(true);
     try {
       await login(email, password);
@@ -22,6 +28,26 @@ export default function LoginPage() {
       setError(err.response?.data?.detail || 'Invalid credentials');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setError('');
+    setMessage('');
+
+    if (!email) {
+      setError('Enter your email above, then click resend verification.');
+      return;
+    }
+
+    setResending(true);
+    try {
+      const res = await api.post('/auth/send-verification', { email });
+      setMessage(res.data?.detail || 'Verification email sent. Please check your inbox.');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Could not resend verification email. Please try again.');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -52,11 +78,34 @@ export default function LoginPage() {
             background: 'rgba(217, 79, 79, 0.08)', border: '1px solid rgba(217, 79, 79, 0.2)', color: '#d94f4f',
           }}>
             {error}
-            {error.toLowerCase().includes('verif') && (
+            {unverifiedError && (
               <div style={{ marginTop: '6px' }}>
-                <Link to="/forgot-password" style={{ color: '#d4942e', fontSize: '0.78rem' }}>Resend verification email →</Link>
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resending}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                    color: '#d4942e',
+                    fontSize: '0.78rem',
+                    cursor: resending ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {resending ? 'Sending verification email...' : 'Resend verification email →'}
+                </button>
               </div>
             )}
+          </div>
+        )}
+
+        {message && (
+          <div style={{
+            padding: '10px 14px', marginBottom: '1rem', borderRadius: '8px', fontSize: '0.8rem',
+            background: 'rgba(55, 154, 108, 0.12)', border: '1px solid rgba(55, 154, 108, 0.28)', color: '#7fd4ae',
+          }}>
+            {message}
           </div>
         )}
 

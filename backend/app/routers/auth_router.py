@@ -68,5 +68,11 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Please verify your email before logging in. Check your inbox for the verification link.",
+        )
+
     token = create_access_token(data={"sub": user.id})
     return {"access_token": token, "token_type": "bearer"}
