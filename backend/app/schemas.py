@@ -34,14 +34,20 @@ class LoginRequest(BaseModel):
 class ExperienceItem(BaseModel):
     title: str = ""
     company: str = ""
+    duration: str = ""
+    description: str = ""
+    # legacy fields kept for backward compat
     start_date: str = ""
     end_date: str = ""
-    description: str = ""
 
 
 class EducationItem(BaseModel):
     degree: str = ""
     institution: str = ""
+    major: str = ""
+    start_year: str = ""
+    end_year: str = ""
+    # legacy fields kept for backward compat
     year: str = ""
     gpa: str = ""
 

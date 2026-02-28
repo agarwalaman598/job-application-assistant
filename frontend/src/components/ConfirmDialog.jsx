@@ -25,12 +25,12 @@ export function ConfirmDialog({
 
   function handleCancel() {
     setClosing(true);
-    setTimeout(() => { setClosing(false); onCancel(); }, 185);
+    setTimeout(() => { onCancel(); }, 185);
   }
 
   function handleConfirm() {
     setClosing(true);
-    setTimeout(() => { setClosing(false); onConfirm(); }, 185);
+    setTimeout(() => { onConfirm(); }, 185);
   }
 
   // Reset closing state when opened again

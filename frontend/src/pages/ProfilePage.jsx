@@ -80,7 +80,7 @@ export default function ProfilePage() {
   };
 
   const addEducation = () => {
-    setProfile({ ...profile, education: [...profile.education, { degree: '', major: '', institution: '', start_year: '', end_year: '' }] });
+    setProfile({ ...profile, education: [...profile.education, { degree: '', major: '', institution: '', start_year: '', end_year: '', gpa: '' }] });
   };
   const updateEducation = (i, field, val) => {
     const edu = [...profile.education];
@@ -288,7 +288,7 @@ export default function ProfilePage() {
         </label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {[
-            { key: 'phone', label: 'Phone', ph: '+1 234 567 890' },
+            { key: 'phone', label: 'Phone', ph: '+91 1234 567 890' },
             { key: 'linkedin', label: 'LinkedIn', ph: 'linkedin.com/in/...' },
             { key: 'github', label: 'GitHub', ph: 'github.com/...' },
             { key: 'website', label: 'Website', ph: 'yoursite.com' },
@@ -414,8 +414,8 @@ export default function ProfilePage() {
                   className="input-field" placeholder="e.g. Kalinga Institute of Industrial Technology" />
               </div>
 
-              {/* Row 3: Start Year + End Year */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {/* Row 3: Start Year + End Year + GPA */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                 <div>
                   <label style={labelSt}>Start Year</label>
                   <input
@@ -431,6 +431,13 @@ export default function ProfilePage() {
                     value={edu.end_year || ''}
                     onChange={(e) => updateEducation(i, 'end_year', e.target.value)}
                     className="input-field" placeholder="e.g. 2027" />
+                </div>
+                <div>
+                  <label style={labelSt}>GPA / Marks / %</label>
+                  <input
+                    value={edu.gpa || ''}
+                    onChange={(e) => updateEducation(i, 'gpa', e.target.value)}
+                    className="input-field" placeholder="e.g. 8.5, 92%" />
                 </div>
               </div>
             </div>

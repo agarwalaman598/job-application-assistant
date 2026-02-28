@@ -25,7 +25,7 @@ export default function AutofillPage() {
 
   const handleDetect = async () => {
     if (!url.trim()) return;
-    setDetecting(true); setFields([]); setError(''); setResult(null);
+    setDetecting(true); setFields([]); setError(''); setResult(null); setMapError(''); setRecalledCount(null);
     try {
       const res = await api.post('/ai/detect-fields', { url });
       setFields(res.data.fields);
@@ -40,9 +40,11 @@ export default function AutofillPage() {
   };
 
   const [mapping, setMapping] = useState(false);
+  const [mapError, setMapError] = useState('');
+  const [recalledCount, setRecalledCount] = useState(null); // number of saved answers used
 
   const handleAutoMap = async () => {
-    setMapping(true);
+    setMapping(true); setMapError(''); setRecalledCount(null);
     try {
       const fieldData = fields.map(f => ({
         field_id: f.field_id,
@@ -54,7 +56,13 @@ export default function AutofillPage() {
       if (res.data.field_values) {
         setFieldValues({ ...fieldValues, ...res.data.field_values });
       }
-    } catch (err) { console.error(err); }
+      if (typeof res.data.saved_answers_count === 'number') {
+        setRecalledCount(res.data.saved_answers_count);
+      }
+    } catch (err) {
+      console.error(err);
+      setMapError(err.response?.data?.detail || 'Auto-map failed. Check your profile is complete.');
+    }
     finally { setMapping(false); }
   };
 
@@ -158,7 +166,7 @@ export default function AutofillPage() {
       {/* Fields */}
       {fields.length > 0 && (
         <div className="card p-5 mb-5 animate-enter">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
               <label className="section-label">Detected Fields</label>
               <p style={{ fontSize: '0.75rem', color: '#5a5a63', marginTop: '2px' }}>
@@ -170,6 +178,33 @@ export default function AutofillPage() {
               {mapping ? 'Mapping...' : 'Map from Profile'}
             </button>
           </div>
+
+          {/* Auto-map error */}
+          {mapError && (
+            <div className="flex items-center gap-2 mb-3" style={{
+              padding: '8px 12px', borderRadius: 8, fontSize: '0.78rem',
+              background: 'rgba(217,79,79,0.07)', border: '1px solid rgba(217,79,79,0.2)',
+              color: '#d94f4f',
+            }}>
+              <AlertCircle size={13} style={{ flexShrink: 0 }} />
+              {mapError}
+            </div>
+          )}
+
+          {/* Recalled from memory indicator */}
+          {recalledCount !== null && !mapError && (
+            <div className="flex items-center gap-2 mb-3" style={{
+              padding: '7px 12px', borderRadius: 8, fontSize: '0.75rem',
+              background: recalledCount > 0 ? 'rgba(62,179,112,0.07)' : 'rgba(90,90,99,0.08)',
+              border: `1px solid ${recalledCount > 0 ? 'rgba(62,179,112,0.2)' : 'rgba(90,90,99,0.15)'}`,
+              color: recalledCount > 0 ? '#3eb370' : '#5a5a63',
+            }}>
+              <CheckCircle size={13} style={{ flexShrink: 0 }} />
+              {recalledCount > 0
+                ? `${recalledCount} saved answer${recalledCount !== 1 ? 's' : ''} recalled from memory`
+                : 'No saved answers yet — fill and submit a form to start learning'}
+            </div>
+          )}
 
           <div className="flex flex-col gap-3">
             {fields.map(field => (

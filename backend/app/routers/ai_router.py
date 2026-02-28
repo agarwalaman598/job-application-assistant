@@ -152,6 +152,7 @@ def auto_map(
     resume_text = _get_default_resume_text(current_user.id, db)
 
     result = auto_map_fields(fields, profile_data, saved_answers, resume_text=resume_text)
+    result["saved_answers_count"] = len(saved_answers)
     return result
 
 

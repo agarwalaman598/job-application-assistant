@@ -288,6 +288,43 @@ def _fallback_jd_parse(jd_text: str) -> dict:
 #  AUTO-MAP FIELDS — LLM-powered
 # ═══════════════════════════════════════════════
 
+def _best_option_match(value: str, options: list) -> str:
+    """
+    Snap an AI-returned value to the closest option in the list.
+    1. Exact match (case-insensitive)
+    2. Option that contains the value, or value contains the option
+    3. First option that shares the most words with the value
+    Returns "" if no reasonable match found.
+    """
+    if not value or not options:
+        return value
+
+    val_lower = value.lower().strip()
+
+    # 1. Exact match
+    for opt in options:
+        if opt.lower().strip() == val_lower:
+            return opt
+
+    # 2. Containment
+    for opt in options:
+        opt_lower = opt.lower().strip()
+        if val_lower in opt_lower or opt_lower in val_lower:
+            return opt
+
+    # 3. Word overlap scoring
+    val_words = set(val_lower.split())
+    best_opt, best_score = "", 0
+    for opt in options:
+        shared = val_words & set(opt.lower().split())
+        if len(shared) > best_score:
+            best_score = len(shared)
+            best_opt = opt
+
+    # Only accept if at least one word overlaps
+    return best_opt if best_score > 0 else ""
+
+
 def auto_map_fields(fields: list, profile_data: dict, saved_answers: dict = None, resume_text: str = "") -> dict:
     """
     Use LLM to intelligently map form fields to profile data.
@@ -297,9 +334,24 @@ def auto_map_fields(fields: list, profile_data: dict, saved_answers: dict = None
     try:
         field_descriptions = []
         for f in fields:
-            desc = f"- field_id: \"{f['field_id']}\", label: \"{f['label']}\", type: {f.get('field_type', 'text')}"
-            if f.get('options'):
-                desc += f", options: {f['options']}"
+            ftype = f.get('field_type', 'text')
+            opts = f.get('options', [])
+            if opts:
+                # Be very explicit: constrained field — value MUST come from options list
+                if ftype == 'checkbox':
+                    desc = (
+                        f"- field_id: \"{f['field_id']}\", label: \"{f['label']}\", "
+                        f"type: checkbox (multi-select) — "
+                        f"ALLOWED VALUES (comma-separate multiple): {opts}"
+                    )
+                else:
+                    desc = (
+                        f"- field_id: \"{f['field_id']}\", label: \"{f['label']}\", "
+                        f"type: {ftype} (single-select) — "
+                        f"YOU MUST return EXACTLY one of these options, word-for-word: {opts}"
+                    )
+            else:
+                desc = f"- field_id: \"{f['field_id']}\", label: \"{f['label']}\", type: {ftype}"
             field_descriptions.append(desc)
 
         fields_text = "\n".join(field_descriptions)
@@ -315,7 +367,12 @@ def auto_map_fields(fields: list, profile_data: dict, saved_answers: dict = None
         if profile_data.get("education"):
             for edu in profile_data["education"]:
                 if isinstance(edu, dict):
-                    edu_text += f"  - {edu.get('degree', '')} from {edu.get('institution', '')} ({edu.get('year', '')})\n"
+                    degree = edu.get('degree', '')
+                    major = edu.get('major', '')
+                    institution = edu.get('institution', '')
+                    start_year = edu.get('start_year', '')
+                    end_year = edu.get('end_year', edu.get('year', ''))
+                    edu_text += f"  - {degree}{(' in ' + major) if major else ''} from {institution} ({start_year}–{end_year})\n"
 
         profile_text = f"""Full Name: {profile_data.get('full_name', '')}
 Email: {profile_data.get('email', '')}
@@ -323,6 +380,7 @@ Phone: {profile_data.get('phone', '')}
 LinkedIn: {profile_data.get('linkedin', '')}
 GitHub: {profile_data.get('github', '')}
 Website: {profile_data.get('website', '')}
+Resume Link: {profile_data.get('resume_link', '')}
 Skills: {', '.join(profile_data.get('skills', []))}
 Summary: {profile_data.get('summary', '')}
 Experience:
@@ -339,37 +397,57 @@ Experience:
 
         system_prompt = (
             "You are a form auto-fill assistant. Given a list of form fields and a user's profile, "
-            "determine what value from the profile should fill each form field.\n\n"
-            "Return ONLY valid JSON: an object where each key is a field_id and the value is the "
-            "suggested text to fill in. If a field has options (radio/dropdown), pick the best matching option. "
-            "If you cannot determine an appropriate value for a field, set it to an empty string.\n\n"
-            "Be smart about mapping: 'Personal Detail' likely means the person's full name, "
-            "'Contact' could mean phone or email, etc. Use common sense.\n\n"
-            "IMPORTANT: If there are previously saved answers from past form submissions, "
-            "use those answers for fields with similar or matching labels. These are high priority."
+            "determine the best value to fill in each field.\n\n"
+            "Return ONLY valid JSON: an object where each key is a field_id and the value is the suggested fill.\n\n"
+            "RULES:\n"
+            "1. For fields marked 'single-select' (radio/dropdown): your value MUST be EXACTLY one of the listed options, "
+            "copied verbatim. Do not paraphrase, abbreviate, or invent a value.\n"
+            "2. For fields marked 'multi-select' (checkbox): your value must be a comma-separated list of one or more "
+            "of the listed options, copied verbatim.\n"
+            "3. For free-text fields: use judgment — map semantically (e.g. '10th standard' → high school institution, "
+            "'stream' → the degree subject, 'secondary school' → 12th institution).\n"
+            "4. If you cannot determine an appropriate value, set it to an empty string \"\".\n"
+            "5. Saved answers from past submissions are high priority — reuse them for similar fields.\n\n"
+            "Be smart: 'High School' maps to 12th; 'Undergraduate' maps to B.Tech/B.Sc/B.E; "
+            "'Branch/Stream' maps to the major/specialisation; 'Passing year' maps to the graduation year."
         )
 
         # Include resume text as additional data
         resume_section = ""
         if resume_text:
-            resume_section = f"\n\nCANDIDATE RESUME (use this for additional information):\n{resume_text}"
+            resume_section = f"\n\nCANDIDATE RESUME (use for additional context):\n{resume_text}"
 
         user_prompt = f"FORM FIELDS:\n{fields_text}\n\nUSER PROFILE:\n{profile_text}{saved_text}{resume_section}"
 
-        raw = _llm_call(system_prompt, user_prompt, max_tokens=800)
+        raw = _llm_call(system_prompt, user_prompt, max_tokens=1000)
         result = _extract_json(raw)
 
-        # Ensure all field_ids are present
+        # Build mapping + post-process constrained fields
         mapping = {}
         for f in fields:
             fid = f["field_id"]
-            mapping[fid] = result.get(fid, "")
+            opts = f.get("options", [])
+            ftype = f.get("field_type", "text")
+            ai_value = result.get(fid, "")
+
+            if opts and ftype != "checkbox":
+                # Single-select: snap to nearest valid option
+                snapped = _best_option_match(ai_value, opts)
+                mapping[fid] = snapped
+                if ai_value and snapped != ai_value:
+                    print(f"[AI] Option snapped: '{ai_value}' → '{snapped}' for field '{f['label']}'")
+            elif opts and ftype == "checkbox":
+                # Multi-select: validate each comma-separated part
+                parts = [p.strip() for p in ai_value.split(",") if p.strip()]
+                valid_parts = [_best_option_match(p, opts) for p in parts]
+                mapping[fid] = ", ".join(v for v in valid_parts if v)
+            else:
+                mapping[fid] = ai_value
 
         return {"field_values": mapping}
 
     except Exception as e:
         print(f"[AI] LLM auto-map failed: {e}")
-        # Basic fallback
         mapping = {}
         for f in fields:
             mapping[f["field_id"]] = ""
