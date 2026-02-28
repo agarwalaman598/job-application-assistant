@@ -99,15 +99,15 @@ export default function ProfilePage() {
   };
 
   if (loading) return (
-    <div className="pt-20 flex justify-center" style={{ color: '#5a5a63' }}>
-      <Loader2 className="animate-spin" />
+    <div className="flex justify-center py-20">
+      <Loader2 className="animate-spin text-[var(--muted-foreground)]" />
     </div>
   );
 
   return (
-    <div className="pt-20 px-6 pb-10 max-w-3xl mx-auto">
+    <div className="px-8 py-8 max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.03em' }}>Profile</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
         <button onClick={handleSave} disabled={saving}
           className="btn-primary flex items-center gap-2 text-sm">
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
@@ -136,7 +136,7 @@ export default function ProfilePage() {
             { key: 'website', label: 'Website', ph: 'yoursite.com' },
           ].map(f => (
             <div key={f.key}>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: '#8b8b92', marginBottom: '3px' }}>{f.label}</label>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted-foreground)', marginBottom: '3px' }}>{f.label}</label>
               <input value={profile[f.key]} onChange={(e) => setProfile({ ...profile, [f.key]: e.target.value })}
                 className="input-field" placeholder={f.ph} />
             </div>
@@ -169,7 +169,7 @@ export default function ProfilePage() {
             </span>
           ))}
           {profile.skills.length === 0 && (
-            <p style={{ fontSize: '0.8rem', color: '#5a5a63' }}>No skills added. Type above and press Enter.</p>
+            <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>No skills added. Type above and press Enter.</p>
           )}
         </div>
       </div>
@@ -188,12 +188,12 @@ export default function ProfilePage() {
         {profile.experience.map((exp, i) => (
           <div key={i} style={{
             padding: '12px', marginBottom: '8px', borderRadius: '8px',
-            background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+            background: 'var(--muted)', border: '1px solid var(--border)',
             position: 'relative',
           }}>
             <button onClick={() => removeExperience(i)}
               className="bg-transparent border-none cursor-pointer"
-              style={{ position: 'absolute', top: '8px', right: '8px', color: '#5a5a63' }}>
+              style={{ position: 'absolute', top: '8px', right: '8px', color: 'var(--muted-foreground)' }}>
               <X size={14} />
             </button>
             <div className="grid grid-cols-2 gap-2 mb-2">
@@ -224,12 +224,12 @@ export default function ProfilePage() {
         {profile.education.map((edu, i) => (
           <div key={i} style={{
             padding: '12px', marginBottom: '8px', borderRadius: '8px',
-            background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+            background: 'var(--muted)', border: '1px solid var(--border)',
             position: 'relative',
           }}>
             <button onClick={() => removeEducation(i)}
               className="bg-transparent border-none cursor-pointer"
-              style={{ position: 'absolute', top: '8px', right: '8px', color: '#5a5a63' }}>
+              style={{ position: 'absolute', top: '8px', right: '8px', color: 'var(--muted-foreground)' }}>
               <X size={14} />
             </button>
             <div className="grid grid-cols-3 gap-2">
@@ -252,13 +252,13 @@ export default function ProfilePage() {
               <BookOpen size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
               Saved Answers
             </label>
-            <p style={{ fontSize: '0.7rem', color: '#5a5a63', marginTop: '2px' }}>
+            <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '2px' }}>
               Learned from form submissions · auto-filled on future forms
             </p>
           </div>
         </div>
         {savedAnswers.length === 0 ? (
-          <p style={{ fontSize: '0.8rem', color: '#5a5a63' }}>
+          <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
             No saved answers yet. Fill out forms on the Autofill page and your answers will appear here.
           </p>
         ) : (
@@ -266,27 +266,27 @@ export default function ProfilePage() {
             {savedAnswers.map(item => (
               <div key={item.id} style={{
                 padding: '10px 12px', borderRadius: '8px',
-                background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                background: 'var(--muted)', border: '1px solid var(--border)',
               }}>
                 <div className="flex items-center justify-between mb-1">
-                  <span style={{ fontSize: '0.75rem', color: '#8b8b92', fontWeight: 500 }}>{item.question}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', fontWeight: 500 }}>{item.question}</span>
                   <div className="flex items-center gap-1">
                     {editingId === item.id ? (
                       <button onClick={() => saveEdit(item.id)}
                         className="bg-transparent border-none cursor-pointer"
-                        style={{ color: '#3eb370', padding: '2px' }}>
+                        style={{ color: '#10b981', padding: '2px' }}>
                         <Check size={14} />
                       </button>
                     ) : (
                       <button onClick={() => startEdit(item)}
                         className="bg-transparent border-none cursor-pointer"
-                        style={{ color: '#8b8b92', padding: '2px' }}>
+                        style={{ color: 'var(--muted-foreground)', padding: '2px' }}>
                         <Pencil size={12} />
                       </button>
                     )}
                     <button onClick={() => deleteAnswer(item.id)}
                       className="bg-transparent border-none cursor-pointer"
-                      style={{ color: '#5a5a63', padding: '2px' }}>
+                      style={{ color: 'var(--muted-foreground)', padding: '2px' }}>
                       <Trash2 size={12} />
                     </button>
                   </div>
@@ -297,7 +297,7 @@ export default function ProfilePage() {
                     onKeyDown={(e) => e.key === 'Enter' && saveEdit(item.id)}
                     className="input-field" autoFocus />
                 ) : (
-                  <p style={{ fontSize: '0.8rem', color: 'var(--color-text)' }}>{item.answer}</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--foreground)' }}>{item.answer}</p>
                 )}
               </div>
             ))}

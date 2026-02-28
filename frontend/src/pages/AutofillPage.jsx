@@ -110,7 +110,7 @@ export default function AutofillPage() {
   };
 
   return (
-    <div className="pt-20 px-6 pb-10 max-w-3xl mx-auto">
+    <div className="px-8 py-8 max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.03em' }}>Autofill</h1>
         <p style={{ fontSize: '0.8rem', color: '#5a5a63', marginTop: '2px' }}>Auto-fill forms on supported platforms</p>
