@@ -185,13 +185,16 @@ export default function DashboardPage() {
 
                   {/* Text */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{
-                      fontSize: '0.9rem', fontWeight: 700, letterSpacing: '-0.02em',
-                      color: 'var(--foreground)', fontFamily: 'inherit',
-                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                    }}>
-                      {app.company}
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <p style={{
+                        fontSize: '0.9rem', fontWeight: 700, letterSpacing: '-0.02em',
+                        color: 'var(--foreground)', fontFamily: 'inherit',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>
+                        {app.company}
+                      </p>
+                      <StatusBadge status={app.status} />
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 3 }}>
                       <span style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', fontFamily: 'inherit', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {app.position}
@@ -207,8 +210,6 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* Status badge */}
-                  <StatusBadge status={app.status} />
                 </div>
               );
             })}

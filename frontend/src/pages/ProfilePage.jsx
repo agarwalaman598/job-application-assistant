@@ -118,7 +118,7 @@ export default function ProfilePage() {
   );
 
   return (
-    <div className="px-8 py-8 max-w-3xl mx-auto">
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
         <button onClick={handleSave} disabled={saving}
@@ -144,7 +144,8 @@ export default function ProfilePage() {
             className={summaryClosing ? 'animate-modal-out' : 'animate-modal'}
             style={{
             background: '#141414', border: '1px solid #2a2a2a', borderRadius: 18,
-            width: '100%', maxWidth: 680, boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+            width: '100%', maxWidth: 680, maxHeight: '90vh',
+            boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
             display: 'flex', flexDirection: 'column', gap: 0, overflow: 'hidden',
           }}>
             {/* Modal header */}
@@ -163,7 +164,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Textarea */}
-            <div style={{ padding: '1.25rem 1.5rem' }}>
+            <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', flex: 1 }}>
               <textarea
                 ref={summaryTextareaRef}
                 value={summaryDraft}
@@ -354,7 +355,7 @@ export default function ProfilePage() {
               style={{ position: 'absolute', top: '8px', right: '8px', color: 'var(--muted-foreground)' }}>
               <X size={14} />
             </button>
-            <div className="grid grid-cols-2 gap-2 mb-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
               <input value={exp.title} onChange={(e) => updateExperience(i, 'title', e.target.value)}
                 className="input-field" placeholder="Job title" />
               <input value={exp.company} onChange={(e) => updateExperience(i, 'company', e.target.value)}
@@ -394,7 +395,7 @@ export default function ProfilePage() {
               </button>
 
               {/* Row 1: Degree + Major */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10, paddingRight: 24 }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2.5 pr-6">
                 <div>
                   <label style={labelSt}>Degree</label>
                   <input value={edu.degree} onChange={(e) => updateEducation(i, 'degree', e.target.value)}
@@ -415,7 +416,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Row 3: Start Year + End Year + GPA */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 <div>
                   <label style={labelSt}>Start Year</label>
                   <input

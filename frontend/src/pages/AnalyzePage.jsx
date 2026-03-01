@@ -54,7 +54,7 @@ export default function AnalyzePage() {
   };
 
   return (
-    <div className="px-8 py-8 max-w-4xl mx-auto">
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-4xl mx-auto">
       <div className="mb-6">
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.03em' }}>Analyze JD</h1>
         <p style={{ fontSize: '0.8rem', color: '#5a5a63', marginTop: '2px' }}>
@@ -78,7 +78,7 @@ export default function AnalyzePage() {
             className={jdClosing ? 'animate-modal-out' : 'animate-modal'}
             style={{
               background: '#141414', border: '1px solid #2a2a2a', borderRadius: 18,
-              width: '100%', maxWidth: 720, boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+              width: '100%', maxWidth: 720, maxHeight: '90vh', boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
               display: 'flex', flexDirection: 'column', overflow: 'hidden',
             }}
           >
@@ -223,15 +223,15 @@ export default function AnalyzePage() {
       {/* Score Breakdown */}
       {matchResult?.breakdown && (
         <div className="card p-5 mb-5 animate-enter" style={{ animationDelay: '0.12s' }}>
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-1">
             <Target size={14} style={{ color: 'var(--color-primary)' }} />
             <label className="section-label" style={{ margin: 0 }}>Score Breakdown</label>
-            {matchResult.reasoning && (
-              <span style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', marginLeft: 'auto', fontStyle: 'italic' }}>
-                {matchResult.reasoning}
-              </span>
-            )}
           </div>
+          {matchResult.reasoning && (
+            <p style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', fontStyle: 'italic', marginBottom: 14 }}>
+              {matchResult.reasoning}
+            </p>
+          )}
           {[
             { label: 'Keyword Coverage', key: 'keyword_score', weight: '40%', color: '#4f8ef7' },
             { label: 'Skills Match',     key: 'skills_score',   weight: '30%', color: '#3eb370' },
@@ -333,7 +333,7 @@ export default function AnalyzePage() {
       {jdAnalysis && (
         <div className="card p-5 mb-5 animate-enter" style={{ animationDelay: '0.15s' }}>
           <label className="section-label" style={{ marginBottom: '12px', display: 'block' }}>JD Breakdown</label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { label: 'Position', val: jdAnalysis.title },
               { label: 'Company', val: jdAnalysis.company },

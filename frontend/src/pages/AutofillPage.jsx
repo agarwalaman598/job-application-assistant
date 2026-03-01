@@ -118,7 +118,7 @@ export default function AutofillPage() {
   };
 
   return (
-    <div className="px-8 py-8 max-w-3xl mx-auto">
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-4xl mx-auto">
       <div className="mb-6">
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.03em' }}>Autofill</h1>
         <p style={{ fontSize: '0.8rem', color: '#5a5a63', marginTop: '2px' }}>Auto-fill forms on supported platforms</p>
@@ -211,6 +211,7 @@ export default function AutofillPage() {
               <div key={field.field_id} style={{
                 padding: '10px 12px', borderRadius: '8px',
                 background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                minWidth: 0, overflow: 'hidden',
               }}>
                 <div className="flex items-center gap-2 mb-2">
                   <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{field.label}</span>
@@ -223,7 +224,7 @@ export default function AutofillPage() {
                 {field.field_type === 'radio' || field.field_type === 'dropdown' ? (
                   <select value={fieldValues[field.field_id] || ''}
                     onChange={(e) => setFieldValues({ ...fieldValues, [field.field_id]: e.target.value })}
-                    className="input-field">
+                    className="input-field w-full" style={{ maxWidth: '100%' }}>
                     <option value="">-- Select --</option>
                     {field.options?.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
                   </select>
@@ -237,12 +238,13 @@ export default function AutofillPage() {
                           borderRadius: '6px', border: '1px solid var(--color-border)',
                           background: selected ? 'rgba(212,148,46,0.15)' : 'var(--color-surface)',
                           color: selected ? 'var(--color-primary)' : '#8b8b92',
+                          maxWidth: '100%', wordBreak: 'break-word',
                         }}>
                           <input type="checkbox" checked={selected} onChange={() => {
                             const current = fieldValues[field.field_id] ? fieldValues[field.field_id].split(', ').filter(Boolean) : [];
                             const next = selected ? current.filter(v => v !== opt) : [...current, opt];
                             setFieldValues({ ...fieldValues, [field.field_id]: next.join(', ') });
-                          }} style={{ accentColor: 'var(--color-primary)' }} />
+                          }} style={{ accentColor: 'var(--color-primary)', flexShrink: 0 }} />
                           {opt}
                         </label>
                       );
@@ -251,21 +253,23 @@ export default function AutofillPage() {
                 ) : field.field_type === 'date' ? (
                   <input type="date" value={fieldValues[field.field_id] || ''}
                     onChange={(e) => setFieldValues({ ...fieldValues, [field.field_id]: e.target.value })}
-                    className="input-field" />
+                    className="input-field w-full" style={{ maxWidth: '100%' }} />
                 ) : field.field_type === 'time' ? (
                   <input type="time" value={fieldValues[field.field_id] || ''}
                     onChange={(e) => setFieldValues({ ...fieldValues, [field.field_id]: e.target.value })}
-                    className="input-field" />
+                    className="input-field w-full" style={{ maxWidth: '100%' }} />
                 ) : field.field_type === 'file' ? (
                   <p style={{ fontSize: '0.75rem', color: '#5a5a63' }}>File uploads must be done manually</p>
                 ) : field.field_type === 'textarea' ? (
                   <textarea value={fieldValues[field.field_id] || ''}
                     onChange={(e) => setFieldValues({ ...fieldValues, [field.field_id]: e.target.value })}
-                    className="input-field" rows={3} placeholder={`Value for ${field.label}`} />
+                    className="input-field w-full" rows={3} placeholder={`Value for ${field.label}`}
+                    style={{ maxWidth: '100%', resize: 'vertical' }} />
                 ) : (
                   <input value={fieldValues[field.field_id] || ''}
                     onChange={(e) => setFieldValues({ ...fieldValues, [field.field_id]: e.target.value })}
-                    className="input-field" placeholder={`Value for ${field.label}`} />
+                    className="input-field w-full" placeholder={`Value for ${field.label}`}
+                    style={{ maxWidth: '100%' }} />
                 )}
               </div>
             ))}
@@ -326,16 +330,16 @@ export default function AutofillPage() {
           <p style={{ fontSize: '0.75rem', color: '#8b8b92', marginBottom: '12px' }}>
             Log this to your Dashboard as "applied" — edit details below if needed.
           </p>
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div>
               <label style={{ display: 'block', fontSize: '0.7rem', color: '#8b8b92', marginBottom: '4px' }}>Company</label>
-              <input className="input-field" value={trackForm.company}
+              <input className="input-field w-full" value={trackForm.company}
                 onChange={e => setTrackForm({ ...trackForm, company: e.target.value })}
                 placeholder="Company name" />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.7rem', color: '#8b8b92', marginBottom: '4px' }}>Position / Role</label>
-              <input className="input-field" value={trackForm.position}
+              <input className="input-field w-full" value={trackForm.position}
                 onChange={e => setTrackForm({ ...trackForm, position: e.target.value })}
                 placeholder="Position applied for" />
             </div>

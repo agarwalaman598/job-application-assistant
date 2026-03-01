@@ -99,7 +99,7 @@ export default function ApplicationsPage() {
     });
 
   return (
-    <div className="px-8 py-8 max-w-5xl mx-auto">
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -112,7 +112,7 @@ export default function ApplicationsPage() {
       </div>
 
       {/* Status filter tabs */}
-      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--muted)', width: 'fit-content' }}>
+        <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--muted)', width: 'fit-content', maxWidth: '100%', overflowX: 'auto' }}>
         {['', ...STATUS_OPTIONS].map(s => (
           <button key={s} onClick={() => setFilter(s)}
             className="px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border-none"
@@ -127,7 +127,7 @@ export default function ApplicationsPage() {
       </div>
 
       {/* Search + Sort row */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
         {/* Search */}
         <div style={{ position: 'relative', flex: 1 }}>
           <Search style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', height: 14, width: 14, color: 'var(--muted-foreground)', pointerEvents: 'none' }} />
@@ -230,7 +230,10 @@ export default function ApplicationsPage() {
                 {i + 1}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{app.company}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-medium text-sm truncate">{app.company}</p>
+                  <StatusBadge status={app.status} />
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.2rem', flexWrap: 'wrap' }}>
                   <p className="text-xs text-[var(--muted-foreground)]">{app.position}</p>
                   {app.applied_at && (
@@ -243,7 +246,6 @@ export default function ApplicationsPage() {
                   )}
                 </div>
               </div>
-              <StatusBadge status={app.status} />
               {app.url && (
                 <a href={app.url} target="_blank" rel="noreferrer" title="Open link"
                   className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">

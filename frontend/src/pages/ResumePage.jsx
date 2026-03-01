@@ -155,7 +155,7 @@ export default function ResumePage() {
   };
 
   return (
-    <div className="px-8 py-8 max-w-3xl mx-auto">
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-4xl mx-auto">
       <h1 className="text-2xl font-semibold tracking-tight mb-6">Resumes</h1>
 
       {/* Upload area */}
@@ -240,7 +240,8 @@ export default function ResumePage() {
             return (
               <div key={r.id} className="card animate-enter" style={{ animationDelay: `${i * 0.04}s` }}>
                 {/* Main row */}
-                <div className="flex items-center justify-between" style={{ padding: '12px 16px' }}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" style={{ padding: '12px 16px' }}>
+                  {/* Left: icon + name/date */}
                   <div className="flex items-center gap-3" style={{ minWidth: 0 }}>
                     {isLinkOnly
                       ? <Link2 size={16} style={{ color: 'var(--muted-foreground)', flexShrink: 0 }} />
@@ -261,7 +262,8 @@ export default function ResumePage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2" style={{ flexShrink: 0 }}>
+                  {/* Right: action buttons — wraps to new line on mobile */}
+                  <div className="flex items-center gap-2 flex-wrap" style={{ flexShrink: 0 }}>
                     {!r.is_default && (
                       <button onClick={() => setDefault(r.id)} title="Set as default" className="btn-secondary text-xs flex items-center gap-1">
                         <Star size={12} /> Set default
