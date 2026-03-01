@@ -2,11 +2,14 @@
 Autofill Service — Form detection via HTTP + HTML parsing (no browser needed).
 Form filling generates a pre-filled URL instead of using Playwright.
 """
+import logging
 import re
 import json
 from typing import Dict
 from urllib.parse import urlencode
 import requests
+
+logger = logging.getLogger(__name__)
 
 
 def _detect_platform(url: str) -> str:
@@ -38,8 +41,8 @@ async def detect_fields(url: str) -> dict:
         raise Exception(f"Failed to fetch form: {str(e)}")
 
     platform = _detect_platform(final_url)
-    print(f"[Autofill] Final URL: {final_url}")
-    print(f"[Autofill] Platform: {platform}")
+    logger.info(f"[Autofill] Final URL: {final_url}")
+    logger.info(f"[Autofill] Platform: {platform}")
 
     fields = []
     form_url = final_url  # Store the actual form URL
@@ -55,7 +58,7 @@ async def detect_fields(url: str) -> dict:
     else:
         fields = _parse_generic_form(html)
 
-    print(f"[Autofill] Detected {len(fields)} fields")
+    logger.info(f"[Autofill] Detected {len(fields)} fields")
     return {"platform": platform, "fields": fields, "form_url": form_url}
 
 
@@ -136,7 +139,7 @@ def _parse_google_forms(html: str) -> list:
                 if fields:
                     return fields
         except (json.JSONDecodeError, IndexError, TypeError) as e:
-            print(f"[Autofill] FB_PUBLIC_LOAD_DATA_ parse failed: {e}")
+            logger.warning(f"[Autofill] FB_PUBLIC_LOAD_DATA_ parse failed: {e}")
 
     # Fallback: parse from HTML class names
     label_matches = re.findall(r'class="[^"]*M7eMe[^"]*"[^>]*>([^<]+)<', html)

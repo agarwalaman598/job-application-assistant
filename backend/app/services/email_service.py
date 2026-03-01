@@ -3,10 +3,13 @@ Email Service — Resend-powered transactional email.
 Uses sandbox sender onboarding@resend.dev for testing.
 Replace RESEND_FROM_EMAIL with a verified domain address for production.
 """
+import logging
 import os
 import pathlib
 from datetime import datetime
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 _env_path = pathlib.Path(__file__).resolve().parent.parent.parent.parent / ".env"
 load_dotenv(_env_path)
@@ -18,8 +21,8 @@ FROM_NAME  = os.getenv("RESEND_FROM_NAME", "JobAssist AI")
 FROM_FORMATTED = f"{FROM_NAME} <{FROM_EMAIL}>"
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5173")
 
-print(f"[Email] Resend API key: {'SET' if RESEND_API_KEY else 'NOT SET'}")
-print(f"[Email] From: {FROM_FORMATTED}")
+logger.info("[Email] Resend API key: %s", "SET" if RESEND_API_KEY else "NOT SET")
+logger.info("[Email] From: %s", FROM_FORMATTED)
 
 def _send_email(to: str, subject: str, html: str, text: str, email_type: str, db=None, user_id: int = None) -> bool:
     """
@@ -50,13 +53,13 @@ def _send_email(to: str, subject: str, html: str, text: str, email_type: str, db
             },
         }
         r = resend.Emails.send(params)
-        print(f"[Email] Sent '{subject}' to {to} | id={r.get('id', 'unknown')}")
+        logger.info(f"[Email] Sent '{subject}' to {to} | id={r.get('id', 'unknown')}")
         status = "sent"
         return True
 
     except Exception as e:
         error_msg = str(e)
-        print(f"[Email] FAILED to send '{subject}' to {to}: {e}")
+        logger.error(f"[Email] FAILED to send '{subject}' to {to}: {e}")
         return False
 
     finally:
@@ -74,7 +77,7 @@ def _send_email(to: str, subject: str, html: str, text: str, email_type: str, db
                 db.add(log)
                 db.commit()
             except Exception as log_err:
-                print(f"[Email] Failed to write EmailLog: {log_err}")
+                logger.error(f"[Email] Failed to write EmailLog: {log_err}")
 
 
 # ─── Email Templates ──────────────────────────────────────────────────────────

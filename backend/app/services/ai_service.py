@@ -2,6 +2,7 @@
 AI Service — All features powered by LLM API (Groq, OpenAI, Ollama, etc.)
 Falls back to basic local methods only if LLM_API_KEY is not configured.
 """
+import logging
 import os
 import json
 import re
@@ -14,11 +15,12 @@ _env_path = pathlib.Path(__file__).resolve().parent.parent.parent.parent / ".env
 load_dotenv(_env_path)
 load_dotenv()
 
-# Debug: confirm key is loaded
+logger = logging.getLogger(__name__)
+
 _key = os.getenv("LLM_API_KEY", "")
-print(f"[AI Service] LLM_API_KEY loaded: {'YES (' + _key[:8] + '...)' if _key else 'NO — using fallback'}")
-print(f"[AI Service] LLM_API_URL: {os.getenv('LLM_API_URL', 'not set')}")
-print(f"[AI Service] LLM_MODEL: {os.getenv('LLM_MODEL', 'not set')}")
+logger.info("[AI Service] LLM_API_KEY: %s", "configured" if _key else "NOT SET \u2014 using fallback")
+logger.info("[AI Service] LLM_API_URL: %s", os.getenv("LLM_API_URL", "not set"))
+logger.info("[AI Service] LLM_MODEL: %s", os.getenv("LLM_MODEL", "not set"))
 
 
 def _get_llm_client():
@@ -41,7 +43,7 @@ def _llm_call(system_prompt: str, user_prompt: str, max_tokens: int = 800, tempe
     if client is None:
         raise ValueError("LLM_API_KEY not configured")
 
-    print(f"[AI Service] Making LLM call to model: {model}")
+    logger.info(f"[AI Service] Making LLM call to model: {model}")
     try:
         response = client.chat.completions.create(
             model=model,
@@ -53,10 +55,10 @@ def _llm_call(system_prompt: str, user_prompt: str, max_tokens: int = 800, tempe
             temperature=temperature,
         )
         result = response.choices[0].message.content.strip()
-        print(f"[AI Service] LLM call succeeded, response length: {len(result)}")
+        logger.info(f"[AI Service] LLM call succeeded, response length: {len(result)}")
         return result
     except Exception as e:
-        print(f"[AI Service] *** LLM CALL FAILED: {type(e).__name__}: {e}")
+        logger.error(f"[AI Service] *** LLM CALL FAILED: {type(e).__name__}: {e}")
         raise
 
 
@@ -138,7 +140,7 @@ def compute_match_score(user_skills: List[str], user_summary: str, jd_text: str,
         # Deterministic sanity check — blend if AI keyword score is far off
         det_kw = _deterministic_keyword_score(jd_text, user_skills, user_summary, resume_text)
         if abs(kw_score - det_kw) > 25:
-            print(f"[AI] Keyword score mismatch: AI={kw_score}, deterministic={det_kw}. Blending.")
+            logger.debug(f"[AI] Keyword score mismatch: AI={kw_score}, deterministic={det_kw}. Blending.")
             kw_score = round(0.6 * kw_score + 0.4 * det_kw)
 
         # Weighted final: 40% keyword, 30% skills, 20% experience, 10% education
@@ -161,7 +163,7 @@ def compute_match_score(user_skills: List[str], user_summary: str, jd_text: str,
         }
 
     except Exception as e:
-        print(f"[AI] LLM skill match failed, using fallback: {e}")
+        logger.warning(f"[AI] LLM skill match failed, using fallback: {e}")
         return _fallback_match(user_skills, user_summary, jd_text, resume_text)
 
 
@@ -270,7 +272,7 @@ def generate_answer(question: str, user_summary: str, user_skills: List[str], jd
         return _llm_call(system_prompt, user_prompt, max_tokens=500, temperature=0.7)
 
     except Exception as e:
-        print(f"[AI] LLM answer generation failed: {e}")
+        logger.warning(f"[AI] LLM answer generation failed: {e}")
         skills_str = ", ".join(user_skills[:8]) if user_skills else "various technologies"
         return (
             f"Based on my background, {user_summary[:200] if user_summary else 'I bring strong technical skills'}. "
@@ -332,7 +334,7 @@ def parse_job_description(jd_text: str, resume_text: str = "") -> dict:
         return result
 
     except Exception as e:
-        print(f"[AI] LLM JD parse failed, using fallback: {e}")
+        logger.warning(f"[AI] LLM JD parse failed, using fallback: {e}")
         return _fallback_jd_parse(jd_text)
 
 
@@ -518,7 +520,7 @@ Experience:
                 snapped = _best_option_match(ai_value, opts)
                 mapping[fid] = snapped
                 if ai_value and snapped != ai_value:
-                    print(f"[AI] Option snapped: '{ai_value}' → '{snapped}' for field '{f['label']}'")
+                    logger.debug(f"[AI] Option snapped: '{ai_value}' → '{snapped}' for field '{f['label']}'")
             elif opts and ftype == "checkbox":
                 # Multi-select: validate each comma-separated part
                 parts = [p.strip() for p in ai_value.split(",") if p.strip()]
@@ -530,7 +532,7 @@ Experience:
         return {"field_values": mapping}
 
     except Exception as e:
-        print(f"[AI] LLM auto-map failed: {e}")
+        logger.warning(f"[AI] LLM auto-map failed: {e}")
         mapping = {}
         for f in fields:
             mapping[f["field_id"]] = ""

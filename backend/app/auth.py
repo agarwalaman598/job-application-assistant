@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime, timedelta
 from typing import Optional
@@ -10,6 +11,8 @@ from dotenv import load_dotenv
 
 from app.database import get_db
 from app.models import User
+
+logger = logging.getLogger(__name__)
 
 # Load .env from project root (one level up from backend/)
 import pathlib
@@ -65,11 +68,11 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
             raise credentials_exception
         user_id = int(sub)
     except (JWTError, ValueError, TypeError) as e:
-        print(f"[AUTH DEBUG] Token decode failed: {e}")
+        logger.warning(f"[AUTH] Token decode failed: {e}")
         raise credentials_exception
 
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
-        print(f"[AUTH DEBUG] User {user_id} not found in DB")
+        logger.warning(f"[AUTH] User {user_id} not found in DB")
         raise credentials_exception
     return user

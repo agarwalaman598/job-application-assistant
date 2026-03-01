@@ -25,6 +25,8 @@ htmlcov/
 *.sqlite
 *.sqlite3
 *.log
+backend/data/
+backend/uploads/
 
 # --- Alembic ---
 alembic/versions/__pycache__/

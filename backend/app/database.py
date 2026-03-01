@@ -1,8 +1,11 @@
+import logging
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 import pathlib
+
+logger = logging.getLogger(__name__)
 
 # Load .env from project root
 _env_path = pathlib.Path(__file__).resolve().parent.parent.parent.parent / ".env"
@@ -17,7 +20,7 @@ if not DATABASE_URL:
     _DATA_DIR = os.path.join(_BASE_DIR, "data")
     os.makedirs(_DATA_DIR, exist_ok=True)
     DATABASE_URL = f"sqlite:///{os.path.join(_DATA_DIR, 'app.db')}"
-    print("[DB] No DATABASE_URL found, using local SQLite fallback")
+    logger.warning("[DB] No DATABASE_URL found, using local SQLite fallback")
 elif DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("postgres://"):
     # Force psycopg v3 driver (installed as psycopg[binary])
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
@@ -28,7 +31,7 @@ _is_sqlite = DATABASE_URL.startswith("sqlite")
 if _is_sqlite:
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 else:
-    print(f"[DB] Connecting to Postgres: {DATABASE_URL[:40]}...")
+    logger.info(f"[DB] Connecting to Postgres: {DATABASE_URL[:40]}...")
     engine = create_engine(
         DATABASE_URL,
         pool_pre_ping=True,

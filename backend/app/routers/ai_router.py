@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,8 @@ from app.schemas import (
 from app.auth import get_current_user
 from app.services.ai_service import compute_match_score, generate_answer, parse_job_description, auto_map_fields
 from app.services.autofill_service import detect_fields, fill_form
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/ai", tags=["AI & Automation"])
 
@@ -37,7 +40,7 @@ def _get_default_resume_text(user_id: int, db: Session) -> str:
         else:
             # Local file (old uploads)
             if not os.path.exists(resume.filepath):
-                print(f"[AI] Resume file not found locally: {resume.filepath}")
+                logger.warning(f"[AI] Resume file not found locally: {resume.filepath}")
                 return ""
             from PyPDF2 import PdfReader
             reader = PdfReader(resume.filepath)
@@ -49,10 +52,10 @@ def _get_default_resume_text(user_id: int, db: Session) -> str:
             text = text.strip()
             if len(text) > 3000:
                 text = text[:3000] + "..."
-            print(f"[AI] Resume text extracted: {len(text)} chars from {resume.filename}")
+            logger.info(f"[AI] Resume text extracted: {len(text)} chars from {resume.filename}")
             return text
     except Exception as e:
-        print(f"[AI] Failed to extract resume text: {e}")
+        logger.error(f"[AI] Failed to extract resume text: {e}")
         return ""
 
 

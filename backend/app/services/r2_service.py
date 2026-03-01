@@ -4,10 +4,13 @@ Cloudflare R2 Storage Service (S3-compatible API via boto3).
 Handles upload, download (for PDF text extraction), and deletion of resume files.
 Falls back gracefully if R2 is not configured (local dev without credentials).
 """
+import logging
 import os
 import io
 import pathlib
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 _env_path = pathlib.Path(__file__).resolve().parent.parent.parent.parent / ".env"
 load_dotenv(_env_path)
@@ -60,7 +63,7 @@ def upload_file(content: bytes, key: str, content_type: str = "application/pdf")
         Body=content,
         ContentType=content_type,
     )
-    print(f"[R2] Uploaded: {key} ({len(content)} bytes)")
+    logger.info(f"[R2] Uploaded: {key} ({len(content)} bytes)")
     return key
 
 
@@ -73,7 +76,7 @@ def download_file(key: str) -> bytes:
     client = _get_client()
     response = client.get_object(Bucket=bucket, Key=key)
     data = response["Body"].read()
-    print(f"[R2] Downloaded: {key} ({len(data)} bytes)")
+    logger.info(f"[R2] Downloaded: {key} ({len(data)} bytes)")
     return data
 
 
@@ -83,9 +86,9 @@ def delete_file(key: str) -> None:
     try:
         client = _get_client()
         client.delete_object(Bucket=bucket, Key=key)
-        print(f"[R2] Deleted: {key}")
+        logger.info(f"[R2] Deleted: {key}")
     except Exception as e:
-        print(f"[R2] Delete failed for {key}: {e}")
+        logger.error(f"[R2] Delete failed for {key}: {e}")
 
 
 def extract_pdf_text_from_r2(key: str, max_chars: int = 3000) -> str:
@@ -105,8 +108,8 @@ def extract_pdf_text_from_r2(key: str, max_chars: int = 3000) -> str:
         text = text.strip()
         if len(text) > max_chars:
             text = text[:max_chars] + "..."
-        print(f"[R2] PDF text extracted: {len(text)} chars from {key}")
+        logger.info(f"[R2] PDF text extracted: {len(text)} chars from {key}")
         return text
     except Exception as e:
-        print(f"[R2] Failed to extract PDF text from {key}: {e}")
+        logger.error(f"[R2] Failed to extract PDF text from {key}: {e}")
         return ""
