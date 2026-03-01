@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, model_validator, EmailStr
 from typing import Optional, List
 from datetime import datetime
 
@@ -87,6 +87,25 @@ class ResumeOut(BaseModel):
     is_r2: bool = False
     drive_link: Optional[str] = None
     uploaded_at: datetime
+    has_file: bool = False
+
+    @model_validator(mode='before')
+    @classmethod
+    def _compute_has_file(cls, v):
+        """Populate has_file from the ORM filepath attribute (not exposed on output)."""
+        if not isinstance(v, dict):
+            filepath = getattr(v, 'filepath', None) or ''
+            return {
+                'id': v.id,
+                'filename': v.filename,
+                'is_default': v.is_default,
+                'is_r2': getattr(v, 'is_r2', False),
+                'drive_link': getattr(v, 'drive_link', None),
+                'uploaded_at': v.uploaded_at,
+                'has_file': bool(filepath),
+            }
+        v.setdefault('has_file', bool(v.get('filepath', '')))
+        return v
 
     class Config:
         from_attributes = True

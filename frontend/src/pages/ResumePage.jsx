@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../api';
-import { Upload, FileText, Star, Trash2, Loader2, Link2, Copy, Check, ExternalLink, Plus, X } from 'lucide-react';
+import { Upload, FileText, Star, Trash2, Loader2, Link2, Copy, Check, ExternalLink, Plus, X, Download, Eye } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
@@ -96,6 +96,55 @@ export default function ResumePage() {
     setTimeout(() => setCopiedId(null), 1800);
   };
 
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [viewingId, setViewingId] = useState(null);
+
+  const handleDownload = async (r) => {
+    setDownloadingId(r.id);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/resumes/${r.id}/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Download failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = r.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      setAlertMsg('Download failed. Please try again.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handleView = async (r) => {
+    setViewingId(r.id);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/resumes/${r.id}/download?mode=view`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Failed to load PDF');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      // Revoke after a short delay to let the new tab load
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (err) {
+      console.error(err);
+      setAlertMsg('Failed to open PDF. Please try again.');
+    } finally {
+      setViewingId(null);
+    }
+  };
+
   const inputStyle = {
     background: 'var(--input)',
     border: '1px solid var(--border)',
@@ -189,7 +238,7 @@ export default function ResumePage() {
       ) : (
         <div className="flex flex-col gap-2">
           {resumes.map((r, i) => {
-            const isLinkOnly = !r.filepath || r.filepath === '';
+            const isLinkOnly = !r.has_file;
             return (
               <div key={r.id} className="card animate-enter" style={{ animationDelay: `${i * 0.04}s` }}>
                 {/* Main row */}
@@ -245,6 +294,30 @@ export default function ResumePage() {
                           : <Copy size={14} />
                         }
                       </button>
+                    )}
+                    {r.has_file && (
+                      <>
+                        <button
+                          onClick={() => handleView(r)}
+                          title="View PDF"
+                          disabled={viewingId === r.id}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex' }}
+                        >
+                          {viewingId === r.id
+                            ? <Loader2 size={14} className="animate-spin" />
+                            : <Eye size={14} />}
+                        </button>
+                        <button
+                          onClick={() => handleDownload(r)}
+                          title="Download PDF"
+                          disabled={downloadingId === r.id}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex' }}
+                        >
+                          {downloadingId === r.id
+                            ? <Loader2 size={14} className="animate-spin" />
+                            : <Download size={14} />}
+                        </button>
+                      </>
                     )}
                     <button onClick={() => deleteResume(r.id)} title="Delete resume" className="btn-danger flex items-center gap-1 text-xs">
                       <Trash2 size={12} />

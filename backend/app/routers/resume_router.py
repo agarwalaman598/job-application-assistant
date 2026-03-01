@@ -1,6 +1,8 @@
+import io
 import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse, FileResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -111,6 +113,46 @@ async def upload_resume(
     db.commit()
     db.refresh(resume)
     return resume
+
+
+@router.get("/{resume_id}/download")
+def download_resume(
+    resume_id: int,
+    mode: str = "download",
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Stream the resume PDF back to the client (supports both R2 and local storage).
+    Use ?mode=view to open inline in browser, ?mode=download (default) to save as file.
+    """
+    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    if not resume.filepath:
+        raise HTTPException(status_code=404, detail="This resume has no attached file")
+
+    safe_filename = resume.filename.replace('"', '')
+    disposition = "inline" if mode == "view" else "attachment"
+    content_disposition = f'{disposition}; filename="{safe_filename}"'
+
+    if resume.is_r2:
+        try:
+            pdf_bytes = r2_service.download_file(resume.filepath)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to fetch file from storage: {e}")
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": content_disposition},
+        )
+    else:
+        if not os.path.exists(resume.filepath):
+            raise HTTPException(status_code=404, detail="File not found on server")
+        return FileResponse(
+            resume.filepath,
+            media_type="application/pdf",
+            headers={"Content-Disposition": content_disposition},
+        )
 
 
 @router.put("/{resume_id}/default", response_model=ResumeOut)
