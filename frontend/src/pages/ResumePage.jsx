@@ -102,9 +102,8 @@ export default function ResumePage() {
   const handleDownload = async (r) => {
     setDownloadingId(r.id);
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/resumes/${r.id}/download`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include', // use httpOnly cookie for auth
       });
       if (!response.ok) throw new Error('Download failed');
       const blob = await response.blob();
@@ -127,9 +126,8 @@ export default function ResumePage() {
   const handleView = async (r) => {
     setViewingId(r.id);
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/resumes/${r.id}/download?mode=view`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include', // use httpOnly cookie for auth
       });
       if (!response.ok) throw new Error('Failed to load PDF');
       const blob = await response.blob();

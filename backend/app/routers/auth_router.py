@@ -2,13 +2,13 @@ import os
 import secrets
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User, Profile
 from app.schemas import UserCreate, UserOut, Token, LoginRequest
-from app.auth import hash_password, verify_password, create_access_token
+from app.auth import hash_password, verify_password, create_access_token, get_current_user
 from app.services.email_service import send_verification_email
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -62,8 +62,8 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
     return response
 
 
-@router.post("/login", response_model=Token)
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
+@router.post("/login")
+def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -74,5 +74,33 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
             detail="Please verify your email before logging in. Check your inbox for the verification link.",
         )
 
-    token = create_access_token(data={"sub": user.id, "email": user.email, "full_name": user.full_name or ""})
-    return {"access_token": token, "token_type": "bearer"}
+    access_token = create_access_token(data={"sub": user.id, "email": user.email, "full_name": user.full_name or ""})
+
+    # Set httpOnly cookie — JS cannot read this, protecting against XSS token theft
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=not IS_DEV,       # Secure flag only in HTTPS (production)
+        samesite="lax",          # Blocks CSRF cross-site POSTs
+        max_age=60 * 60 * 24,   # 24 hours
+        path="/",
+    )
+    return {
+        "message": "Logged in",
+        "user": {"id": user.id, "email": user.email, "full_name": user.full_name or ""},
+    }
+
+
+@router.post("/logout")
+def logout(response: Response):
+    """Clear the auth cookie, effectively ending the session."""
+    response.delete_cookie(key="access_token", path="/", samesite="lax")
+    return {"message": "Logged out"}
+
+
+@router.get("/me")
+def me(request: Request, db: Session = Depends(get_db)):
+    """Return current user info — used by frontend to verify session on page load."""
+    user = get_current_user(request, db)
+    return {"id": user.id, "email": user.email, "full_name": user.full_name or ""}

@@ -1,6 +1,8 @@
-from pydantic import BaseModel, model_validator, EmailStr
+from pydantic import BaseModel, field_validator, model_validator, EmailStr
 from typing import Optional, List
 from datetime import datetime
+
+from app.utils import sanitize_text
 
 
 # ── Auth ──────────────────────────────────────────────
@@ -8,6 +10,11 @@ class UserCreate(BaseModel):
     email: str
     password: str
     full_name: str
+
+    @field_validator('email', 'full_name', mode='before')
+    @classmethod
+    def _sanitize(cls, v):
+        return sanitize_text(v) if isinstance(v, str) else v
 
 
 class UserOut(BaseModel):
@@ -23,6 +30,17 @@ class UserOut(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class UserSession(BaseModel):
+    id: int
+    email: str
+    full_name: str
+
+
+class LoginResponse(BaseModel):
+    message: str = "Logged in"
+    user: UserSession
 
 
 class LoginRequest(BaseModel):
@@ -61,6 +79,11 @@ class ProfileUpdate(BaseModel):
     experience: Optional[List[ExperienceItem]] = []
     education: Optional[List[EducationItem]] = []
     summary: Optional[str] = ""
+
+    @field_validator('phone', 'linkedin', 'github', 'website', 'summary', mode='before')
+    @classmethod
+    def _sanitize(cls, v):
+        return sanitize_text(v) if isinstance(v, str) else v
 
 
 class ProfileOut(BaseModel):
@@ -120,6 +143,11 @@ class ApplicationCreate(BaseModel):
     match_score: Optional[float] = None
     notes: Optional[str] = ""
 
+    @field_validator('company', 'position', 'url', 'notes', mode='before')
+    @classmethod
+    def _sanitize(cls, v):
+        return sanitize_text(v) if isinstance(v, str) else v
+
 
 class ApplicationUpdate(BaseModel):
     company: Optional[str] = None
@@ -128,6 +156,11 @@ class ApplicationUpdate(BaseModel):
     status: Optional[str] = None
     match_score: Optional[float] = None
     notes: Optional[str] = None
+
+    @field_validator('company', 'position', 'url', 'notes', mode='before')
+    @classmethod
+    def _sanitize(cls, v):
+        return sanitize_text(v) if isinstance(v, str) else v
 
 
 class ApplicationOut(BaseModel):

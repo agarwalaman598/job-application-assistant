@@ -2,16 +2,10 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: '/api',
+  withCredentials: true, // send httpOnly auth cookie automatically on every request
 });
 
-// Attach JWT token to every request
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers['Authorization'] = `Bearer ${token}`;
-  }
-  return config;
-});
+// No Bearer token attachment — auth is handled by the httpOnly cookie set at login.
 
 // Handle 401 responses — only redirect if not already on auth pages
 api.interceptors.response.use(
@@ -21,7 +15,6 @@ api.interceptors.response.use(
       error.response?.status === 401 &&
       !error.config?.url?.includes('/auth/')
     ) {
-      localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
@@ -30,4 +23,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-

@@ -94,7 +94,7 @@ export default function RegisterPage() {
       {/* Title above card */}
       <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.02em', marginBottom: '0.4rem' }}>
-          Join Job Assist
+          Join JobAssist AI
         </h1>
         <p style={{ fontSize: '0.9rem', color: 'var(--muted-foreground)' }}>
           Create your account to start tracking
