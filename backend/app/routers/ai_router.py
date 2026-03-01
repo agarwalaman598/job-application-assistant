@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Profile, QAPair, Resume
 from app.schemas import (
-    MatchRequest, MatchResponse,
+    MatchRequest, MatchResponse, ScoreBreakdown,
     GenerateAnswerRequest, GenerateAnswerResponse,
     AnalyzeJDRequest, AnalyzeJDResponse,
     DetectFieldsRequest, DetectFieldsResponse,
@@ -68,13 +68,16 @@ def match_skills(
 
     resume_text = _get_default_resume_text(current_user.id, db)
 
-    score, matched, missing = compute_match_score(
+    result = compute_match_score(
         user_skills=profile.skills or [],
         user_summary=profile.summary or "",
         jd_text=payload.job_description,
         resume_text=resume_text,
     )
-    return MatchResponse(match_score=score, matched_skills=matched, missing_skills=missing)
+    # Wrap breakdown dict in ScoreBreakdown model if present
+    if result.get("breakdown"):
+        result["breakdown"] = ScoreBreakdown(**result["breakdown"])
+    return MatchResponse(**result)
 
 
 @router.post("/generate-answer", response_model=GenerateAnswerResponse)

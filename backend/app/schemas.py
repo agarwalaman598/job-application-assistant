@@ -149,10 +149,22 @@ class MatchRequest(BaseModel):
     job_description: str
 
 
+class ScoreBreakdown(BaseModel):
+    keyword_score: float
+    skills_score: float
+    experience_score: float
+    education_score: float
+
+
 class MatchResponse(BaseModel):
     match_score: float
     matched_skills: List[str]
     missing_skills: List[str]
+    breakdown: Optional[ScoreBreakdown] = None
+    matched_keywords: Optional[List[str]] = []
+    missing_keywords: Optional[List[str]] = []
+    suggestions: Optional[List[str]] = []
+    reasoning: Optional[str] = ""
 
 
 class GenerateAnswerRequest(BaseModel):

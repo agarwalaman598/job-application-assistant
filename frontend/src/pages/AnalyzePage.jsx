@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import api from '../api';
 import MatchScoreGauge from '../components/MatchScoreGauge';
-import { Search, CheckCircle, XCircle, Loader2, FileText, MessageSquare, Sparkles, FileCheck, Maximize2, X, Check } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Loader2, FileText, MessageSquare, Sparkles, FileCheck, Maximize2, X, Check, Target, Lightbulb, Hash } from 'lucide-react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
 export default function AnalyzePage() {
@@ -217,6 +217,115 @@ export default function AnalyzePage() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Score Breakdown */}
+      {matchResult?.breakdown && (
+        <div className="card p-5 mb-5 animate-enter" style={{ animationDelay: '0.12s' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Target size={14} style={{ color: 'var(--color-primary)' }} />
+            <label className="section-label" style={{ margin: 0 }}>Score Breakdown</label>
+            {matchResult.reasoning && (
+              <span style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', marginLeft: 'auto', fontStyle: 'italic' }}>
+                {matchResult.reasoning}
+              </span>
+            )}
+          </div>
+          {[
+            { label: 'Keyword Coverage', key: 'keyword_score', weight: '40%', color: '#4f8ef7' },
+            { label: 'Skills Match',     key: 'skills_score',   weight: '30%', color: '#3eb370' },
+            { label: 'Experience Match', key: 'experience_score', weight: '20%', color: '#d4942e' },
+            { label: 'Education Match',  key: 'education_score', weight: '10%', color: '#9b6dff' },
+          ].map(({ label, key, weight, color }) => (
+            <div key={key} style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--foreground)', fontWeight: 500 }}>{label}</span>
+                  <span style={{
+                    fontSize: '0.65rem', color: 'var(--muted-foreground)',
+                    background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                    padding: '1px 6px', borderRadius: 4,
+                  }}>{weight}</span>
+                </div>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color }}>{Math.round(matchResult.breakdown[key])}</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 4, background: '#2a2a2a', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 4, background: color,
+                  width: `${matchResult.breakdown[key]}%`,
+                  transition: 'width 0.9s ease',
+                }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Keyword Analysis */}
+      {matchResult && (matchResult.matched_keywords?.length > 0 || matchResult.missing_keywords?.length > 0) && (
+        <div className="card p-5 mb-5 animate-enter" style={{ animationDelay: '0.17s' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Hash size={14} style={{ color: 'var(--color-primary)' }} />
+            <label className="section-label" style={{ margin: 0 }}>Keyword Analysis</label>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {matchResult.matched_keywords?.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <CheckCircle size={12} style={{ color: '#3eb370' }} />
+                  <span style={{ fontSize: '0.7rem', color: '#3eb370', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Matched Keywords</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {matchResult.matched_keywords.map((kw, i) => (
+                    <span key={i} style={{
+                      padding: '3px 10px', borderRadius: '5px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)',
+                      background: 'rgba(62, 179, 112, 0.08)', color: '#3eb370', border: '1px solid rgba(62, 179, 112, 0.15)',
+                    }}>{kw}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {matchResult.missing_keywords?.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <XCircle size={12} style={{ color: '#d94f4f' }} />
+                  <span style={{ fontSize: '0.7rem', color: '#d94f4f', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Missing Keywords</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {matchResult.missing_keywords.map((kw, i) => (
+                    <span key={i} style={{
+                      padding: '3px 10px', borderRadius: '5px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)',
+                      background: 'rgba(217, 79, 79, 0.08)', color: '#d94f4f', border: '1px solid rgba(217, 79, 79, 0.15)',
+                    }}>{kw}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Improvement Suggestions */}
+      {matchResult?.suggestions?.length > 0 && (
+        <div className="card p-5 mb-5 animate-enter" style={{ animationDelay: '0.22s' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb size={14} style={{ color: '#d4942e' }} />
+            <label className="section-label" style={{ margin: 0 }}>Improvement Suggestions</label>
+          </div>
+          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {matchResult.suggestions.map((tip, i) => (
+              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <span style={{
+                  flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
+                  background: 'rgba(212, 148, 46, 0.12)', border: '1px solid rgba(212, 148, 46, 0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.65rem', fontWeight: 700, color: '#d4942e',
+                }}>{i + 1}</span>
+                <span style={{ fontSize: '0.82rem', color: '#ececed', lineHeight: 1.6 }}>{tip}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

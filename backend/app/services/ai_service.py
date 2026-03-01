@@ -5,7 +5,7 @@ Falls back to basic local methods only if LLM_API_KEY is not configured.
 import os
 import json
 import re
-from typing import List, Tuple
+from typing import List
 from dotenv import load_dotenv
 import pathlib
 
@@ -87,53 +87,112 @@ def _extract_json(text: str) -> dict:
 #  SKILL MATCHING — LLM-powered
 # ═══════════════════════════════════════════════
 
-def compute_match_score(user_skills: List[str], user_summary: str, jd_text: str, resume_text: str = "") -> Tuple[float, List[str], List[str]]:
+def compute_match_score(user_skills: List[str], user_summary: str, jd_text: str, resume_text: str = "") -> dict:
     """
-    Use LLM to intelligently compare user skills against a job description.
-    Uses resume text for deeper analysis if available.
-    Returns (score, matched_skills, missing_skills).
+    Use LLM with a structured 4-dimension rubric to score the candidate against the JD.
+    Dimensions: keyword coverage (40%), skills match (30%), experience (20%), education (10%).
+    Returns a dict compatible with MatchResponse schema.
     """
     try:
         system_prompt = (
-            "You are a job matching analysis engine. Given a candidate's skills, resume, and a job description, "
-            "determine which of the candidate's skills match the JD requirements and which JD-required skills "
-            "the candidate is missing.\n\n"
-            "Return ONLY valid JSON with exactly these keys:\n"
-            '- "match_score": integer 0-100 representing overall fit\n'
-            '- "matched_skills": array of the candidate\'s skills that are relevant to this JD\n'
-            '- "missing_skills": array of skills the JD requires that the candidate does NOT have\n'
-            '- "reasoning": one sentence explaining the score\n\n'
-            "Be thorough: consider aliases (e.g. JS = JavaScript, React.js = React), "
-            "related skills, and experience level. Analyze the resume content deeply — "
-            "look for skills mentioned in projects, work experience, certifications, etc. "
-            "Be accurate — do not list a skill as matched "
-            "if the candidate doesn't have it or something very close to it."
+            "You are a professional ATS (Applicant Tracking System) scoring engine. "
+            "Score the candidate's fit for the job description across 4 dimensions.\n\n"
+            "Return ONLY valid JSON with EXACTLY these keys:\n"
+            '- "keyword_match_score": integer 0-100. How many important keywords, tools, '
+            "technologies, and phrases from the JD appear in the candidate's resume and skills.\n"
+            '- "skills_match_score": integer 0-100. Coverage of required technical and soft '
+            "skills listed in the JD.\n"
+            '- "experience_match_score": integer 0-100. How well the candidate\'s experience '
+            "level, years, and domain match what the JD requires.\n"
+            '- "education_match_score": integer 0-100. How well the candidate\'s education '
+            "matches the JD. If JD does not mention education requirements, return 80.\n"
+            '- "matched_keywords": array of specific keywords/tools/phrases from the JD that '
+            "ARE present in the candidate's resume or skills (max 15 items).\n"
+            '- "missing_keywords": array of important keywords/tools/phrases from the JD that '
+            "are NOT found in the candidate's profile (max 10 items).\n"
+            '- "matched_skills": array of the candidate\'s skills relevant to this JD.\n'
+            '- "missing_skills": array of skills the JD requires that the candidate lacks.\n'
+            '- "suggestions": array of 4-5 specific, actionable tips to improve the match '
+            "(e.g. \"Add 'Kubernetes' to your resume skills section\").\n"
+            '- "reasoning": one sentence overall assessment of the candidate\'s fit.\n\n'
+            "Be accurate and strict — only mark a keyword as matched if it genuinely "
+            "appears in or is strongly implied by the candidate's profile."
         )
 
         resume_section = f"\n\nCANDIDATE RESUME:\n{resume_text}" if resume_text else ""
-
         user_prompt = (
             f"CANDIDATE SKILLS: {', '.join(user_skills)}\n\n"
             f"CANDIDATE SUMMARY: {user_summary}{resume_section}\n\n"
             f"JOB DESCRIPTION:\n{jd_text}"
         )
 
-        raw = _llm_call(system_prompt, user_prompt, max_tokens=600)
+        raw = _llm_call(system_prompt, user_prompt, max_tokens=1000)
         result = _extract_json(raw)
 
-        score = min(max(int(result.get("match_score", 50)), 0), 100)
-        matched = result.get("matched_skills", [])
-        missing = result.get("missing_skills", [])
+        # Clamp each dimension score to 0-100
+        kw_score  = min(max(int(result.get("keyword_match_score", 50)), 0), 100)
+        sk_score  = min(max(int(result.get("skills_match_score", 50)), 0), 100)
+        ex_score  = min(max(int(result.get("experience_match_score", 50)), 0), 100)
+        ed_score  = min(max(int(result.get("education_match_score", 80)), 0), 100)
 
-        return float(score), matched, missing
+        # Deterministic sanity check — blend if AI keyword score is far off
+        det_kw = _deterministic_keyword_score(jd_text, user_skills, user_summary, resume_text)
+        if abs(kw_score - det_kw) > 25:
+            print(f"[AI] Keyword score mismatch: AI={kw_score}, deterministic={det_kw}. Blending.")
+            kw_score = round(0.6 * kw_score + 0.4 * det_kw)
+
+        # Weighted final: 40% keyword, 30% skills, 20% experience, 10% education
+        final_score = round(0.40 * kw_score + 0.30 * sk_score + 0.20 * ex_score + 0.10 * ed_score, 1)
+
+        return {
+            "match_score": final_score,
+            "matched_skills": result.get("matched_skills", []),
+            "missing_skills": result.get("missing_skills", []),
+            "breakdown": {
+                "keyword_score": float(kw_score),
+                "skills_score": float(sk_score),
+                "experience_score": float(ex_score),
+                "education_score": float(ed_score),
+            },
+            "matched_keywords": result.get("matched_keywords", []),
+            "missing_keywords": result.get("missing_keywords", []),
+            "suggestions": result.get("suggestions", []),
+            "reasoning": result.get("reasoning", ""),
+        }
 
     except Exception as e:
         print(f"[AI] LLM skill match failed, using fallback: {e}")
-        return _fallback_match(user_skills, user_summary, jd_text)
+        return _fallback_match(user_skills, user_summary, jd_text, resume_text)
 
 
-def _fallback_match(user_skills: List[str], user_summary: str, jd_text: str) -> Tuple[float, List[str], List[str]]:
-    """Basic keyword fallback if LLM is unavailable."""
+def _deterministic_keyword_score(jd_text: str, user_skills: List[str], user_summary: str, resume_text: str = "") -> int:
+    """Regex-based keyword coverage score used as a sanity check on the LLM score."""
+    KNOWN_SKILLS = [
+        "python", "javascript", "typescript", "react", "angular", "vue", "node.js",
+        "java", "c++", "c#", ".net", "go", "rust", "ruby", "php", "swift", "kotlin",
+        "sql", "mysql", "mongodb", "postgresql", "redis", "elasticsearch",
+        "aws", "azure", "gcp", "docker", "kubernetes", "git", "ci/cd",
+        "machine learning", "deep learning", "nlp", "data science",
+        "tensorflow", "pytorch", "pandas", "numpy",
+        "html", "css", "tailwind", "bootstrap",
+        "flask", "django", "fastapi", "spring", "express",
+        "rest", "graphql", "microservices", "linux", "agile", "scrum",
+    ]
+    jd_lower = jd_text.lower()
+    candidate_text = (
+        " ".join(user_skills).lower() + " " +
+        user_summary.lower() + " " +
+        resume_text.lower()
+    )
+    jd_kw = [kw for kw in KNOWN_SKILLS if re.search(r'\b' + re.escape(kw) + r'\b', jd_lower)]
+    if not jd_kw:
+        return 60  # neutral if no known tech keywords found in JD
+    matched = [kw for kw in jd_kw if re.search(r'\b' + re.escape(kw) + r'\b', candidate_text)]
+    return round((len(matched) / len(jd_kw)) * 100)
+
+
+def _fallback_match(user_skills: List[str], user_summary: str, jd_text: str, resume_text: str = "") -> dict:
+    """Deterministic keyword fallback when LLM is unavailable."""
     jd_lower = jd_text.lower()
     user_lower = [s.lower().strip() for s in user_skills]
 
@@ -149,12 +208,36 @@ def _fallback_match(user_skills: List[str], user_summary: str, jd_text: str) -> 
         "rest", "graphql", "microservices", "linux", "agile",
     ]
 
-    jd_skills = [s for s in KNOWN_SKILLS if re.search(r'\b' + re.escape(s) + r'\b', jd_lower)]
-    matched = [s for s in jd_skills if any(s in u or u in s for u in user_lower)]
-    missing = [s for s in jd_skills if s not in matched]
-    score = (len(matched) / max(len(jd_skills), 1)) * 100
+    jd_kw = [s for s in KNOWN_SKILLS if re.search(r'\b' + re.escape(s) + r'\b', jd_lower)]
+    candidate_text = " ".join(user_skills).lower() + " " + user_summary.lower() + " " + resume_text.lower()
+    matched_kw = [s for s in jd_kw if re.search(r'\b' + re.escape(s) + r'\b', candidate_text)]
+    missing_kw = [s for s in jd_kw if s not in matched_kw]
+    matched_sk = [s for s in jd_kw if any(s in u or u in s for u in user_lower)]
+    missing_sk = [s for s in jd_kw if s not in matched_sk]
 
-    return round(score, 1), matched, missing
+    kw_score = round((len(matched_kw) / max(len(jd_kw), 1)) * 100)
+    sk_score = round((len(matched_sk) / max(len(jd_kw), 1)) * 100)
+    final_score = round(0.40 * kw_score + 0.30 * sk_score + 0.20 * 50 + 0.10 * 80, 1)
+
+    suggestions = []
+    for kw in missing_kw[:5]:
+        suggestions.append(f"Add '{kw}' to your resume skills or experience section.")
+
+    return {
+        "match_score": final_score,
+        "matched_skills": matched_sk,
+        "missing_skills": missing_sk,
+        "breakdown": {
+            "keyword_score": float(kw_score),
+            "skills_score": float(sk_score),
+            "experience_score": 50.0,
+            "education_score": 80.0,
+        },
+        "matched_keywords": matched_kw,
+        "missing_keywords": missing_kw,
+        "suggestions": suggestions,
+        "reasoning": f"Deterministic fallback: matched {len(matched_kw)}/{len(jd_kw)} keywords.",
+    }
 
 
 # ═══════════════════════════════════════════════
