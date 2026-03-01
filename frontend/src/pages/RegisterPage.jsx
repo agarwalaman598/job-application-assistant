@@ -70,10 +70,23 @@ export default function RegisterPage() {
                 <Mail size={28} style={{ color: 'var(--primary)' }} />
               </div>
               <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px' }}>Check your email</h2>
-              <p style={{ color: 'var(--muted-foreground)', fontSize: '0.85rem', lineHeight: '1.6', marginBottom: '20px' }}>
+              <p style={{ color: 'var(--muted-foreground)', fontSize: '0.85rem', lineHeight: '1.6', marginBottom: '16px' }}>
                 We sent a verification link to <strong style={{ color: 'var(--foreground)' }}>{email}</strong>.<br />
                 Click it to activate your account, then sign in.
               </p>
+              {/* Spam notice */}
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', gap: '10px',
+                background: 'rgba(212,148,46,0.07)', border: '1px solid rgba(212,148,46,0.2)',
+                borderRadius: '10px', padding: '10px 14px', marginBottom: '20px', textAlign: 'left',
+              }}>
+                <span style={{ fontSize: '1rem', flexShrink: 0 }}>📬</span>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: '#a07830', lineHeight: '1.55' }}>
+                  <strong style={{ color: '#d4942e' }}>Can't find the email?</strong> Check your{' '}
+                  <strong style={{ color: '#d4942e' }}>spam or junk folder</strong> — transactional
+                  emails sometimes land there. Mark it as "Not spam" to receive future emails in your inbox.
+                </p>
+              </div>
               <Link to="/login" style={{
                 display: 'inline-block', padding: '10px 28px',
                 background: '#1f1f1f', color: 'var(--foreground)', border: '1px solid #2e2e2e',

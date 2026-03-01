@@ -14,13 +14,14 @@ load_dotenv()
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+FROM_NAME  = os.getenv("RESEND_FROM_NAME", "JobAssist AI")
+FROM_FORMATTED = f"{FROM_NAME} <{FROM_EMAIL}>"
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5173")
 
 print(f"[Email] Resend API key: {'SET' if RESEND_API_KEY else 'NOT SET'}")
-print(f"[Email] From: {FROM_EMAIL}")
+print(f"[Email] From: {FROM_FORMATTED}")
 
-
-def _send_email(to: str, subject: str, html: str, email_type: str, db=None, user_id: int = None) -> bool:
+def _send_email(to: str, subject: str, html: str, text: str, email_type: str, db=None, user_id: int = None) -> bool:
     """
     Core send function via Resend SDK.
     Logs result to EmailLog table if db session provided.
@@ -39,10 +40,14 @@ def _send_email(to: str, subject: str, html: str, email_type: str, db=None, user
         resend.api_key = RESEND_API_KEY
 
         params: resend.Emails.SendParams = {
-            "from": FROM_EMAIL,
+            "from": FROM_FORMATTED,
             "to": [to],
             "subject": subject,
             "html": html,
+            "text": text,  # plain-text fallback — critical for spam scoring
+            "headers": {
+                "X-Entity-Ref-ID": email_type,  # helps some filters categorise
+            },
         }
         r = resend.Emails.send(params)
         print(f"[Email] Sent '{subject}' to {to} | id={r.get('id', 'unknown')}")
@@ -74,12 +79,14 @@ def _send_email(to: str, subject: str, html: str, email_type: str, db=None, user
 
 # ─── Email Templates ──────────────────────────────────────────────────────────
 
-def _base_template(title: str, body_html: str) -> str:
+def _base_template(title: str, body_html: str, preheader: str = "") -> str:
+    preheader_html = f'<span style="display:none;max-height:0;overflow:hidden;">{preheader}&nbsp;</span>' if preheader else ""
     return f"""
     <!DOCTYPE html>
     <html>
     <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
     <body style="margin:0;padding:0;background:#0e0e12;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+      {preheader_html}
       <table width="100%" cellpadding="0" cellspacing="0" style="background:#0e0e12;padding:40px 0;">
         <tr><td align="center">
           <table width="520" cellpadding="0" cellspacing="0" style="background:#18181f;border-radius:12px;border:1px solid #2a2a32;overflow:hidden;">
@@ -119,11 +126,23 @@ def send_verification_email(to: str, token: str, db=None, user_id: int = None) -
       This link expires in <strong style="color:#8b8b92;">24 hours</strong>.<br>
       Or copy this URL: <a href="{verify_url}" style="color:#d4942e;">{verify_url}</a>
     </p>
+    <p style="color:#5a5a63;font-size:0.72rem;margin:14px 0 0;padding:10px 12px;background:#111117;border-radius:6px;border-left:3px solid #2a2a32;">
+      Can't find this email? Check your <strong style="color:#8b8b92;">spam or junk folder</strong>.
+    </p>
     """
+    plain = (
+        f"Welcome to JobAssist AI!\n\n"
+        f"Please verify your email address by visiting the link below:\n"
+        f"{verify_url}\n\n"
+        f"This link expires in 24 hours.\n\n"
+        f"If you didn't sign up, you can safely ignore this email.\n\n"
+        f"Can't find this email? Check your spam or junk folder."
+    )
     return _send_email(
         to=to,
-        subject="Verify your email — Job Application Assistant",
-        html=_base_template("Confirm your email address", body),
+        subject="Confirm your email address for JobAssist AI",
+        html=_base_template("Confirm your email address", body, preheader="Click to verify and activate your JobAssist AI account."),
+        text=plain,
         email_type="verification",
         db=db,
         user_id=user_id,
@@ -146,11 +165,23 @@ def send_password_reset_email(to: str, token: str, db=None, user_id: int = None)
       If you didn't request this, your account is safe — ignore this email.<br>
       Or copy this URL: <a href="{reset_url}" style="color:#d4942e;">{reset_url}</a>
     </p>
+    <p style="color:#5a5a63;font-size:0.72rem;margin:14px 0 0;padding:10px 12px;background:#111117;border-radius:6px;border-left:3px solid #2a2a32;">
+      Can't find this email? Check your <strong style="color:#8b8b92;">spam or junk folder</strong>.
+    </p>
     """
+    plain = (
+        f"Password reset request for JobAssist AI\n\n"
+        f"Click the link below to set a new password:\n"
+        f"{reset_url}\n\n"
+        f"This link expires in 1 hour.\n\n"
+        f"If you didn't request this, your account is safe — you can ignore this email.\n\n"
+        f"Can't find this email? Check your spam or junk folder."
+    )
     return _send_email(
         to=to,
-        subject="Reset your password — Job Application Assistant",
-        html=_base_template("Password reset request", body),
+        subject="Reset your JobAssist AI password",
+        html=_base_template("Password reset request", body, preheader="Reset your JobAssist AI password. Link expires in 1 hour."),
+        text=plain,
         email_type="password_reset",
         db=db,
         user_id=user_id,

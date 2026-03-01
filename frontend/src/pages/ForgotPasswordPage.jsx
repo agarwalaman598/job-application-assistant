@@ -55,9 +55,23 @@ export default function ForgotPasswordPage() {
                 </p>
               </div>
             ) : (
-              <p style={{ color: '#8b8b92', fontSize: '0.85rem', lineHeight: '1.6' }}>
-                If <strong style={{ color: '#ececed' }}>{email}</strong> is registered, you'll receive a reset link within a few minutes.
-              </p>
+              <>
+                <p style={{ color: '#8b8b92', fontSize: '0.85rem', lineHeight: '1.6', marginBottom: '16px' }}>
+                  If <strong style={{ color: '#ececed' }}>{email}</strong> is registered, you'll receive a reset link within a few minutes.
+                </p>
+                {/* Spam notice */}
+                <div style={{
+                  display: 'flex', alignItems: 'flex-start', gap: '10px',
+                  background: 'rgba(212,148,46,0.07)', border: '1px solid rgba(212,148,46,0.2)',
+                  borderRadius: '10px', padding: '10px 14px', textAlign: 'left',
+                }}>
+                  <span style={{ fontSize: '1rem', flexShrink: 0 }}>📬</span>
+                  <p style={{ margin: 0, fontSize: '0.78rem', color: '#a07830', lineHeight: '1.55' }}>
+                    <strong style={{ color: '#d4942e' }}>Can't find the email?</strong> Check your{' '}
+                    <strong style={{ color: '#d4942e' }}>spam or junk folder</strong> — it may have been filtered automatically.
+                  </p>
+                </div>
+              </>
             )}
           </div>
         ) : (
