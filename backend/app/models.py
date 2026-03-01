@@ -54,6 +54,7 @@ class Resume(Base):
     filename = Column(String(255), nullable=False)
     filepath = Column(String(500), nullable=False, default="")
     drive_link = Column(String(1000), nullable=True)
+    is_r2 = Column(Boolean, default=False, nullable=False)   # True = filepath is an R2 object key
     is_default = Column(Boolean, default=False)
     uploaded_at = Column(DateTime, default=datetime.datetime.utcnow)
 

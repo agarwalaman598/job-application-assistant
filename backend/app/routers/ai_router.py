@@ -18,34 +18,39 @@ router = APIRouter(prefix="/api/ai", tags=["AI & Automation"])
 
 
 def _get_default_resume_text(user_id: int, db: Session) -> str:
-    """Extract text from the user's default resume PDF."""
+    """Extract text from the user's default resume PDF (local or R2)."""
+    from app.services import r2_service
+    import os
+
     resume = db.query(Resume).filter(
         Resume.user_id == user_id,
         Resume.is_default == True,
     ).first()
 
-    if not resume:
-        return ""
-
-    import os
-    if not os.path.exists(resume.filepath):
-        print(f"[AI] Resume file not found: {resume.filepath}")
+    if not resume or not resume.filepath:
         return ""
 
     try:
-        from PyPDF2 import PdfReader
-        reader = PdfReader(resume.filepath)
-        text = ""
-        for page in reader.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text + "\n"
-        text = text.strip()
-        # Cap at ~3000 chars to fit in LLM context
-        if len(text) > 3000:
-            text = text[:3000] + "..."
-        print(f"[AI] Resume text extracted: {len(text)} chars from {resume.filename}")
-        return text
+        if resume.is_r2:
+            # Download from Cloudflare R2 and extract text in-memory
+            return r2_service.extract_pdf_text_from_r2(resume.filepath)
+        else:
+            # Local file (old uploads)
+            if not os.path.exists(resume.filepath):
+                print(f"[AI] Resume file not found locally: {resume.filepath}")
+                return ""
+            from PyPDF2 import PdfReader
+            reader = PdfReader(resume.filepath)
+            text = ""
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+            text = text.strip()
+            if len(text) > 3000:
+                text = text[:3000] + "..."
+            print(f"[AI] Resume text extracted: {len(text)} chars from {resume.filename}")
+            return text
     except Exception as e:
         print(f"[AI] Failed to extract resume text: {e}")
         return ""

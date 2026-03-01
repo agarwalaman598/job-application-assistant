@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models import User, Resume
 from app.schemas import ResumeOut
 from app.auth import get_current_user
+from app.services import r2_service
 
 class AddLinkPayload(BaseModel):
     title: str
@@ -75,22 +76,37 @@ async def upload_resume(
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
-    unique_name = f"{uuid.uuid4().hex}_{file.filename}"
-    filepath = os.path.join(UPLOAD_DIR, unique_name)
-
     content = await file.read()
-    with open(filepath, "wb") as f:
-        f.write(content)
-
-    # If first resume, set as default
+    unique_name = f"{uuid.uuid4().hex}_{file.filename}"
     existing_count = db.query(Resume).filter(Resume.user_id == current_user.id).count()
 
-    resume = Resume(
-        user_id=current_user.id,
-        filename=file.filename,
-        filepath=filepath,
-        is_default=existing_count == 0,
-    )
+    if r2_service.is_r2_configured():
+        # Upload to Cloudflare R2
+        r2_key = f"resumes/{unique_name}"
+        try:
+            r2_service.upload_file(content, r2_key)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"R2 upload failed: {e}")
+        resume = Resume(
+            user_id=current_user.id,
+            filename=file.filename,
+            filepath=r2_key,
+            is_r2=True,
+            is_default=existing_count == 0,
+        )
+    else:
+        # Fallback: save locally
+        filepath = os.path.join(UPLOAD_DIR, unique_name)
+        with open(filepath, "wb") as f:
+            f.write(content)
+        resume = Resume(
+            user_id=current_user.id,
+            filename=file.filename,
+            filepath=filepath,
+            is_r2=False,
+            is_default=existing_count == 0,
+        )
+
     db.add(resume)
     db.commit()
     db.refresh(resume)
@@ -125,8 +141,11 @@ def delete_resume(
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
 
-    if resume.filepath and os.path.exists(resume.filepath):
-        os.remove(resume.filepath)
+    if resume.filepath:
+        if resume.is_r2:
+            r2_service.delete_file(resume.filepath)  # filepath is R2 object key
+        elif os.path.exists(resume.filepath):
+            os.remove(resume.filepath)
 
     db.delete(resume)
     db.commit()

@@ -84,6 +84,7 @@ class ResumeOut(BaseModel):
     id: int
     filename: str
     is_default: bool
+    is_r2: bool = False
     drive_link: Optional[str] = None
     uploaded_at: datetime
 
