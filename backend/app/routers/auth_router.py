@@ -77,12 +77,14 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
     access_token = create_access_token(data={"sub": user.id, "email": user.email, "full_name": user.full_name or ""})
 
     # Set httpOnly cookie — JS cannot read this, protecting against XSS token theft
+    # Production: samesite=none required for cross-domain (Vercel frontend + Render backend)
+    # Dev: samesite=lax is fine since frontend and backend share localhost
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=not IS_DEV,       # Secure flag only in HTTPS (production)
-        samesite="lax",          # Blocks CSRF cross-site POSTs
+        secure=not IS_DEV,
+        samesite="none" if not IS_DEV else "lax",
         max_age=60 * 60 * 24,   # 24 hours
         path="/",
     )
@@ -95,7 +97,7 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
 @router.post("/logout")
 def logout(response: Response):
     """Clear the auth cookie, effectively ending the session."""
-    response.delete_cookie(key="access_token", path="/", samesite="lax")
+    response.delete_cookie(key="access_token", path="/", samesite="none" if not IS_DEV else "lax")
     return {"message": "Logged out"}
 
 
