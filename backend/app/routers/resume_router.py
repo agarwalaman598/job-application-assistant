@@ -1,4 +1,5 @@
 import io
+import logging
 import os
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
@@ -21,6 +22,8 @@ class UpdateLinkPayload(BaseModel):
     drive_link: Optional[str] = None
 
 router = APIRouter(prefix="/api/resumes", tags=["Resumes"])
+
+logger = logging.getLogger(__name__)
 
 
 @router.get("", response_model=list[ResumeOut])
@@ -75,7 +78,10 @@ async def upload_resume(
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
+    MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
     content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 10 MB.")
     unique_name = f"{uuid.uuid4().hex}_{file.filename}"
     existing_count = db.query(Resume).filter(Resume.user_id == current_user.id).count()
 
@@ -173,11 +179,12 @@ def delete_resume(
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
 
-    if resume.filepath:
-        if resume.is_r2:
-            r2_service.delete_file(resume.filepath)  # filepath is R2 object key
-        elif os.path.exists(resume.filepath):
-            os.remove(resume.filepath)
+    if resume.filepath and resume.is_r2:
+        try:
+            r2_service.delete_file(resume.filepath)
+        except Exception as e:
+            logger.warning(f"[R2] Failed to delete file '{resume.filepath}' from R2: {e}")
+            # Continue — always remove the DB record even if R2 delete fails
 
     db.delete(resume)
     db.commit()

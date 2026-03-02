@@ -21,10 +21,11 @@ if not DATABASE_URL:
     os.makedirs(_DATA_DIR, exist_ok=True)
     DATABASE_URL = f"sqlite:///{os.path.join(_DATA_DIR, 'app.db')}"
     logger.warning("[DB] No DATABASE_URL found, using local SQLite fallback")
-elif DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("postgres://"):
+elif DATABASE_URL.startswith("postgresql://"):
     # Force psycopg v3 driver (installed as psycopg[binary])
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+    DATABASE_URL = "postgresql+psycopg://" + DATABASE_URL[len("postgresql://"):]
+elif DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = "postgresql+psycopg://" + DATABASE_URL[len("postgres://"):]
 
 _is_sqlite = DATABASE_URL.startswith("sqlite")
 

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User, Profile, QAPair
-from app.schemas import ProfileOut, ProfileUpdate
+from app.schemas import ProfileOut, ProfileUpdate, SavedAnswerUpdate
 from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/profile", tags=["Profile"])
@@ -60,17 +60,17 @@ def get_saved_answers(current_user: User = Depends(get_current_user), db: Sessio
 @router.put("/saved-answers/{answer_id}")
 def update_saved_answer(
     answer_id: int,
-    payload: dict,
+    payload: SavedAnswerUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     pair = db.query(QAPair).filter(QAPair.id == answer_id, QAPair.user_id == current_user.id).first()
     if not pair:
         raise HTTPException(status_code=404, detail="Answer not found")
-    if "answer" in payload:
-        pair.answer = payload["answer"]
-    if "question" in payload:
-        pair.question = payload["question"]
+    if payload.answer is not None:
+        pair.answer = payload.answer
+    if payload.question is not None:
+        pair.question = payload.question
     db.commit()
     return {"id": pair.id, "question": pair.question, "answer": pair.answer}
 

@@ -1,11 +1,20 @@
+import asyncio
 import os
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import datetime
 import logging
 
-from app.database import engine, Base, SessionLocal
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse as _JSONResponse
+
+from app.database import engine, Base, SessionLocal, get_db
+from app.rate_limit import limiter
 from app.routers import auth_router, profile_router, resume_router, application_router, ai_router
 from app.routers.auth_email_router import router as auth_email_router
 
@@ -20,7 +29,7 @@ def _cleanup_unverified_users():
     db = SessionLocal()
     try:
         from app.models import User
-        cutoff = datetime.datetime.utcnow() - datetime.timedelta(hours=UNVERIFIED_TTL_HOURS)
+        cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=UNVERIFIED_TTL_HOURS)
         deleted = (
             db.query(User)
             .filter(User.is_verified == False, User.created_at < cutoff)
@@ -60,12 +69,27 @@ async def lifespan(app: FastAPI):
 
 # ─────────────────────────────────────────────────────────────────────────────
 
+class _TimeoutMiddleware(BaseHTTPMiddleware):
+    """Cancel requests that exceed 60 s — protects against hung LLM/R2 calls."""
+    async def dispatch(self, request, call_next):
+        try:
+            return await asyncio.wait_for(call_next(request), timeout=60.0)
+        except asyncio.TimeoutError:
+            return _JSONResponse(
+                status_code=504,
+                content={"detail": "Request timed out. Please try again."},
+            )
+
+
 app = FastAPI(
     title="AI Smart Job Application Assistant",
     description="AI-powered job application form filling and optimization",
     version="1.0.0",
     lifespan=lifespan,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS — allow React dev server + any production frontend URL
 _cors_origins = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
@@ -83,6 +107,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(_TimeoutMiddleware)
 
 # Mount routers
 app.include_router(auth_router.router)
@@ -99,6 +124,11 @@ def root():
 
 
 @app.get("/health")
-def health():
-    """Health-check endpoint for container/load-balancer probes."""
-    return {"status": "ok"}
+def health(db: Session = Depends(get_db)):
+    """Health-check endpoint — verifies DB connectivity for Render health checks."""
+    try:
+        db.execute(text("SELECT 1"))
+        return {"status": "ok", "db": "connected"}
+    except Exception as e:
+        logger.error(f"[Health] DB check failed: {e}")
+        raise HTTPException(status_code=503, detail="Database unavailable")

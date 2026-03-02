@@ -11,7 +11,7 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     # Email verification
     is_verified = Column(Boolean, default=False, nullable=False)
@@ -56,7 +56,7 @@ class Resume(Base):
     drive_link = Column(String(1000), nullable=True)
     is_r2 = Column(Boolean, default=False, nullable=False)   # True = filepath is an R2 object key
     is_default = Column(Boolean, default=False)
-    uploaded_at = Column(DateTime, default=datetime.datetime.utcnow)
+    uploaded_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     user = relationship("User", back_populates="resumes")
 
@@ -75,7 +75,7 @@ class Application(Base):
     url = Column(String(500), default="")
     status = Column(String(50), default="applied")  # draft, applied, interview, offer, rejected
     match_score = Column(Float, nullable=True)
-    applied_at = Column(DateTime, default=datetime.datetime.utcnow)
+    applied_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     notes = Column(Text, default="")
 
     user = relationship("User", back_populates="applications")
@@ -113,7 +113,7 @@ class EmailLog(Base):
     email_type = Column(String(50), nullable=False)  # verification, password_reset
     status = Column(String(20), nullable=False)       # sent, failed
     error_message = Column(Text, nullable=True)
-    sent_at = Column(DateTime, default=datetime.datetime.utcnow)
+    sent_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     user = relationship("User", back_populates="email_logs")
 

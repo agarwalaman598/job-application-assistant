@@ -4,15 +4,16 @@ All endpoints are rate-limited and token-based.
 """
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User
 from app.auth import hash_password
+from app.rate_limit import limiter
 from app.services.email_service import send_verification_email, send_password_reset_email
 
 router = APIRouter(prefix="/api/auth", tags=["Auth — Email"])
@@ -53,7 +54,8 @@ def _dev_fallback(link_type: str, token: str) -> dict:
 # ─── Endpoints ───────────────────────────────────────────────────────────────
 
 @router.post("/send-verification")
-def send_verification(payload: EmailRequest, db: Session = Depends(get_db)):
+@limiter.limit("3/15minutes")
+def send_verification(request: Request, payload: EmailRequest, db: Session = Depends(get_db)):
     """Send (or resend) email verification link."""
     user = db.query(User).filter(User.email == payload.email).first()
     if not user:
@@ -64,7 +66,7 @@ def send_verification(payload: EmailRequest, db: Session = Depends(get_db)):
 
     token = _make_token()
     user.verification_token = token
-    user.verification_token_expires = datetime.utcnow() + timedelta(hours=24)
+    user.verification_token_expires = datetime.now(timezone.utc) + timedelta(hours=24)
     db.commit()
 
     ok = send_verification_email(to=user.email, token=token, db=db, user_id=user.id)
@@ -96,7 +98,8 @@ def verify_email(token: str, db: Session = Depends(get_db)):
 
 
 @router.post("/forgot-password")
-def forgot_password(payload: EmailRequest, db: Session = Depends(get_db)):
+@limiter.limit("3/15minutes")
+def forgot_password(request: Request, payload: EmailRequest, db: Session = Depends(get_db)):
     """Send a password reset link to the provided email."""
     user = db.query(User).filter(User.email == payload.email).first()
     if not user:
@@ -104,7 +107,7 @@ def forgot_password(payload: EmailRequest, db: Session = Depends(get_db)):
 
     token = _make_token()
     user.reset_token = token
-    user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+    user.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)
     db.commit()
 
     ok = send_password_reset_email(to=user.email, token=token, db=db, user_id=user.id)

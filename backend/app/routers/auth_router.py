@@ -1,6 +1,6 @@
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models import User, Profile
 from app.schemas import UserCreate, UserOut, Token, LoginRequest
 from app.auth import hash_password, verify_password, create_access_token, get_current_user
+from app.rate_limit import limiter
 from app.services.email_service import send_verification_email
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -19,7 +20,10 @@ IS_DEV = APP_ENV == "development"
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-def register(payload: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def register(request: Request, payload: UserCreate, db: Session = Depends(get_db)):
+    if len(payload.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         if existing.is_verified:
@@ -27,7 +31,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
         # Unverified account exists — refresh the token and resend the verification email
         token = secrets.token_urlsafe(32)
         existing.verification_token = token
-        existing.verification_token_expires = datetime.utcnow() + timedelta(hours=24)
+        existing.verification_token_expires = datetime.now(timezone.utc) + timedelta(hours=24)
         db.commit()
         ok = send_verification_email(to=existing.email, token=token, db=db, user_id=existing.id)
         resp = {
@@ -50,7 +54,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
         full_name=payload.full_name,
         is_verified=False,
         verification_token=token,
-        verification_token_expires=datetime.utcnow() + timedelta(hours=24),
+        verification_token_expires=datetime.now(timezone.utc) + timedelta(hours=24),
     )
     db.add(user)
     db.commit()
@@ -81,7 +85,8 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login")
-def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")

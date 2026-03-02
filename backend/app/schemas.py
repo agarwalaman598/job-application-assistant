@@ -98,6 +98,16 @@ class ProfileOut(BaseModel):
     education: list
     summary: str
 
+
+class SavedAnswerUpdate(BaseModel):
+    question: Optional[str] = None
+    answer: Optional[str] = None
+
+    @field_validator('question', 'answer', mode='before')
+    @classmethod
+    def _sanitize(cls, v):
+        return sanitize_text(v) if isinstance(v, str) else v
+
     class Config:
         from_attributes = True
 
@@ -135,6 +145,9 @@ class ResumeOut(BaseModel):
 
 
 # ── Application ──────────────────────────────────────
+VALID_STATUSES = {"draft", "applied", "interview", "offer", "rejected"}
+
+
 class ApplicationCreate(BaseModel):
     company: str
     position: str
@@ -147,6 +160,13 @@ class ApplicationCreate(BaseModel):
     @classmethod
     def _sanitize(cls, v):
         return sanitize_text(v) if isinstance(v, str) else v
+
+    @field_validator('status', mode='before')
+    @classmethod
+    def _validate_status(cls, v):
+        if v and v not in VALID_STATUSES:
+            raise ValueError(f"Invalid status. Must be one of: {', '.join(sorted(VALID_STATUSES))}")
+        return v
 
 
 class ApplicationUpdate(BaseModel):
@@ -161,6 +181,13 @@ class ApplicationUpdate(BaseModel):
     @classmethod
     def _sanitize(cls, v):
         return sanitize_text(v) if isinstance(v, str) else v
+
+    @field_validator('status', mode='before')
+    @classmethod
+    def _validate_status(cls, v):
+        if v and v not in VALID_STATUSES:
+            raise ValueError(f"Invalid status. Must be one of: {', '.join(sorted(VALID_STATUSES))}")
+        return v
 
 
 class ApplicationOut(BaseModel):
