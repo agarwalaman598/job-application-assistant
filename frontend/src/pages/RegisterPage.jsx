@@ -108,7 +108,7 @@ export default function RegisterPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--background)', padding: '1.5rem' }}>
       <Helmet><title>Register | JobAssist AI</title></Helmet>
-      {/* Title above card */}}
+      {/* Title above card */}
       <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.02em', marginBottom: '0.4rem' }}>
           Join JobAssist AI
