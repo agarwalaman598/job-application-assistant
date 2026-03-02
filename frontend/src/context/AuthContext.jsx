@@ -8,8 +8,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // On mount, verify the httpOnly cookie is still valid by calling /auth/me.
-    // If it is, populate user state; if not, clear stale localStorage user.
+    // On mount, restore token from localStorage so interceptor can attach it,
+    // then verify session is still valid via /auth/me.
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       // Optimistically set user from cache so UI doesn't flash, then verify
@@ -21,7 +21,8 @@ export function AuthProvider({ children }) {
         localStorage.setItem('user', JSON.stringify(res.data));
       })
       .catch(() => {
-        // Cookie expired / invalid — clear cached user
+        // Token expired / invalid — clear everything
+        localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
       })
@@ -30,7 +31,10 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
-    // Backend sets the httpOnly cookie; we only store non-sensitive display info
+    // Store JWT in localStorage for cross-domain Bearer token auth
+    if (res.data.access_token) {
+      localStorage.setItem('token', res.data.access_token);
+    }
     const userData = res.data.user;
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
@@ -44,11 +48,12 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     // Clear local state immediately so UI reacts instantly
+    localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
     try {
       await api.post('/auth/logout'); // tells backend to clear the httpOnly cookie
-    } catch (e) { /* ignore — cookie will expire on its own */ }
+    } catch (e) { /* ignore — token will expire on its own */ }
   };
 
   return (

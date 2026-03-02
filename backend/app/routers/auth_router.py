@@ -85,10 +85,11 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
         httponly=True,
         secure=not IS_DEV,
         samesite="none" if not IS_DEV else "lax",
-        max_age=60 * 60 * 24,   # 24 hours
+        max_age=60 * 60 * 24 * 7,  # 7 days
         path="/",
     )
     return {
+        "access_token": access_token,  # also in body so frontend can store in localStorage
         "message": "Logged in",
         "user": {"id": user.id, "email": user.email, "full_name": user.full_name or ""},
     }
