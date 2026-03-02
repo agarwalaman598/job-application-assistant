@@ -7,7 +7,7 @@ import re
 import json
 from typing import Dict
 from urllib.parse import urlencode
-import requests
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +33,11 @@ async def detect_fields(url: str) -> dict:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
-        resp = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            resp = await client.get(url, headers=headers, timeout=15)
         resp.raise_for_status()
         html = resp.text
-        final_url = resp.url  # Use the redirected URL for platform detection
+        final_url = str(resp.url)  # httpx URL object → string
     except Exception as e:
         raise Exception(f"Failed to fetch form: {str(e)}")
 

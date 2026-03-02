@@ -5,15 +5,9 @@ Replace RESEND_FROM_EMAIL with a verified domain address for production.
 """
 import logging
 import os
-import pathlib
 from datetime import datetime
-from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
-
-_env_path = pathlib.Path(__file__).resolve().parent.parent.parent.parent / ".env"
-load_dotenv(_env_path)
-load_dotenv()
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")

@@ -10,6 +10,7 @@ from app.schemas import (
     AnalyzeJDRequest, AnalyzeJDResponse,
     DetectFieldsRequest, DetectFieldsResponse,
     FillFormRequest, FillFormResponse,
+    AutoMapRequest, SaveAnswersRequest,
 )
 from app.auth import get_current_user
 from app.services.ai_service import compute_match_score, generate_answer, parse_job_description, auto_map_fields
@@ -124,7 +125,7 @@ async def detect_form_fields(payload: DetectFieldsRequest, current_user: User = 
 
 @router.post("/auto-map")
 def auto_map(
-    payload: dict,
+    payload: AutoMapRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -132,7 +133,7 @@ def auto_map(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found.")
 
-    fields = payload.get("fields", [])
+    fields = [f.model_dump() for f in payload.fields]
     # Get default resume for drive_link
     default_resume = db.query(Resume).filter(
         Resume.user_id == current_user.id,
@@ -169,17 +170,16 @@ def auto_map(
 
 @router.post("/save-answers")
 def save_answers(
-    payload: dict,
+    payload: SaveAnswersRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Save filled form field values for future auto-mapping."""
-    fields = payload.get("fields", [])  # [{label, value}]
     saved_count = 0
 
-    for item in fields:
-        label = item.get("label", "").strip()
-        value = item.get("value", "").strip()
+    for item in payload.fields:
+        label = item.label.strip()
+        value = item.value.strip()
         if not label or not value:
             continue
 

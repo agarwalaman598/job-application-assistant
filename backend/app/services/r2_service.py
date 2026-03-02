@@ -7,14 +7,8 @@ Falls back gracefully if R2 is not configured (local dev without credentials).
 import logging
 import os
 import io
-import pathlib
-from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
-
-_env_path = pathlib.Path(__file__).resolve().parent.parent.parent.parent / ".env"
-load_dotenv(_env_path)
-load_dotenv()
 
 
 def _get_client():

@@ -165,6 +165,18 @@ export default function AutofillPage() {
         </div>
       )}
 
+      {/* Initial state hint — shown before first detection */}
+      {!detecting && fields.length === 0 && !error && !result && (
+        <div className="card p-8 text-center animate-enter" style={{ opacity: 0.65 }}>
+          <Wand2 size={26} style={{ color: 'var(--muted-foreground)', margin: '0 auto 10px', opacity: 0.4 }} />
+          <p style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>
+            Enter a form URL above and click{' '}
+            <strong style={{ color: 'var(--foreground)' }}>Detect</strong>{' '}
+            to automatically fill application forms.
+          </p>
+        </div>
+      )}
+
       {/* Fields */}
       {fields.length > 0 && (
         <div className="card p-5 mb-5 animate-enter">

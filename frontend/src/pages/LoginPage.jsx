@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
@@ -13,6 +14,13 @@ export default function LoginPage() {
   const [resending, setResending] = useState(false);
   const { login }  = useAuth();
   const navigate   = useNavigate();
+
+  useEffect(() => {
+    if (sessionStorage.getItem('sessionExpired')) {
+      sessionStorage.removeItem('sessionExpired');
+      toast.error('Your session has expired. Please sign in again.');
+    }
+  }, []);
 
   const unverifiedError = error.toLowerCase().includes('verify');
 

@@ -7,24 +7,21 @@ import os
 import json
 import re
 from typing import List
-from dotenv import load_dotenv
-import pathlib
-
-# Load .env from project root (4 levels up from backend/app/services/ai_service.py)
-_env_path = pathlib.Path(__file__).resolve().parent.parent.parent.parent / ".env"
-load_dotenv(_env_path)
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 _key = os.getenv("LLM_API_KEY", "")
-logger.info("[AI Service] LLM_API_KEY: %s", "configured" if _key else "NOT SET \u2014 using fallback")
+logger.info("[AI Service] LLM_API_KEY: %s", "configured" if _key else "NOT SET - using fallback")
 logger.info("[AI Service] LLM_API_URL: %s", os.getenv("LLM_API_URL", "not set"))
 logger.info("[AI Service] LLM_MODEL: %s", os.getenv("LLM_MODEL", "not set"))
 
+# Module-level cached client to reuse HTTP connection pool
+_llm_client_instance = None
+
 
 def _get_llm_client():
-    """Get an OpenAI-compatible client. Returns (client, model) or raises."""
+    """Return cached OpenAI-compatible client. Returns (client, model) or (None, model)."""
+    global _llm_client_instance
     api_key = os.getenv("LLM_API_KEY", "")
     api_url = os.getenv("LLM_API_URL", "https://api.openai.com/v1")
     model = os.getenv("LLM_MODEL", "gpt-3.5-turbo")
@@ -32,9 +29,12 @@ def _get_llm_client():
     if not api_key:
         return None, model
 
-    from openai import OpenAI
-    client = OpenAI(api_key=api_key, base_url=api_url)
-    return client, model
+    if _llm_client_instance is None:
+        from openai import OpenAI
+        _llm_client_instance = OpenAI(api_key=api_key, base_url=api_url)
+        logger.info("[AI Service] LLM client initialized (cached for reuse)")
+
+    return _llm_client_instance, model
 
 
 def _llm_call(system_prompt: str, user_prompt: str, max_tokens: int = 800, temperature: float = 0.3) -> str:

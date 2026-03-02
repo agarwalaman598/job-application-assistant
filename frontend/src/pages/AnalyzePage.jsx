@@ -179,6 +179,18 @@ export default function AnalyzePage() {
         </button>
       </div>
 
+      {/* Initial state hint — shown before first analysis */}
+      {!matchResult && !loading && (
+        <div className="card p-8 text-center animate-enter" style={{ opacity: 0.65 }}>
+          <Search size={26} style={{ color: 'var(--muted-foreground)', margin: '0 auto 10px', opacity: 0.4 }} />
+          <p style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>
+            Paste a job description above and click{' '}
+            <strong style={{ color: 'var(--foreground)' }}>Analyze</strong>{' '}
+            to see your match score, missing skills, and suggestions.
+          </p>
+        </div>
+      )}
+
       {/* Match results */}
       {matchResult && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">

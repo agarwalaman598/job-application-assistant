@@ -7,7 +7,7 @@ from app.utils import sanitize_text
 
 # ── Auth ──────────────────────────────────────────────
 class UserCreate(BaseModel):
-    email: str
+    email: EmailStr
     password: str
     full_name: str
 
@@ -281,3 +281,19 @@ class FillFormResponse(BaseModel):
     filled_count: int
     errors: List[str]
     prefilled_url: Optional[str] = None
+
+
+# ── AI Router Request Bodies ──────────────────────────
+class AutoMapRequest(BaseModel):
+    """Typed request body for /ai/auto-map."""
+    fields: List[FormField] = []
+
+
+class SaveAnswersFieldItem(BaseModel):
+    label: str
+    value: str
+
+
+class SaveAnswersRequest(BaseModel):
+    """Typed request body for /ai/save-answers."""
+    fields: List[SaveAnswersFieldItem] = []

@@ -7,18 +7,11 @@ import bcrypt
 from fastapi import Depends, HTTPException, Request, status
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from dotenv import load_dotenv
 
 from app.database import get_db
 from app.models import User
 
 logger = logging.getLogger(__name__)
-
-# Load .env from project root (one level up from backend/)
-import pathlib
-_env_path = pathlib.Path(__file__).resolve().parent.parent.parent / ".env"
-load_dotenv(_env_path)
-load_dotenv()  # also try CWD
 
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 if not SECRET_KEY:

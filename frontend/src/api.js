@@ -24,10 +24,21 @@ api.interceptors.response.use(
     ) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      sessionStorage.setItem('sessionExpired', '1');
       window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
+
+/**
+ * Extract a user-friendly error message from an Axios error.
+ * Handles network failures, FastAPI detail strings, and fallback text.
+ */
+export function getErrorMessage(err, fallback = 'Something went wrong. Please try again.') {
+  if (err?.response?.data?.detail) return err.response.data.detail;
+  if (!err?.response) return 'Network error — please check your connection.';
+  return fallback;
+}
 
 export default api;

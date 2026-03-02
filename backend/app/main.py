@@ -20,6 +20,12 @@ from app.routers.auth_email_router import router as auth_email_router
 
 logger = logging.getLogger(__name__)
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
 # ── Unverified-user cleanup ───────────────────────────────────────────────────
 
 UNVERIFIED_TTL_HOURS = 24  # delete accounts that weren't verified within this window
@@ -104,8 +110,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
 )
 app.add_middleware(_TimeoutMiddleware)
 
@@ -132,3 +138,10 @@ def health(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"[Health] DB check failed: {e}")
         raise HTTPException(status_code=503, detail="Database unavailable")
+
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots_txt():
+    """Prevent search engines from indexing API endpoints."""
+    from starlette.responses import PlainTextResponse
+    return PlainTextResponse("User-agent: *\nDisallow: /\n")

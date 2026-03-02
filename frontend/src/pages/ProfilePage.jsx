@@ -19,6 +19,26 @@ export default function ProfilePage() {
   const [summaryDraft, setSummaryDraft] = useState('');
   const summaryTextareaRef = useRef(null);
 
+  // Unsaved-changes tracking for beforeunload warning
+  const cleanProfileRef = useRef(null);
+  const isDirtyRef = useRef(false);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (isDirtyRef.current) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+
+  useEffect(() => {
+    if (cleanProfileRef.current === null) return;
+    isDirtyRef.current = JSON.stringify(profile) !== cleanProfileRef.current;
+  }, [profile]);
+
   const closeSummaryModal = () => {
     setSummaryClosing(true);
     setTimeout(() => { setSummaryModalOpen(false); setSummaryClosing(false); }, 185);
@@ -32,7 +52,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     api.get('/profile').then(res => {
-      setProfile({
+      const p = {
         summary: res.data.summary || '',
         phone: res.data.phone || '',
         linkedin: res.data.linkedin || '',
@@ -41,7 +61,10 @@ export default function ProfilePage() {
         skills: res.data.skills || [],
         experience: res.data.experience || [],
         education: res.data.education || [],
-      });
+      };
+      setProfile(p);
+      cleanProfileRef.current = JSON.stringify(p);
+      isDirtyRef.current = false;
     }).catch(console.error).finally(() => setLoading(false));
 
     // Load saved answers
@@ -55,6 +78,8 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       await api.put('/profile', profile);
+      cleanProfileRef.current = JSON.stringify(profile);
+      isDirtyRef.current = false;
       toast.success('Profile saved successfully!');
     } catch (err) {
       console.error(err);
