@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -83,7 +84,8 @@ export default function DashboardPage() {
 
   return (
     <div className="px-6 md:px-10 py-8 max-w-6xl mx-auto">
-      {/* Greeting */}
+      <Helmet><title>Dashboard | JobAssist AI</title></Helmet>
+      {/* Greeting */}}
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react';
@@ -26,6 +27,7 @@ export default function VerifyEmailPage() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)', padding: '24px' }}>
+      <Helmet><title>Verify Email | JobAssist AI</title></Helmet>
       <div className="card p-10 animate-enter" style={{ maxWidth: '440px', width: '100%', textAlign: 'center' }}>
         {status === 'loading' && (
           <>

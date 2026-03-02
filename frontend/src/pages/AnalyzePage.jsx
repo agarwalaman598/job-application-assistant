@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import api from '../api';
 import MatchScoreGauge from '../components/MatchScoreGauge';
 import { Search, CheckCircle, XCircle, Loader2, FileText, MessageSquare, Sparkles, FileCheck, Maximize2, X, Check, Target, Lightbulb, Hash } from 'lucide-react';
@@ -24,7 +25,7 @@ export default function AnalyzePage() {
   const [alertMsg, setAlertMsg] = useState(null);
 
   const handleAnalyze = async () => {
-    if (!jd.trim()) return;
+    if (loading || !jd.trim()) return;
     setLoading(true);
     setMatchResult(null);
     setJdAnalysis(null);
@@ -44,7 +45,7 @@ export default function AnalyzePage() {
   };
 
   const handleGenerate = async () => {
-    if (!question.trim()) return;
+    if (genLoading || !question.trim()) return;
     setGenLoading(true);
     try {
       const res = await api.post('/ai/generate-answer', { question, job_description: jd });
@@ -55,6 +56,7 @@ export default function AnalyzePage() {
 
   return (
     <div className="px-4 py-6 md:px-8 md:py-8 max-w-4xl mx-auto">
+      <Helmet><title>Analyze Resume | JobAssist AI</title></Helmet>
       <div className="mb-6">
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.03em' }}>Analyze JD</h1>
         <p style={{ fontSize: '0.8rem', color: '#5a5a63', marginTop: '2px' }}>

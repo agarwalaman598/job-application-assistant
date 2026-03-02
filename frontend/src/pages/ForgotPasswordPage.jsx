@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { Mail, Loader2, ArrowLeft, CheckCircle } from 'lucide-react';
@@ -13,6 +14,7 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true); setError('');
     try {
       const res = await api.post('/auth/forgot-password', { email });
@@ -25,6 +27,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)', padding: '24px' }}>
+      <Helmet><title>Forgot Password | JobAssist AI</title></Helmet>
       <div className="card p-8 animate-enter" style={{ maxWidth: '400px', width: '100%' }}>
         <button onClick={() => navigate('/login')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5a5a63', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', marginBottom: '20px', padding: 0 }}>

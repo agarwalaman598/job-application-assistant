@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import api from '../api';
 import { Wand2, Link2, Loader2, CheckCircle, AlertCircle, Zap, BriefcaseBusiness, X } from 'lucide-react';
 
@@ -24,7 +25,7 @@ export default function AutofillPage() {
   const [tracked, setTracked] = useState(false);
 
   const handleDetect = async () => {
-    if (!url.trim()) return;
+    if (detecting || !url.trim()) return;
     setDetecting(true); setFields([]); setError(''); setResult(null); setMapError(''); setRecalledCount(null);
     try {
       const res = await api.post('/ai/detect-fields', { url });
@@ -119,6 +120,7 @@ export default function AutofillPage() {
 
   return (
     <div className="px-4 py-6 md:px-8 md:py-8 max-w-4xl mx-auto">
+      <Helmet><title>Autofill | JobAssist AI</title></Helmet>
       <div className="mb-6">
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.03em' }}>Autofill</h1>
         <p style={{ fontSize: '0.8rem', color: '#5a5a63', marginTop: '2px' }}>Auto-fill forms on supported platforms</p>

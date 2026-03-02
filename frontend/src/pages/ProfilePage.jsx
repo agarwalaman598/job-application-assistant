@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { toast } from 'sonner';
 import api from '../api';
 import { Save, Plus, X, Loader2, Briefcase, GraduationCap, Globe, BookOpen, Pencil, Trash2, Check, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -49,11 +51,15 @@ export default function ProfilePage() {
   }, []);
 
   const handleSave = async () => {
+    if (saving) return;
     setSaving(true);
     try {
       await api.put('/profile', profile);
-    } catch (err) { console.error(err); }
-    finally { setSaving(false); }
+      toast.success('Profile saved successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to save profile. Please try again.');
+    } finally { setSaving(false); }
   };
 
   const addSkill = () => {
@@ -112,13 +118,24 @@ export default function ProfilePage() {
   };
 
   if (loading) return (
-    <div className="flex justify-center py-20">
-      <Loader2 className="animate-spin text-[var(--muted-foreground)]" />
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-3xl mx-auto">
+      <Helmet><title>Profile | JobAssist AI</title></Helmet>
+      <div className="flex items-center justify-between mb-6">
+        <div style={{ height: 28, width: 90, borderRadius: 8, background: 'var(--muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        <div style={{ height: 34, width: 72, borderRadius: 9999, background: 'var(--muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+      </div>
+      {[0, 1, 2, 3].map(i => (
+        <div key={i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '1.5rem', marginBottom: '1rem' }}>
+          <div style={{ height: 13, width: '35%', borderRadius: 6, background: 'var(--muted)', marginBottom: '0.85rem', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          <div style={{ height: 40, borderRadius: 9999, background: 'var(--muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        </div>
+      ))}
     </div>
   );
 
   return (
     <div className="px-4 py-6 md:px-8 md:py-8 max-w-3xl mx-auto">
+      <Helmet><title>Profile | JobAssist AI</title></Helmet>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
         <button onClick={handleSave} disabled={saving}

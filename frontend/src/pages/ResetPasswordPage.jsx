@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { KeyRound, Loader2, CheckCircle, Eye, EyeOff } from 'lucide-react';
@@ -32,6 +33,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)', padding: '24px' }}>
+      <Helmet><title>Reset Password | JobAssist AI</title></Helmet>
       <div className="card p-8 animate-enter" style={{ maxWidth: '400px', width: '100%' }}>
         {done ? (
           <div style={{ textAlign: 'center' }}>

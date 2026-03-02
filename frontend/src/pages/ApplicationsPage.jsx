@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { toast } from 'sonner';
 import api from '../api';
 import { Plus, Edit2, Trash2, X, Loader2, Briefcase, ExternalLink, Search, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -60,13 +62,17 @@ export default function ApplicationsPage() {
   const closeForm = () => { setShowForm(false); setEditingId(null); };
 
   const handleSave = async () => {
+    if (saving) return;
     setSaving(true);
     try {
       if (editingId) await api.put(`/applications/${editingId}`, form);
       else           await api.post('/applications', form);
       closeForm(); fetchApps();
-    } catch (e) { console.error(e); }
-    finally { setSaving(false); }
+      toast.success(editingId ? 'Application updated!' : 'Application added!');
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to save application. Please try again.');
+    } finally { setSaving(false); }
   };
 
   const handleDelete = (id) => setConfirmId(id);
@@ -100,7 +106,8 @@ export default function ApplicationsPage() {
 
   return (
     <div className="px-4 py-6 md:px-8 md:py-8 max-w-6xl mx-auto">
-      {/* Header */}
+      <Helmet><title>Applications | JobAssist AI</title></Helmet>
+      {/* Header */}}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Applications</h1>

@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { toast } from 'sonner';
 import api from '../api';
 import { Upload, FileText, Star, Trash2, Loader2, Link2, Copy, Check, ExternalLink, Plus, X, Download, Eye } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -41,15 +43,18 @@ export default function ResumePage() {
     try {
       await api.post('/resumes/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       fetchResumes();
-    } catch (err) { console.error(err); }
-    finally { setUploading(false); }
+      toast.success('Resume uploaded successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Upload failed. Please try again.');
+    } finally { setUploading(false); }
   };
 
-  const handleDrop = useCallback((e) => {
+  const handleDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
     handleUpload(e.dataTransfer.files[0]);
-  }, []);
+  };
 
   const setDefault = async (id) => {
     await api.put(`/resumes/${id}/default`);
@@ -153,6 +158,7 @@ export default function ResumePage() {
 
   return (
     <div className="px-4 py-6 md:px-8 md:py-8 max-w-4xl mx-auto">
+      <Helmet><title>Resumes | JobAssist AI</title></Helmet>
       <h1 className="text-2xl font-semibold tracking-tight mb-6">Resumes</h1>
 
       {/* Upload area */}

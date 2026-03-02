@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
@@ -17,6 +18,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setError(''); setMessage(''); setLoading(true);
     try {
       await login(email, password);
@@ -47,7 +49,8 @@ export default function LoginPage() {
       background: 'var(--background)',
       padding: '1.5rem',
     }}>
-      {/* Title above card */}
+      <Helmet><title>Login | JobAssist AI</title></Helmet>
+      {/* Title above card */}}
       <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.02em', marginBottom: '0.4rem' }}>
           JobAssist AI
