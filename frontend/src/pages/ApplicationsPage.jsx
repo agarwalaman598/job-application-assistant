@@ -107,7 +107,7 @@ export default function ApplicationsPage() {
   return (
     <div className="px-4 py-6 md:px-8 md:py-8 max-w-6xl mx-auto">
       <Helmet><title>Applications | JobAssist AI</title></Helmet>
-      {/* Header */}}
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Applications</h1>

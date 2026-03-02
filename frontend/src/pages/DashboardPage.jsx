@@ -85,7 +85,7 @@ export default function DashboardPage() {
   return (
     <div className="px-6 md:px-10 py-8 max-w-6xl mx-auto">
       <Helmet><title>Dashboard | JobAssist AI</title></Helmet>
-      {/* Greeting */}}
+      {/* Greeting */}
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
