@@ -22,9 +22,6 @@ class UpdateLinkPayload(BaseModel):
 
 router = APIRouter(prefix="/api/resumes", tags=["Resumes"])
 
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "resumes")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
 
 @router.get("", response_model=list[ResumeOut])
 def list_resumes(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -82,32 +79,25 @@ async def upload_resume(
     unique_name = f"{uuid.uuid4().hex}_{file.filename}"
     existing_count = db.query(Resume).filter(Resume.user_id == current_user.id).count()
 
-    if r2_service.is_r2_configured():
-        # Upload to Cloudflare R2
-        r2_key = f"resumes/{unique_name}"
-        try:
-            r2_service.upload_file(content, r2_key)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"R2 upload failed: {e}")
-        resume = Resume(
-            user_id=current_user.id,
-            filename=file.filename,
-            filepath=r2_key,
-            is_r2=True,
-            is_default=existing_count == 0,
+    if not r2_service.is_r2_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="File storage is not configured on this server. Please contact support.",
         )
-    else:
-        # Fallback: save locally
-        filepath = os.path.join(UPLOAD_DIR, unique_name)
-        with open(filepath, "wb") as f:
-            f.write(content)
-        resume = Resume(
-            user_id=current_user.id,
-            filename=file.filename,
-            filepath=filepath,
-            is_r2=False,
-            is_default=existing_count == 0,
-        )
+
+    r2_key = f"resumes/{unique_name}"
+    try:
+        r2_service.upload_file(content, r2_key)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"R2 upload failed: {e}")
+
+    resume = Resume(
+        user_id=current_user.id,
+        filename=file.filename,
+        filepath=r2_key,
+        is_r2=True,
+        is_default=existing_count == 0,
+    )
 
     db.add(resume)
     db.commit()

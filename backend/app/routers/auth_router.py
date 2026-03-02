@@ -22,7 +22,25 @@ IS_DEV = APP_ENV == "development"
 def register(payload: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        if existing.is_verified:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        # Unverified account exists — refresh the token and resend the verification email
+        token = secrets.token_urlsafe(32)
+        existing.verification_token = token
+        existing.verification_token_expires = datetime.utcnow() + timedelta(hours=24)
+        db.commit()
+        ok = send_verification_email(to=existing.email, token=token, db=db, user_id=existing.id)
+        resp = {
+            "id": existing.id,
+            "email": existing.email,
+            "full_name": existing.full_name,
+            "is_verified": False,
+            "email_sent": ok,
+            "resent": True,
+        }
+        if not ok and IS_DEV:
+            resp["dev_link"] = f"{APP_BASE_URL}/verify-email?token={token}"
+        return resp
 
     token = secrets.token_urlsafe(32)
 

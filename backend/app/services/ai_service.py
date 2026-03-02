@@ -53,6 +53,7 @@ def _llm_call(system_prompt: str, user_prompt: str, max_tokens: int = 800, tempe
             ],
             max_tokens=max_tokens,
             temperature=temperature,
+            timeout=30,  # prevent indefinite hangs in production
         )
         result = response.choices[0].message.content.strip()
         logger.info(f"[AI Service] LLM call succeeded, response length: {len(result)}")

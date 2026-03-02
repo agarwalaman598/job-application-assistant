@@ -69,9 +69,12 @@ app = FastAPI(
 
 # CORS — allow React dev server + any production frontend URL
 _cors_origins = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
-_frontend_url = os.getenv("FRONTEND_URL", "")
-if _frontend_url and _frontend_url not in _cors_origins:
-    _cors_origins.append(_frontend_url)
+# Support comma-separated origins: FRONTEND_URL=https://foo.vercel.app,https://bar.vercel.app
+for _url in os.getenv("FRONTEND_URL", "").split(","):
+    _url = _url.strip()
+    if _url and _url not in _cors_origins:
+        _cors_origins.append(_url)
+logger.info("[CORS] Allowed origins: %s", _cors_origins)
 
 app.add_middleware(
     CORSMiddleware,

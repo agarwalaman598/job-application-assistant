@@ -19,7 +19,14 @@ RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
 FROM_NAME  = os.getenv("RESEND_FROM_NAME", "JobAssist AI")
 FROM_FORMATTED = f"{FROM_NAME} <{FROM_EMAIL}>"
-APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5173")
+_default_base_url = "http://localhost:5173"
+APP_BASE_URL = os.getenv("APP_BASE_URL", _default_base_url)
+if APP_BASE_URL == _default_base_url and os.getenv("APP_ENV", "production") != "development":
+    logger.warning(
+        "[Email] APP_BASE_URL is still 'http://localhost:5173' in production! "
+        "Verification and password-reset links will point to localhost. "
+        "Set APP_BASE_URL=https://<your-vercel-domain> in Render environment variables."
+    )
 
 logger.info("[Email] Resend API key: %s", "SET" if RESEND_API_KEY else "NOT SET")
 logger.info("[Email] From: %s", FROM_FORMATTED)

@@ -102,11 +102,8 @@ export default function ResumePage() {
   const handleDownload = async (r) => {
     setDownloadingId(r.id);
     try {
-      const response = await fetch(`/api/resumes/${r.id}/download`, {
-        credentials: 'include', // use httpOnly cookie for auth
-      });
-      if (!response.ok) throw new Error('Download failed');
-      const blob = await response.blob();
+      const response = await api.get(`/resumes/${r.id}/download`, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -126,15 +123,15 @@ export default function ResumePage() {
   const handleView = async (r) => {
     setViewingId(r.id);
     try {
-      const response = await fetch(`/api/resumes/${r.id}/download?mode=view`, {
-        credentials: 'include', // use httpOnly cookie for auth
+      const response = await api.get(`/resumes/${r.id}/download`, {
+        responseType: 'blob',
+        params: { mode: 'view' },
       });
-      if (!response.ok) throw new Error('Failed to load PDF');
-      const blob = await response.blob();
+      const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
-      // Revoke after a short delay to let the new tab load
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      // Revoke after tab has loaded
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (err) {
       console.error(err);
       setAlertMsg('Failed to open PDF. Please try again.');

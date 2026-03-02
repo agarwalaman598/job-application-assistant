@@ -8,8 +8,15 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // On mount, restore token from localStorage so interceptor can attach it,
-    // then verify session is still valid via /auth/me.
+    // Skip the API call entirely if there's no token — avoids a guaranteed 401 on every page load
+    const token = localStorage.getItem('token');
+    if (!token) {
+      localStorage.removeItem('user');
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       // Optimistically set user from cache so UI doesn't flash, then verify
