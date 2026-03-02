@@ -37,7 +37,7 @@ An AI-powered full-stack web app that helps you track job applications, match yo
 ### 1. Clone and configure
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/agarwalaman598/job-application-assistant.git
 cd job-application-assistant
 ```
 
