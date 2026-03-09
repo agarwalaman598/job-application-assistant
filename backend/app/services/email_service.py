@@ -85,67 +85,119 @@ def _send_email(to: str, subject: str, html: str, text: str, email_type: str, db
 
 def _base_template(title: str, body_html: str, preheader: str = "") -> str:
     preheader_html = f'<span style="display:none;max-height:0;overflow:hidden;">{preheader}&nbsp;</span>' if preheader else ""
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
-    <body style="margin:0;padding:0;background:#0e0e12;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-      {preheader_html}
-      <table width="100%" cellpadding="0" cellspacing="0" style="background:#0e0e12;padding:40px 0;">
-        <tr><td align="center">
-          <table width="520" cellpadding="0" cellspacing="0" style="background:#18181f;border-radius:12px;border:1px solid #2a2a32;overflow:hidden;">
-            <tr><td style="background:linear-gradient(135deg,#1c1a2e,#18181f);padding:28px 36px;border-bottom:1px solid #2a2a32;">
-              <span style="font-size:1.1rem;font-weight:700;color:#d4942e;letter-spacing:-0.02em;">Job Application Assistant</span>
-            </td></tr>
-            <tr><td style="padding:32px 36px;">
-              <h2 style="margin:0 0 16px;font-size:1.2rem;font-weight:700;color:#ececed;letter-spacing:-0.02em;">{title}</h2>
-              {body_html}
-            </td></tr>
-            <tr><td style="padding:16px 36px 28px;border-top:1px solid #2a2a32;">
-              <p style="margin:0;font-size:0.75rem;color:#5a5a63;">
-                If you didn't request this, please ignore this email.<br>
-                &copy; {datetime.now().year} Job Application Assistant
-              </p>
-            </td></tr>
-          </table>
-        </td></tr>
-      </table>
-    </body>
-    </html>
-    """
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body style="margin:0;padding:0;background:#000000;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+{preheader_html}
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#000000;padding:48px 16px;">
+<tr>
+<td align="center">
+
+<table width="540" cellpadding="0" cellspacing="0" style="background:#0f0f11;border-radius:14px;border:1px solid #1f1f23;overflow:hidden;">
+
+<!-- HEADER -->
+<tr>
+<td style="padding:22px 28px;background:#0a0a0a;border-bottom:1px solid #1f1f23;">
+<table width="100%">
+<tr>
+<td>
+<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1;margin-right:8px;"></span>
+<span style="font-size:15px;font-weight:700;color:#ffffff;letter-spacing:-0.01em;">
+JobAssist AI
+</span>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+
+<!-- MAIN CONTENT -->
+<tr>
+<td style="padding:34px 28px;">
+
+<h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#ffffff;">
+{title}
+</h2>
+
+{body_html}
+
+</td>
+</tr>
+
+<!-- FOOTER CARD -->
+<tr>
+<td style="padding:0 28px 28px 28px;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border:1px solid #1f1f23;border-radius:10px;">
+<tr>
+<td style="padding:14px 16px;font-size:12px;color:#6b7280;line-height:1.6;">
+If you didn't request this email, you can safely ignore it.
+</td>
+</tr>
+</table>
+</td>
+</tr>
+
+<!-- COPYRIGHT -->
+<tr>
+<td style="padding:0 28px 24px 28px;text-align:center;">
+<p style="margin:0;font-size:11px;color:#4b5563;">
+© {datetime.now().year} JobAssist AI
+</p>
+</td>
+</tr>
+
+</table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
+"""
 
 
 def send_verification_email(to: str, token: str, db=None, user_id: int = None) -> bool:
     verify_url = f"{APP_BASE_URL}/verify-email?token={token}"
+
     body = f"""
-    <p style="color:#8b8b92;font-size:0.9rem;line-height:1.6;margin:0 0 20px;">
-      Thanks for signing up! Click the button below to verify your email address and activate your account.
-    </p>
-    <a href="{verify_url}"
-       style="display:inline-block;background:#d4942e;color:#fff;font-weight:600;font-size:0.85rem;
-              padding:12px 28px;border-radius:8px;text-decoration:none;letter-spacing:0.01em;">
-      Verify Email Address
-    </a>
-    <p style="color:#5a5a63;font-size:0.75rem;margin:20px 0 0;">
-      This link expires in <strong style="color:#8b8b92;">24 hours</strong>.<br>
-      Or copy this URL: <a href="{verify_url}" style="color:#d4942e;">{verify_url}</a>
-    </p>
-    <p style="color:#5a5a63;font-size:0.72rem;margin:14px 0 0;padding:10px 12px;background:#111117;border-radius:6px;border-left:3px solid #2a2a32;">
-      Can't find this email? Check your <strong style="color:#8b8b92;">spam or junk folder</strong>.
-    </p>
-    """
+<p style="color:#a1a1aa;font-size:0.9rem;line-height:1.6;margin:0 0 20px;">
+Thanks for signing up! Click the button below to verify your email address and activate your account.
+</p>
+
+<a href="{verify_url}"
+style="display:inline-block;background:#6366f1;color:#ffffff;font-weight:600;font-size:0.85rem;padding:12px 28px;border-radius:8px;text-decoration:none;letter-spacing:0.01em;">
+Verify Email Address
+</a>
+
+<p style="color:#6b7280;font-size:0.75rem;margin:20px 0 0;">
+Or copy this URL: <a href="{verify_url}" style="color:#6366f1;">{verify_url}</a> <br>
+This link expires in <strong style="color:#ffffff;">24 hours</strong>.<br>
+</p>
+"""
+
     plain = (
         f"Welcome to JobAssist AI!\n\n"
         f"Please verify your email address by visiting the link below:\n"
         f"{verify_url}\n\n"
         f"This link expires in 24 hours.\n\n"
         f"If you didn't sign up, you can safely ignore this email.\n\n"
-        f"Can't find this email? Check your spam or junk folder."
     )
+
     return _send_email(
         to=to,
         subject="Confirm your email address for JobAssist AI",
-        html=_base_template("Confirm your email address", body, preheader="Click to verify and activate your JobAssist AI account."),
+        html=_base_template(
+            "Confirm your email address",
+            body,
+            preheader="Click to verify and activate your JobAssist AI account."
+        ),
         text=plain,
         email_type="verification",
         db=db,
@@ -155,36 +207,38 @@ def send_verification_email(to: str, token: str, db=None, user_id: int = None) -
 
 def send_password_reset_email(to: str, token: str, db=None, user_id: int = None) -> bool:
     reset_url = f"{APP_BASE_URL}/reset-password?token={token}"
+
     body = f"""
-    <p style="color:#8b8b92;font-size:0.9rem;line-height:1.6;margin:0 0 20px;">
-      We received a request to reset your password. Click the button below to set a new one.
-    </p>
-    <a href="{reset_url}"
-       style="display:inline-block;background:#d4942e;color:#fff;font-weight:600;font-size:0.85rem;
-              padding:12px 28px;border-radius:8px;text-decoration:none;letter-spacing:0.01em;">
-      Reset Password
-    </a>
-    <p style="color:#5a5a63;font-size:0.75rem;margin:20px 0 0;">
-      This link expires in <strong style="color:#8b8b92;">1 hour</strong>.<br>
-      If you didn't request this, your account is safe — ignore this email.<br>
-      Or copy this URL: <a href="{reset_url}" style="color:#d4942e;">{reset_url}</a>
-    </p>
-    <p style="color:#5a5a63;font-size:0.72rem;margin:14px 0 0;padding:10px 12px;background:#111117;border-radius:6px;border-left:3px solid #2a2a32;">
-      Can't find this email? Check your <strong style="color:#8b8b92;">spam or junk folder</strong>.
-    </p>
-    """
+<p style="color:#a1a1aa;font-size:0.9rem;line-height:1.6;margin:0 0 20px;">
+We received a request to reset your password. Click the button below to set a new one.
+</p>
+
+<a href="{reset_url}"
+style="display:inline-block;background:#6366f1;color:#ffffff;font-weight:600;font-size:0.85rem;padding:12px 28px;border-radius:8px;text-decoration:none;letter-spacing:0.01em;">
+Reset Password
+</a>
+
+<p style="color:#6b7280;font-size:0.75rem;margin:20px 0 0;">
+Or copy this URL: <a href="{reset_url}" style="color:#6366f1;">{reset_url}</a> <br>
+This link expires in <strong style="color:#ffffff;">1 hour</strong>.<br>
+</p>
+"""
+
     plain = (
         f"Password reset request for JobAssist AI\n\n"
         f"Click the link below to set a new password:\n"
         f"{reset_url}\n\n"
         f"This link expires in 1 hour.\n\n"
-        f"If you didn't request this, your account is safe — you can ignore this email.\n\n"
-        f"Can't find this email? Check your spam or junk folder."
     )
+
     return _send_email(
         to=to,
         subject="Reset your JobAssist AI password",
-        html=_base_template("Password reset request", body, preheader="Reset your JobAssist AI password. Link expires in 1 hour."),
+        html=_base_template(
+            "Password reset request",
+            body,
+            preheader="Reset your JobAssist AI password. Link expires in 1 hour."
+        ),
         text=plain,
         email_type="password_reset",
         db=db,
