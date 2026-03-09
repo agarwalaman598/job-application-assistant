@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
+import { useNavigationGuard } from '../context/NavigationGuardContext';
 import api from '../api';
 import { Save, Plus, X, Loader2, Briefcase, GraduationCap, Globe, BookOpen, Pencil, Trash2, Check, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
-import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ConfirmDialog, UnsavedChangesDialog } from '../components/ConfirmDialog';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState({
@@ -19,25 +20,37 @@ export default function ProfilePage() {
   const [summaryDraft, setSummaryDraft] = useState('');
   const summaryTextareaRef = useRef(null);
 
-  // Unsaved-changes tracking for beforeunload warning
+  // Unsaved-changes tracking
   const cleanProfileRef = useRef(null);
-  const isDirtyRef = useRef(false);
+  const [isDirty, setIsDirty] = useState(false);
 
+  // Block browser tab close / refresh
   useEffect(() => {
     const handler = (e) => {
-      if (isDirtyRef.current) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
+      if (isDirty) { e.preventDefault(); e.returnValue = ''; }
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, []);
+  }, [isDirty]);
 
   useEffect(() => {
     if (cleanProfileRef.current === null) return;
-    isDirtyRef.current = JSON.stringify(profile) !== cleanProfileRef.current;
+    setIsDirty(JSON.stringify(profile) !== cleanProfileRef.current);
   }, [profile]);
+
+  // In-app navigation guard (works with BrowserRouter)
+  const { registerGuard, clearGuard, isBlocked, proceed, cancel } = useNavigationGuard();
+
+  // Keep a ref in sync so the guard closure always reads the latest value
+  const isDirtyRef = useRef(false);
+  useEffect(() => { isDirtyRef.current = isDirty; }, [isDirty]);
+
+  // Register guard once on mount, remove on unmount
+  useEffect(() => {
+    registerGuard(() => isDirtyRef.current);
+    return () => clearGuard();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const closeSummaryModal = () => {
     setSummaryClosing(true);
@@ -64,7 +77,7 @@ export default function ProfilePage() {
       };
       setProfile(p);
       cleanProfileRef.current = JSON.stringify(p);
-      isDirtyRef.current = false;
+      setIsDirty(false);
     }).catch(console.error).finally(() => setLoading(false));
 
     // Load saved answers
@@ -73,19 +86,37 @@ export default function ProfilePage() {
     }).catch(console.error);
   }, []);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (saving) return;
     setSaving(true);
     try {
       await api.put('/profile', profile);
       cleanProfileRef.current = JSON.stringify(profile);
-      isDirtyRef.current = false;
+      setIsDirty(false);
       toast.success('Profile saved successfully!');
     } catch (err) {
       console.error(err);
       toast.error('Failed to save profile. Please try again.');
+      throw err; // re-throw so save-and-leave can detect failure
     } finally { setSaving(false); }
-  };
+  }, [saving, profile]);
+
+  const handleSaveAndLeave = useCallback(async () => {
+    try {
+      await handleSave();
+      clearGuard();
+      proceed();
+    } catch {
+      // save failed — stay on page so user sees the toast
+    }
+  }, [handleSave, clearGuard, proceed]);
+
+  const handleDiscardAndLeave = useCallback(() => {
+    setProfile(JSON.parse(cleanProfileRef.current));
+    setIsDirty(false);
+    clearGuard();
+    proceed();
+  }, [clearGuard, proceed]);
 
   const addSkill = () => {
     if (skillInput.trim() && !profile.skills.includes(skillInput.trim())) {
@@ -161,6 +192,15 @@ export default function ProfilePage() {
   return (
     <div className="px-4 py-6 md:px-8 md:py-8 max-w-3xl mx-auto">
       <Helmet><title>Profile | JobAssist AI</title></Helmet>
+
+      {/* Unsaved-changes navigation guard */}
+      <UnsavedChangesDialog
+        open={isBlocked}
+        onSave={handleSaveAndLeave}
+        onDiscard={handleDiscardAndLeave}
+        onStay={cancel}
+      />
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
         <button onClick={handleSave} disabled={saving}

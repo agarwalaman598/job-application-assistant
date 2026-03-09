@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
+import { NavigationGuardProvider } from './context/NavigationGuardContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Sidebar } from './components/Sidebar';
@@ -60,6 +61,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
+        <NavigationGuardProvider>
         <AuthProvider>
           <Routes>
           {/* Public routes */}
@@ -92,6 +94,7 @@ export default function App() {
           <Route path="*"  element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </AuthProvider>
+        </NavigationGuardProvider>
       </ErrorBoundary>
     </BrowserRouter>
   );

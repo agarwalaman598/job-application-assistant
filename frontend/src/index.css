@@ -74,15 +74,19 @@
 
   * { margin:0; padding:0; box-sizing:border-box; border-color:var(--border); }
 
+  html, body {
+    height: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     background: var(--background);
     color: var(--foreground);
-    min-height: 100vh;
+    min-height: 100%;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.015em;
-    zoom: 1.12;
   }
 
   #root { min-height: 100vh; }

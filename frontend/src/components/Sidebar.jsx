@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useNavigationGuard } from '../context/NavigationGuardContext';
 import {
   LayoutDashboard,
   FileText,
@@ -34,6 +35,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
   const location = useLocation();
   const navigate  = useNavigate();
   const { logout, user } = useAuth();
+  const { requestNavigate } = useNavigationGuard() ?? {};
   const [confirming, setConfirming] = useState(false);
 
   function handleLogout() {
@@ -117,7 +119,16 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
             <Link
               key={href}
               to={href}
-              onClick={onClose}
+              onClick={(e) => {
+                // Same page — nothing to block
+                if (location.pathname === href) { onClose?.(); return; }
+                const blocked = requestNavigate?.(href, navigate);
+                if (blocked) {
+                  e.preventDefault();
+                } else {
+                  onClose?.();
+                }
+              }}
               title={collapsed ? label : undefined}
               className={cn(
                 'relative flex items-center rounded-lg text-sm font-medium transition-all duration-150 select-none',
