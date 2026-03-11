@@ -52,6 +52,36 @@ export default function ProfilePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── Back-button guard ─────────────────────────────────────────────────────
+  // Strategy: push one sentinel history entry when dirty. On popstate (back
+  // pressed), re-push the sentinel so the URL/stack position is restored, then
+  // show the dialog. On confirm-leave, go(-2) skips sentinel + profile entry.
+  const sentinelPushedRef = useRef(false);
+  const [backBlocked, setBackBlocked] = useState(false);
+
+  // Push sentinel the moment the page becomes dirty
+  useEffect(() => {
+    if (isDirty && !sentinelPushedRef.current) {
+      history.pushState({ profileGuard: true }, '', window.location.pathname);
+      sentinelPushedRef.current = true;
+    }
+  }, [isDirty]);
+
+  // popstate = browser back / forward button
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isDirtyRef.current) {
+        // Re-push sentinel so stack always has exactly one sentinel at the top
+        history.pushState({ profileGuard: true }, '', window.location.pathname);
+        setBackBlocked(true);
+      } else {
+        sentinelPushedRef.current = false;
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const closeSummaryModal = () => {
     setSummaryClosing(true);
     setTimeout(() => { setSummaryModalOpen(false); setSummaryClosing(false); }, 185);
@@ -101,6 +131,7 @@ export default function ProfilePage() {
     } finally { setSaving(false); }
   }, [saving, profile]);
 
+  // Sidebar-guard handlers
   const handleSaveAndLeave = useCallback(async () => {
     try {
       await handleSave();
@@ -117,6 +148,33 @@ export default function ProfilePage() {
     clearGuard();
     proceed();
   }, [clearGuard, proceed]);
+
+  // Back-button guard handlers
+  // go(-2): skips the re-pushed sentinel AND the original /profile entry → lands on previous page
+  const handleBackSaveAndLeave = useCallback(async () => {
+    try {
+      await handleSave();
+      setBackBlocked(false);
+      sentinelPushedRef.current = false;
+      clearGuard();
+      history.go(-2);
+    } catch { /* stay — user sees the error toast */ }
+  }, [handleSave, clearGuard]);
+
+  const handleBackDiscard = useCallback(() => {
+    setProfile(JSON.parse(cleanProfileRef.current));
+    setIsDirty(false);
+    setBackBlocked(false);
+    sentinelPushedRef.current = false;
+    clearGuard();
+    history.go(-2);
+  }, [clearGuard]);
+
+  // Unified dialog props — back-button takes priority if both somehow fire
+  const dialogOpen = isBlocked || backBlocked;
+  const dialogHandlers = backBlocked
+    ? { onSave: handleBackSaveAndLeave, onDiscard: handleBackDiscard,    onStay: () => setBackBlocked(false) }
+    : { onSave: handleSaveAndLeave,     onDiscard: handleDiscardAndLeave, onStay: cancel };
 
   const addSkill = () => {
     if (skillInput.trim() && !profile.skills.includes(skillInput.trim())) {
@@ -193,12 +251,12 @@ export default function ProfilePage() {
     <div className="px-4 py-6 md:px-8 md:py-8 max-w-3xl mx-auto">
       <Helmet><title>Profile | JobAssist AI</title></Helmet>
 
-      {/* Unsaved-changes navigation guard */}
+      {/* Unsaved-changes navigation guard (sidebar + back button) */}
       <UnsavedChangesDialog
-        open={isBlocked}
-        onSave={handleSaveAndLeave}
-        onDiscard={handleDiscardAndLeave}
-        onStay={cancel}
+        open={dialogOpen}
+        onSave={dialogHandlers.onSave}
+        onDiscard={dialogHandlers.onDiscard}
+        onStay={dialogHandlers.onStay}
       />
 
       <div className="flex items-center justify-between mb-6">
