@@ -26,20 +26,52 @@ def _detect_platform(url: str) -> str:
     return "generic"
 
 
+# Full browser-like headers to avoid bot detection / 401 from Google
+_BROWSER_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/122.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "identity",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Upgrade-Insecure-Requests": "1",
+}
+
+
 async def detect_fields(url: str) -> dict:
     """Detect form fields by fetching HTML and parsing — no browser needed."""
 
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            resp = await client.get(url, headers=headers, timeout=15)
+            resp = await client.get(url, headers=_BROWSER_HEADERS, timeout=15)
         resp.raise_for_status()
         html = resp.text
         final_url = str(resp.url)  # httpx URL object → string
+    except httpx.HTTPStatusError as e:
+        status = e.response.status_code
+        if status == 401:
+            raise Exception("This form requires a Google account login and cannot be accessed server-side.")
+        elif status == 403:
+            raise Exception("Access to this form is forbidden (403). It may be restricted to specific users.")
+        elif status == 429:
+            raise Exception("Rate limited by the form provider (429). Please try again in a few seconds.")
+        raise Exception(f"Failed to fetch form: HTTP {status}")
     except Exception as e:
         raise Exception(f"Failed to fetch form: {str(e)}")
+
+    # Detect redirect to Google sign-in page — means the form requires a Google account
+    if "accounts.google.com" in final_url or "accounts.google.com" in html[:2000]:
+        raise Exception(
+            "This form requires a Google account to access. "
+            "Only publicly visible forms (no login required) are supported."
+        )
 
     platform = _detect_platform(final_url)
     logger.info(f"[Autofill] Final URL: {final_url}")

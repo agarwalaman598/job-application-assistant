@@ -119,7 +119,15 @@ def analyze_jd(
 
 @router.post("/detect-fields", response_model=DetectFieldsResponse)
 async def detect_form_fields(payload: DetectFieldsRequest, current_user: User = Depends(get_current_user)):
-    result = await detect_fields(payload.url)
+    try:
+        result = await detect_fields(payload.url)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    if not result.get("fields"):
+        raise HTTPException(
+            status_code=422,
+            detail="No form fields detected. The form may require login, use JavaScript rendering, or is not a supported form type (Google Forms, MS Forms, Typeform, JotForm).",
+        )
     return DetectFieldsResponse(**result)
 
 
