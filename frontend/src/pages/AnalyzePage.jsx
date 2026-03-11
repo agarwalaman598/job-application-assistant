@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import api from '../api';
 import MatchScoreGauge from '../components/MatchScoreGauge';
@@ -20,8 +20,31 @@ export default function AnalyzePage() {
   const [jdAnalysis, setJdAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
+  const [displayedAnswer, setDisplayedAnswer] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const typingRef = useRef(null);
   const [genLoading, setGenLoading] = useState(false);
+
+  // Cleanup typing interval on unmount
+  useEffect(() => () => { if (typingRef.current) clearInterval(typingRef.current); }, []);
+
+  const animateAnswer = useCallback((text) => {
+    if (typingRef.current) clearInterval(typingRef.current);
+    setDisplayedAnswer('');
+    setIsTyping(true);
+    // Normalize to ~3 s regardless of answer length (~200 ticks @ 15 ms)
+    const charsPerTick = Math.max(1, Math.ceil(text.length / 200));
+    let pos = 0;
+    typingRef.current = setInterval(() => {
+      pos = Math.min(pos + charsPerTick, text.length);
+      setDisplayedAnswer(text.slice(0, pos));
+      if (pos >= text.length) {
+        clearInterval(typingRef.current);
+        typingRef.current = null;
+        setIsTyping(false);
+      }
+    }, 15);
+  }, []);
   const [alertMsg, setAlertMsg] = useState(null);
 
   const handleAnalyze = async () => {
@@ -29,7 +52,9 @@ export default function AnalyzePage() {
     setLoading(true);
     setMatchResult(null);
     setJdAnalysis(null);
-    setAnswer('');
+    setDisplayedAnswer('');
+    if (typingRef.current) { clearInterval(typingRef.current); typingRef.current = null; }
+    setIsTyping(false);
     try {
       const [matchRes, analyzeRes] = await Promise.all([
         api.post('/ai/match', { job_description: jd }),
@@ -49,7 +74,7 @@ export default function AnalyzePage() {
     setGenLoading(true);
     try {
       const res = await api.post('/ai/generate-answer', { question, job_description: jd });
-      setAnswer(res.data.answer);
+      animateAnswer(res.data.answer);
     } catch (err) { console.error(err); }
     finally { setGenLoading(false); }
   };
@@ -428,17 +453,21 @@ export default function AnalyzePage() {
           <textarea value={question} onChange={(e) => setQuestion(e.target.value)}
             className="input-field mb-3" rows={2}
             placeholder="e.g. Why do you want to work at this company?" />
-          <button onClick={handleGenerate} disabled={genLoading || !question.trim()}
+          <button onClick={handleGenerate} disabled={genLoading || isTyping || !question.trim()}
             className="btn-primary flex items-center gap-2">
             {genLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
             {genLoading ? 'Generating...' : 'Generate'}
           </button>
-          {answer && (
+          {(displayedAnswer || isTyping) && (
             <div style={{
               marginTop: '12px', padding: '14px', borderRadius: '8px',
               background: 'var(--color-surface)', border: '1px solid var(--color-border)',
               fontSize: '0.85rem', lineHeight: '1.6', color: '#ececed',
-            }}>{answer}</div>
+              whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+            }}>
+              {displayedAnswer}
+              {isTyping && <span className="typing-cursor" />}
+            </div>
           )}
         </div>
       )}
