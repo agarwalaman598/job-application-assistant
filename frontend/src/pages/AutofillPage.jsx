@@ -24,6 +24,11 @@ export default function AutofillPage() {
   const [tracking, setTracking] = useState(false);
   const [tracked, setTracked] = useState(false);
 
+  // Derived: only fields with a renderable input type (filters out headings,
+  // display blocks, and any unknown types that slip through the backend).
+  const VALID_TYPES = ['text', 'textarea', 'radio', 'dropdown', 'checkbox', 'date', 'time', 'file', 'email'];
+  const visibleFields = fields.filter(f => VALID_TYPES.includes(f.field_type));
+
   const handleDetect = async () => {
     if (detecting || !url.trim()) return;
     setDetecting(true); setFields([]); setError(''); setResult(null); setMapError(''); setRecalledCount(null);
@@ -47,7 +52,7 @@ export default function AutofillPage() {
   const handleAutoMap = async () => {
     setMapping(true); setMapError(''); setRecalledCount(null);
     try {
-      const fieldData = fields.map(f => ({
+      const fieldData = visibleFields.map(f => ({
         field_id: f.field_id,
         label: f.label,
         field_type: f.field_type,
@@ -79,7 +84,7 @@ export default function AutofillPage() {
       }
 
       // Save filled field values for future auto-mapping
-      const answersToSave = fields
+      const answersToSave = visibleFields
         .filter(f => fieldValues[f.field_id]?.trim())
         .map(f => ({ label: f.label, value: fieldValues[f.field_id] }));
       if (answersToSave.length > 0) {
@@ -178,13 +183,13 @@ export default function AutofillPage() {
       )}
 
       {/* Fields */}
-      {fields.length > 0 && (
+      {visibleFields.length > 0 && (
         <div className="card p-5 mb-5 animate-enter">
           <div className="flex items-center justify-between mb-3">
             <div>
               <label className="section-label">Detected Fields</label>
               <p style={{ fontSize: '0.75rem', color: '#5a5a63', marginTop: '2px' }}>
-                {fields.length} fields · {platform.replace('_', ' ')}
+                {visibleFields.length} fields · {platform.replace('_', ' ')}
               </p>
             </div>
             <button onClick={handleAutoMap} disabled={mapping} className="btn-secondary flex items-center gap-1 text-xs">
@@ -221,7 +226,7 @@ export default function AutofillPage() {
           )}
 
           <div className="flex flex-col gap-3">
-            {fields.map(field => (
+            {visibleFields.map(field => (
               <div key={field.field_id} style={{
                 padding: '10px 12px', borderRadius: '8px',
                 background: 'var(--color-surface)', border: '1px solid var(--color-border)',
@@ -235,35 +240,73 @@ export default function AutofillPage() {
                     fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
                   }}>{field.field_type}</span>
                 </div>
-                {field.field_type === 'radio' || field.field_type === 'dropdown' ? (
+                {field.field_type === 'dropdown' ? (
                   <select value={fieldValues[field.field_id] || ''}
                     onChange={(e) => setFieldValues({ ...fieldValues, [field.field_id]: e.target.value })}
                     className="input-field w-full" style={{ maxWidth: '100%' }}>
                     <option value="">-- Select --</option>
                     {field.options?.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
                   </select>
+                ) : field.field_type === 'radio' ? (
+                  field.options?.length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {field.options.map((opt, i) => {
+                        const selected = fieldValues[field.field_id] === opt;
+                        return (
+                          <label key={i} className="flex items-center gap-1.5" style={{
+                            fontSize: '0.8rem', cursor: 'pointer', padding: '4px 10px',
+                            borderRadius: '6px', border: '1px solid var(--color-border)',
+                            background: selected ? 'rgba(244,244,245,0.08)' : 'var(--color-surface)',
+                            color: selected ? 'var(--foreground)' : '#8b8b92',
+                            maxWidth: '100%', wordBreak: 'break-word',
+                            transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+                            borderColor: selected ? '#3a3a3a' : 'var(--color-border)',
+                          }}>
+                            <input type="radio"
+                              name={field.field_id}
+                              checked={selected}
+                              onChange={() => setFieldValues({ ...fieldValues, [field.field_id]: opt })}
+                              style={{ accentColor: 'var(--foreground)', flexShrink: 0 }} />
+                            {opt}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <input value={fieldValues[field.field_id] || ''}
+                      onChange={(e) => setFieldValues({ ...fieldValues, [field.field_id]: e.target.value })}
+                      className="input-field w-full" placeholder={`Value for ${field.label}`}
+                      style={{ maxWidth: '100%' }} />
+                  )
                 ) : field.field_type === 'checkbox' ? (
-                  <div className="flex flex-wrap gap-2">
-                    {field.options?.map((opt, i) => {
-                      const selected = (fieldValues[field.field_id] || '').split(', ').includes(opt);
-                      return (
-                        <label key={i} className="flex items-center gap-1.5" style={{
-                          fontSize: '0.8rem', cursor: 'pointer', padding: '4px 8px',
-                          borderRadius: '6px', border: '1px solid var(--color-border)',
-                          background: selected ? 'rgba(212,148,46,0.15)' : 'var(--color-surface)',
-                          color: selected ? 'var(--color-primary)' : '#8b8b92',
-                          maxWidth: '100%', wordBreak: 'break-word',
-                        }}>
-                          <input type="checkbox" checked={selected} onChange={() => {
-                            const current = fieldValues[field.field_id] ? fieldValues[field.field_id].split(', ').filter(Boolean) : [];
-                            const next = selected ? current.filter(v => v !== opt) : [...current, opt];
-                            setFieldValues({ ...fieldValues, [field.field_id]: next.join(', ') });
-                          }} style={{ accentColor: 'var(--color-primary)', flexShrink: 0 }} />
-                          {opt}
-                        </label>
-                      );
-                    })}
-                  </div>
+                  field.options?.length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {field.options.map((opt, i) => {
+                        const selected = (fieldValues[field.field_id] || '').split(', ').includes(opt);
+                        return (
+                          <label key={i} className="flex items-center gap-1.5" style={{
+                            fontSize: '0.8rem', cursor: 'pointer', padding: '4px 8px',
+                            borderRadius: '6px', border: '1px solid var(--color-border)',
+                            background: selected ? 'rgba(212,148,46,0.15)' : 'var(--color-surface)',
+                            color: selected ? 'var(--color-primary)' : '#8b8b92',
+                            maxWidth: '100%', wordBreak: 'break-word',
+                          }}>
+                            <input type="checkbox" checked={selected} onChange={() => {
+                              const current = fieldValues[field.field_id] ? fieldValues[field.field_id].split(', ').filter(Boolean) : [];
+                              const next = selected ? current.filter(v => v !== opt) : [...current, opt];
+                              setFieldValues({ ...fieldValues, [field.field_id]: next.join(', ') });
+                            }} style={{ accentColor: 'var(--color-primary)', flexShrink: 0 }} />
+                            {opt}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <input value={fieldValues[field.field_id] || ''}
+                      onChange={(e) => setFieldValues({ ...fieldValues, [field.field_id]: e.target.value })}
+                      className="input-field w-full" placeholder={`Value for ${field.label}`}
+                      style={{ maxWidth: '100%' }} />
+                  )
                 ) : field.field_type === 'date' ? (
                   <input type="date" value={fieldValues[field.field_id] || ''}
                     onChange={(e) => setFieldValues({ ...fieldValues, [field.field_id]: e.target.value })}

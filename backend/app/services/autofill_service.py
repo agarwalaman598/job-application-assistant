@@ -106,8 +106,52 @@ def _parse_google_forms(html: str) -> list:
                     type_map = {
                         0: "text", 1: "textarea", 2: "radio",
                         3: "dropdown", 4: "checkbox", 5: "radio",
-                        7: "grid", 9: "date", 10: "time",
+                        9: "date", 10: "time",
                     }
+
+                    # Skip unknown type codes (images, videos, descriptions, etc.)
+                    # Only type 7 (grid) is handled separately below.
+                    if q_type not in type_map and q_type != 7:
+                        continue
+
+                    # ── Grid questions (type 7) ────────────────────────────────
+                    # Each row in the grid is a separate entry with its own
+                    # entry_id. Column options are shared across all rows.
+                    if q_type == 7:
+                        # Column labels live in item[4][0][1]
+                        col_options = []
+                        if (
+                            isinstance(item[4][0], list)
+                            and len(item[4][0]) > 1
+                            and isinstance(item[4][0][1], list)
+                        ):
+                            for opt in item[4][0][1]:
+                                if isinstance(opt, list) and len(opt) > 0:
+                                    col_options.append(str(opt[0]))
+
+                        for row_idx, entry in enumerate(item[4]):
+                            if not isinstance(entry, list) or len(entry) == 0:
+                                continue
+                            row_entry_id = entry[0]
+                            # Row label is stored in entry[3][0] when present
+                            try:
+                                row_label = str(entry[3][0]) if (
+                                    len(entry) > 3
+                                    and isinstance(entry[3], list)
+                                    and len(entry[3]) > 0
+                                ) else f"Row {row_idx + 1}"
+                            except (IndexError, TypeError):
+                                row_label = f"Row {row_idx + 1}"
+                            row_required = bool(entry[2]) if len(entry) > 2 and entry[2] is not None else False
+                            fields.append({
+                                "field_id": f"entry.{row_entry_id}" if row_entry_id else f"field_{i}_row{row_idx}",
+                                "label": f"{label} – {row_label}",
+                                "field_type": "radio",
+                                "required": row_required,
+                                "options": col_options,
+                            })
+                        continue  # skip the generic append below
+
                     field_type = type_map.get(q_type, "text")
 
                     # Extract entry ID from item[4][0][0] — used for pre-filled URLs
@@ -115,19 +159,27 @@ def _parse_google_forms(html: str) -> list:
                     if isinstance(item[4][0], list) and len(item[4][0]) > 0:
                         entry_id = item[4][0][0]
 
-                    # Extract options from item[4][0][1]
+                    # Title/description blocks (e.g. "Before we start…") have the
+                    # same type code as text questions but carry no entry_id because
+                    # they are display-only and cannot be submitted.  Skip them.
+                    if not entry_id:
+                        continue
+
+                    # Extract options from item[4][0][1] (first entry only for non-grid)
                     options = []
-                    for entry in item[4]:
-                        if isinstance(entry, list) and len(entry) > 1 and isinstance(entry[1], list):
-                            for opt in entry[1]:
-                                if isinstance(opt, list) and len(opt) > 0:
-                                    options.append(str(opt[0]))
+                    if (
+                        isinstance(item[4][0], list)
+                        and len(item[4][0]) > 1
+                        and isinstance(item[4][0][1], list)
+                    ):
+                        for opt in item[4][0][1]:
+                            if isinstance(opt, list) and len(opt) > 0:
+                                options.append(str(opt[0]))
 
                     # Check required flag
                     required = False
-                    for entry in item[4]:
-                        if isinstance(entry, list) and len(entry) > 2:
-                            required = bool(entry[2]) if entry[2] is not None else False
+                    if isinstance(item[4][0], list) and len(item[4][0]) > 2:
+                        required = bool(item[4][0][2]) if item[4][0][2] is not None else False
 
                     fields.append({
                         "field_id": f"entry.{entry_id}" if entry_id else f"field_{i}",
@@ -162,6 +214,20 @@ def _parse_ms_forms(html: str) -> list:
     """Parse Microsoft Forms fields from HTML."""
     fields = []
 
+    # Normalize raw MS Forms type strings to our standard field types
+    _MS_TYPE_MAP = {
+        "text": "text", "textarea": "textarea", "longtext": "textarea",
+        "choice": "radio", "multiselectchoice": "checkbox",
+        "dropdown": "dropdown", "multichoice": "checkbox",
+        "checkbox": "checkbox", "date": "date", "datetime": "date",
+        "time": "time", "rating": "radio", "nps": "radio",
+        "ranking": "radio", "file": "file", "email": "email",
+        "number": "text",
+    }
+    # Non-input display types that carry no submittable value
+    _NON_INPUT = {"section", "heading", "description", "pagebreak",
+                  "image", "imageupload", "video", "statement"}
+
     data_match = re.search(r'__FORM_DATA__\s*=\s*({[\s\S]*?});\s*</', html)
     if not data_match:
         data_match = re.search(r'"questions"\s*:\s*(\[[\s\S]*?\])', html)
@@ -171,10 +237,14 @@ def _parse_ms_forms(html: str) -> list:
             data = json.loads(data_match.group(1))
             questions = data if isinstance(data, list) else data.get("questions", [])
             for i, q in enumerate(questions):
+                raw_type = q.get("type", "text").lower()
+                if raw_type in _NON_INPUT:
+                    continue
+                field_type = _MS_TYPE_MAP.get(raw_type, "text")
                 fields.append({
                     "field_id": f"field_{i}",
                     "label": q.get("title", q.get("questionText", f"Question {i+1}")),
-                    "field_type": q.get("type", "text"),
+                    "field_type": field_type,
                     "required": q.get("required", False),
                     "options": [o.get("text", "") for o in q.get("choices", [])],
                 })
@@ -226,6 +296,10 @@ def _parse_generic_form(html: str) -> list:
             field_type = "email"
         elif inp_type == "file":
             field_type = "file"
+        elif inp_type == "radio":
+            field_type = "radio"
+        elif inp_type == "checkbox":
+            field_type = "checkbox"
 
         fields.append({
             "field_id": name,
