@@ -22,8 +22,8 @@
 
 <br/>
 
-[![GitHub Stars](https://img.shields.io/github/stars/agarwalaman598/job-application-assistant?style=social)](https://github.com/agarwalaman598/job-application-assistant/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/agarwalaman598/job-application-assistant?style=social)](https://github.com/agarwalaman598/job-application-assistant/network/members)
+[![GitHub Stars](https://img.shields.io/github/stars/agarwalaman598/job-application-assistant?style=flat-square)](https://github.com/agarwalaman598/job-application-assistant/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/agarwalaman598/job-application-assistant?style=flat-square)](https://github.com/agarwalaman598/job-application-assistant/network/members)
 [![GitHub Issues](https://img.shields.io/github/issues/agarwalaman598/job-application-assistant)](https://github.com/agarwalaman598/job-application-assistant/issues)
 
 <br/>
