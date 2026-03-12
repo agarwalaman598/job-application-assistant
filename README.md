@@ -154,21 +154,21 @@ Generates a pre-filled URL for Google Forms natively.
 flowchart TD
     User([fa:fa-user User Browser])
 
-    User -->|HTTPS| Frontend[React 19 + Vite\nVercel]
+    User -->|HTTPS| Frontend[React 19 + Vite<br/>Vercel]
 
-    Frontend -->|REST + JWT Cookie| Backend[FastAPI\nRender]
+    Frontend -->|REST + JWT Cookie| Backend[FastAPI<br/>Render]
 
-    Backend --> Auth[JWT Auth\nbcrypt + python-jose]
-    Backend --> DB[(PostgreSQL\nNeon Cloud)]
-    Backend --> Storage[(Cloudflare R2\nResume PDFs)]
-    Backend --> LLM[Groq / OpenAI\nLlama-3.3-70b]
-    Backend --> Email[Resend\nTransactional Email]
-    Backend --> Scheduler[APScheduler\nBackground Jobs]
+    Backend --> Auth[JWT Auth<br/>bcrypt + python-jose]
+    Backend --> DB[(PostgreSQL<br/>Neon Cloud)]
+    Backend --> Storage[(Cloudflare R2<br/>Resume PDFs)]
+    Backend --> LLM[Groq / OpenAI<br/>Llama-3.3-70b]
+    Backend --> Email[Resend<br/>Transactional Email]
+    Backend --> Scheduler[APScheduler<br/>Background Jobs]
 
     Storage --> Resumes[Resume Files]
-    DB --> AppData[Applications · Profiles\nQ&A Pairs · Email Logs]
-    LLM --> AIFeatures[Match Scoring · JD Analysis\nAnswer Gen · Form Mapping]
-    Scheduler --> Cleanup[Purge Unverified\nAccounts Every 24h]
+    DB --> AppData[Applications · Profiles<br/>Q&A Pairs · Email Logs]
+    LLM --> AIFeatures[Match Scoring · JD Analysis<br/>Answer Gen · Form Mapping]
+    Scheduler --> Cleanup[Purge Unverified<br/>Accounts Every 24h]
 ```
 
 ---
