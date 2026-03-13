@@ -2,19 +2,34 @@ import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api';
-import { KeyRound, Loader2, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { KeyRound, Loader2, CheckCircle, Eye } from 'lucide-react';
 
 export default function ResetPasswordPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [showPw, setShowPw] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
 
   const token = params.get('token') || '';
+
+  const holdShowHandlers = (setter) => ({
+    onPointerDown: () => setter(true),
+    onPointerUp: () => setter(false),
+    onPointerLeave: () => setter(false),
+    onPointerCancel: () => setter(false),
+    onBlur: () => setter(false),
+    onKeyDown: (e) => {
+      if (e.key === ' ' || e.key === 'Enter') setter(true);
+    },
+    onKeyUp: (e) => {
+      if (e.key === ' ' || e.key === 'Enter') setter(false);
+    },
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,17 +74,29 @@ export default function ResetPasswordPage() {
             <form onSubmit={handleSubmit}>
               <label style={{ display: 'block', fontSize: '0.75rem', color: '#8b8b92', marginBottom: '4px' }}>New Password</label>
               <div style={{ position: 'relative', marginBottom: '12px' }}>
-                <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
                   className="input-field" placeholder="New password" required style={{ paddingRight: '40px', width: '100%', boxSizing: 'border-box' }} />
-                <button type="button" onClick={() => setShowPw(!showPw)}
-                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#5a5a63' }}>
-                  {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                <button type="button"
+                  aria-label="Hold to show password"
+                  title="Hold to show password"
+                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#5a5a63', padding: 0, display: 'flex', alignItems: 'center' }}
+                  {...holdShowHandlers(setShowPassword)}>
+                  <Eye size={14} />
                 </button>
               </div>
 
               <label style={{ display: 'block', fontSize: '0.75rem', color: '#8b8b92', marginBottom: '4px' }}>Confirm Password</label>
-              <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
-                className="input-field" placeholder="Confirm new password" required style={{ marginBottom: '12px', width: '100%', boxSizing: 'border-box' }} />
+              <div style={{ position: 'relative', marginBottom: '12px' }}>
+                <input type={showConfirmPassword ? 'text' : 'password'} value={confirm} onChange={e => setConfirm(e.target.value)}
+                  className="input-field" placeholder="Confirm new password" required style={{ width: '100%', boxSizing: 'border-box', paddingRight: '40px' }} />
+                <button type="button"
+                  aria-label="Hold to show confirm password"
+                  title="Hold to show confirm password"
+                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#5a5a63', padding: 0, display: 'flex', alignItems: 'center' }}
+                  {...holdShowHandlers(setShowConfirmPassword)}>
+                  <Eye size={14} />
+                </button>
+              </div>
 
               {error && <p style={{ color: '#d94f4f', fontSize: '0.78rem', marginBottom: '10px' }}>{error}</p>}
 

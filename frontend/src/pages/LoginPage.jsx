@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Eye } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
   const [message, setMessage]   = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [resending, setResending] = useState(false);
   const { login }  = useAuth();
@@ -135,19 +137,44 @@ export default function LoginPage() {
                 Forgot password?
               </Link>
             </div>
-            <input
-              type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••" required
-              style={{
-                width: '100%', padding: '10px 16px',
-                background: 'var(--input)', border: '1px solid var(--border)',
-                borderRadius: '9999px', color: 'var(--foreground)',
-                fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit',
-                boxSizing: 'border-box',
-              }}
-              onFocus={e => e.target.style.borderColor = 'var(--primary)'}
-              onBlur={e => e.target.style.borderColor = 'var(--border)'}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••" required
+                style={{
+                  width: '100%', padding: '10px 42px 10px 16px',
+                  background: 'var(--input)', border: '1px solid var(--border)',
+                  borderRadius: '9999px', color: 'var(--foreground)',
+                  fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+                onBlur={e => e.target.style.borderColor = 'var(--border)'}
+              />
+              <button
+                type="button"
+                aria-label="Hold to show password"
+                title="Hold to show password"
+                style={{
+                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)',
+                  padding: 0, display: 'flex', alignItems: 'center',
+                }}
+                onPointerDown={() => setShowPassword(true)}
+                onPointerUp={() => setShowPassword(false)}
+                onPointerLeave={() => setShowPassword(false)}
+                onPointerCancel={() => setShowPassword(false)}
+                onBlur={() => setShowPassword(false)}
+                onKeyDown={(e) => {
+                  if (e.key === ' ' || e.key === 'Enter') setShowPassword(true);
+                }}
+                onKeyUp={(e) => {
+                  if (e.key === ' ' || e.key === 'Enter') setShowPassword(false);
+                }}
+              >
+                <Eye size={15} />
+              </button>
+            </div>
           </div>
 
           {/* Submit */}

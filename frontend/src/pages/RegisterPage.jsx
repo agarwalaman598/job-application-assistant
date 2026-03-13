@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mail } from 'lucide-react';
+import { Eye, Mail } from 'lucide-react';
 
 const INPUT_STYLE = {
   width: '100%', padding: '10px 16px',
@@ -22,6 +22,8 @@ export default function RegisterPage() {
   const [email, setEmail]             = useState('');
   const [password, setPassword]       = useState('');
   const [confirmPwd, setConfirmPwd]   = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError]             = useState('');
   const [loading, setLoading]         = useState(false);
   const [registered, setRegistered]   = useState(false);
@@ -44,6 +46,20 @@ export default function RegisterPage() {
 
   const focus = (e) => { e.target.style.borderColor = 'var(--primary)'; };
   const blur  = (e) => { e.target.style.borderColor = 'var(--border)'; };
+
+  const holdShowHandlers = (setter) => ({
+    onPointerDown: () => setter(true),
+    onPointerUp: () => setter(false),
+    onPointerLeave: () => setter(false),
+    onPointerCancel: () => setter(false),
+    onBlur: () => setter(false),
+    onKeyDown: (e) => {
+      if (e.key === ' ' || e.key === 'Enter') setter(true);
+    },
+    onKeyUp: (e) => {
+      if (e.key === ' ' || e.key === 'Enter') setter(false);
+    },
+  });
 
   // ── Post-registration screen ──────────────────────────────────────────────
   if (registered) {
@@ -141,8 +157,24 @@ export default function RegisterPage() {
 
           <div style={{ marginBottom: '1rem' }}>
             <label style={LABEL_STYLE}>Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••" required minLength={8} style={INPUT_STYLE} onFocus={focus} onBlur={blur} />
+            <div style={{ position: 'relative' }}>
+              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••" required minLength={8}
+                style={{ ...INPUT_STYLE, paddingRight: '42px' }} onFocus={focus} onBlur={blur} />
+              <button
+                type="button"
+                aria-label="Hold to show password"
+                title="Hold to show password"
+                style={{
+                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)',
+                  padding: 0, display: 'flex', alignItems: 'center',
+                }}
+                {...holdShowHandlers(setShowPassword)}
+              >
+                <Eye size={15} />
+              </button>
+            </div>
             <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: '0.35rem', paddingLeft: '6px' }}>
               Must be at least 8 characters
             </p>
@@ -150,8 +182,24 @@ export default function RegisterPage() {
 
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={LABEL_STYLE}>Confirm Password</label>
-            <input type="password" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)}
-              placeholder="••••••••" required style={INPUT_STYLE} onFocus={focus} onBlur={blur} />
+            <div style={{ position: 'relative' }}>
+              <input type={showConfirmPassword ? 'text' : 'password'} value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)}
+                placeholder="••••••••" required
+                style={{ ...INPUT_STYLE, paddingRight: '42px' }} onFocus={focus} onBlur={blur} />
+              <button
+                type="button"
+                aria-label="Hold to show confirm password"
+                title="Hold to show confirm password"
+                style={{
+                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)',
+                  padding: 0, display: 'flex', alignItems: 'center',
+                }}
+                {...holdShowHandlers(setShowConfirmPassword)}
+              >
+                <Eye size={15} />
+              </button>
+            </div>
           </div>
 
           <button type="submit" disabled={loading} style={{
