@@ -6,6 +6,7 @@ import { Plus, Edit2, Trash2, X, Loader2, Briefcase, ExternalLink, Search, Arrow
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 import { StatusBadge } from '../components/StatusBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
@@ -301,7 +302,8 @@ export default function ApplicationsPage() {
               </div>
               <div>
                 <Label htmlFor="m-url">Job URL</Label>
-                <Input id="m-url" type="url" placeholder="https://..." value={form.url}
+                <Textarea id="m-url" placeholder="https://..." value={form.url}
+                  minRows={1} maxRows={4} expandOnFocusRows={2} singleLine
                   onChange={e => setForm(f => ({ ...f, url: e.target.value }))} />
               </div>
               <div>
@@ -316,8 +318,8 @@ export default function ApplicationsPage() {
               </div>
               <div>
                 <Label htmlFor="m-notes">Notes</Label>
-                <textarea id="m-notes" value={form.notes} rows={2} placeholder="Optional notes…"
-                  className="input-field resize-none"
+                <Textarea id="m-notes" value={form.notes} minRows={2} maxRows={10} placeholder="Optional notes..."
+                  className="input-field"
                   onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
               </div>
             </div>

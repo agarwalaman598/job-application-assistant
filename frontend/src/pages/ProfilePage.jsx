@@ -5,6 +5,7 @@ import { useNavigationGuard } from '../context/NavigationGuardContext';
 import api from '../api';
 import { Save, Plus, X, Loader2, Briefcase, GraduationCap, Globe, BookOpen, Pencil, Trash2, Check, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
 import { ConfirmDialog, UnsavedChangesDialog } from '../components/ConfirmDialog';
+import { Textarea } from '../components/ui/textarea';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState({
@@ -305,18 +306,19 @@ export default function ProfilePage() {
 
             {/* Textarea */}
             <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', flex: 1 }}>
-              <textarea
+              <Textarea
                 ref={summaryTextareaRef}
                 value={summaryDraft}
                 onChange={e => setSummaryDraft(e.target.value)}
                 placeholder="Describe your professional background, key skills, and career goals..."
-                rows={10}
+                minRows={10}
+                maxRows={20}
                 style={{
                   width: '100%', boxSizing: 'border-box',
                   background: '#0e0e0e', border: '1px solid #2a2a2a', borderRadius: 10,
                   color: 'var(--foreground)', fontSize: '0.875rem', fontFamily: 'inherit',
                   lineHeight: 1.7, padding: '0.875rem 1rem',
-                  resize: 'vertical', outline: 'none',
+                  outline: 'none',
                   letterSpacing: '-0.01em',
                 }}
                 onFocus={e => e.target.style.borderColor = '#4a4a5a'}
@@ -436,8 +438,21 @@ export default function ProfilePage() {
           ].map(f => (
             <div key={f.key}>
               <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--muted-foreground)', marginBottom: '3px' }}>{f.label}</label>
-              <input value={profile[f.key]} onChange={(e) => setProfile({ ...profile, [f.key]: e.target.value })}
-                className="input-field" placeholder={f.ph} />
+              {f.key === 'phone' ? (
+                <input value={profile[f.key]} onChange={(e) => setProfile({ ...profile, [f.key]: e.target.value })}
+                  className="input-field" placeholder={f.ph} />
+              ) : (
+                <Textarea
+                  value={profile[f.key]}
+                  onChange={(e) => setProfile({ ...profile, [f.key]: e.target.value })}
+                  className="input-field"
+                  placeholder={f.ph}
+                  minRows={1}
+                  maxRows={4}
+                  expandOnFocusRows={2}
+                  singleLine
+                />
+              )}
             </div>
           ))}
         </div>
@@ -503,8 +518,8 @@ export default function ProfilePage() {
             </div>
             <input value={exp.duration} onChange={(e) => updateExperience(i, 'duration', e.target.value)}
               className="input-field" placeholder="Duration (e.g. Jan 2023 - Present)" style={{ marginBottom: '6px' }} />
-            <textarea value={exp.description} onChange={(e) => updateExperience(i, 'description', e.target.value)}
-              className="input-field" rows={2} placeholder="Description" />
+            <Textarea value={exp.description} onChange={(e) => updateExperience(i, 'description', e.target.value)}
+              className="input-field" minRows={2} maxRows={10} placeholder="Description" />
           </div>
         ))}
       </div>

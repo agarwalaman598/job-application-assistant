@@ -4,6 +4,7 @@ import api from '../api';
 import MatchScoreGauge from '../components/MatchScoreGauge';
 import { Search, CheckCircle, XCircle, Loader2, FileText, MessageSquare, Sparkles, FileCheck, Maximize2, X, Check, Target, Lightbulb, Hash } from 'lucide-react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Textarea } from '../components/ui/textarea';
 
 export default function AnalyzePage() {
   const [jd, setJd] = useState('');
@@ -126,18 +127,19 @@ export default function AnalyzePage() {
 
             {/* Textarea */}
             <div style={{ padding: '1.25rem 1.5rem' }}>
-              <textarea
+              <Textarea
                 ref={jdTextareaRef}
                 value={jdDraft}
                 onChange={e => setJdDraft(e.target.value)}
                 placeholder="Paste the full job description here..."
-                rows={14}
+                minRows={14}
+                maxRows={24}
                 style={{
                   width: '100%', boxSizing: 'border-box',
                   background: '#0e0e0e', border: '1px solid #2a2a2a', borderRadius: 10,
                   color: 'var(--foreground)', fontSize: '0.875rem', fontFamily: 'inherit',
                   lineHeight: 1.7, padding: '0.875rem 1rem',
-                  resize: 'vertical', outline: 'none', letterSpacing: '-0.01em',
+                  outline: 'none', letterSpacing: '-0.01em',
                 }}
                 onFocus={e => e.target.style.borderColor = '#4a4a5a'}
                 onBlur={e => e.target.style.borderColor = '#2a2a2a'}
@@ -193,8 +195,8 @@ export default function AnalyzePage() {
         </div>
 
         {/* Inline textarea (still usable directly) */}
-        <textarea value={jd} onChange={e => setJd(e.target.value)}
-          className="input-field" rows={5}
+        <Textarea value={jd} onChange={e => setJd(e.target.value)}
+          className="input-field" minRows={5} maxRows={18}
           placeholder="Paste the job description here, or click Expand for a larger editor..." />
 
         <button onClick={handleAnalyze} disabled={loading || !jd.trim()}
@@ -450,8 +452,8 @@ export default function AnalyzePage() {
             <MessageSquare size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
             AI Answer Generator
           </label>
-          <textarea value={question} onChange={(e) => setQuestion(e.target.value)}
-            className="input-field mb-3" rows={2}
+          <Textarea value={question} onChange={(e) => setQuestion(e.target.value)}
+            className="input-field mb-3" minRows={2} maxRows={10}
             placeholder="e.g. Why do you want to work at this company?" />
           <button onClick={handleGenerate} disabled={genLoading || isTyping || !question.trim()}
             className="btn-primary flex items-center gap-2">

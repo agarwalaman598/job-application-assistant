@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import api from '../api';
 import { Wand2, Link2, Loader2, CheckCircle, AlertCircle, Zap, BriefcaseBusiness, X } from 'lucide-react';
+import { Textarea } from '../components/ui/textarea';
 
 const PLATFORMS = [
   { name: 'Google Forms', color: '#4285f4' },
@@ -152,8 +153,9 @@ export default function AutofillPage() {
           Form URL
         </label>
         <div className="flex gap-2">
-          <input value={url} onChange={(e) => setUrl(e.target.value)}
-            className="input-field flex-1" placeholder="https://docs.google.com/forms/..." />
+          <Textarea value={url} onChange={(e) => setUrl(e.target.value)}
+            className="input-field flex-1" placeholder="https://docs.google.com/forms/..."
+            minRows={1} maxRows={4} expandOnFocusRows={2} singleLine />
           <button onClick={handleDetect} disabled={detecting || !url.trim()}
             className="btn-primary flex items-center gap-2">
             {detecting ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
@@ -318,10 +320,10 @@ export default function AutofillPage() {
                 ) : field.field_type === 'file' ? (
                   <p style={{ fontSize: '0.75rem', color: '#5a5a63' }}>File uploads must be done manually</p>
                 ) : field.field_type === 'textarea' ? (
-                  <textarea value={fieldValues[field.field_id] || ''}
+                  <Textarea value={fieldValues[field.field_id] || ''}
                     onChange={(e) => setFieldValues({ ...fieldValues, [field.field_id]: e.target.value })}
-                    className="input-field w-full" rows={3} placeholder={`Value for ${field.label}`}
-                    style={{ maxWidth: '100%', resize: 'vertical' }} />
+                    className="input-field w-full" minRows={3} maxRows={12} placeholder={`Value for ${field.label}`}
+                    style={{ maxWidth: '100%' }} />
                 ) : (
                   <input value={fieldValues[field.field_id] || ''}
                     onChange={(e) => setFieldValues({ ...fieldValues, [field.field_id]: e.target.value })}
