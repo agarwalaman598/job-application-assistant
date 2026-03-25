@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Live Demo](https://img.shields.io/badge/🚀%20Live%20Demo-job--application--assistant--amber.vercel.app-4F46E5?style=for-the-badge)](https://job-application-assistant-amber.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/🚀%20Live%20Demo-jobassistai.amanlabs.dev-4F46E5?style=for-the-badge)](https://jobassistai.amanlabs.dev)
 [![License](https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge)](LICENSE)
 
 <br/>
