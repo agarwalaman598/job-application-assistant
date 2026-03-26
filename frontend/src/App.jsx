@@ -17,6 +17,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ApplicationsPage from './pages/ApplicationsPage';
+import ContactsPage from './pages/ContactsPage';
 import './index.css';
 
 function AppLayout({ children }) {
@@ -77,6 +78,9 @@ export default function App() {
           } />
           <Route path="/applications" element={
             <ProtectedRoute><AppLayout><ApplicationsPage /></AppLayout></ProtectedRoute>
+          } />
+          <Route path="/contacts" element={
+            <ProtectedRoute><AppLayout><ContactsPage /></AppLayout></ProtectedRoute>
           } />
           <Route path="/profile" element={
             <ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>

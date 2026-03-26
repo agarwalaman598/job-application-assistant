@@ -15,7 +15,7 @@ from starlette.responses import JSONResponse as _JSONResponse
 
 from app.database import engine, Base, SessionLocal, get_db
 from app.rate_limit import limiter
-from app.routers import auth_router, profile_router, resume_router, application_router, ai_router
+from app.routers import auth_router, profile_router, resume_router, application_router, ai_router, contact_router
 from app.routers.auth_email_router import router as auth_email_router
 
 logger = logging.getLogger(__name__)
@@ -121,6 +121,7 @@ app.include_router(auth_email_router)          # email verification + password r
 app.include_router(profile_router.router)
 app.include_router(resume_router.router)
 app.include_router(application_router.router)
+app.include_router(contact_router.router)
 app.include_router(ai_router.router)
 
 

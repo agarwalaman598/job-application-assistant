@@ -25,6 +25,7 @@ class User(Base):
     profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     resumes = relationship("Resume", back_populates="user", cascade="all, delete-orphan")
     applications = relationship("Application", back_populates="user", cascade="all, delete-orphan")
+    contacts = relationship("Contact", back_populates="user", cascade="all, delete-orphan")
     qa_pairs = relationship("QAPair", back_populates="user", cascade="all, delete-orphan")
     email_logs = relationship("EmailLog", back_populates="user", cascade="all, delete-orphan")
 
@@ -83,11 +84,54 @@ class Application(Base):
 
     user = relationship("User", back_populates="applications")
     resume = relationship("Resume", back_populates="applications")
+    contacts = relationship("Contact", secondary="contact_applications", back_populates="applications")
 
     __table_args__ = (
         Index("ix_applications_user_id", "user_id"),
         Index("ix_applications_resume_id", "user_id", "resume_id"),
         Index("ix_applications_status", "user_id", "status"),
+    )
+
+
+class Contact(Base):
+    __tablename__ = "contacts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    full_name = Column(String(255), nullable=False)
+    contact_type = Column(String(50), nullable=False, default="recruiter")
+    company = Column(String(255), default="")
+    email = Column(String(255), default="")
+    phone = Column(String(50), default="")
+    linkedin = Column(String(500), default="")
+    notes = Column(Text, default="")
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.datetime.now(datetime.timezone.utc),
+        onupdate=lambda: datetime.datetime.now(datetime.timezone.utc),
+    )
+
+    user = relationship("User", back_populates="contacts")
+    applications = relationship("Application", secondary="contact_applications", back_populates="contacts")
+
+    __table_args__ = (
+        Index("ix_contacts_user_id", "user_id"),
+        Index("ix_contacts_type", "user_id", "contact_type"),
+        Index("ix_contacts_company", "user_id", "company"),
+    )
+
+
+class ContactApplication(Base):
+    __tablename__ = "contact_applications"
+
+    contact_id = Column(Integer, ForeignKey("contacts.id"), primary_key=True)
+    application_id = Column(Integer, ForeignKey("applications.id"), primary_key=True)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+    __table_args__ = (
+        Index("ix_contact_applications_contact_id", "contact_id"),
+        Index("ix_contact_applications_application_id", "application_id"),
     )
 
 

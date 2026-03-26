@@ -172,6 +172,7 @@ class ResumeOut(BaseModel):
 
 # ── Application ──────────────────────────────────────
 VALID_STATUSES = {"draft", "applied", "interview", "offer", "rejected"}
+VALID_CONTACT_TYPES = {"hr", "recruiter", "interviewer", "referral", "other"}
 
 
 class ApplicationCreate(BaseModel):
@@ -249,6 +250,114 @@ class ApplicationOut(BaseModel):
             'match_score': v.match_score,
             'applied_at': v.applied_at,
             'notes': v.notes,
+        }
+
+    class Config:
+        from_attributes = True
+
+
+# ── Contacts ─────────────────────────────────────────
+class ContactApplicationRef(BaseModel):
+    id: int
+    company: str
+    position: str
+    status: str
+
+
+class ContactCreate(BaseModel):
+    full_name: str
+    contact_type: str = "recruiter"
+    company: Optional[str] = ""
+    email: Optional[str] = ""
+    phone: Optional[str] = ""
+    linkedin: Optional[str] = ""
+    notes: Optional[str] = ""
+    application_ids: Optional[List[int]] = []
+
+    @field_validator('full_name', 'company', 'email', 'phone', 'linkedin', 'notes', mode='before')
+    @classmethod
+    def _sanitize(cls, v):
+        return sanitize_text(v) if isinstance(v, str) else v
+
+    @field_validator('contact_type', mode='before')
+    @classmethod
+    def _validate_type(cls, v):
+        if not v:
+            return "recruiter"
+        clean = sanitize_text(v).lower()
+        if clean not in VALID_CONTACT_TYPES:
+            raise ValueError(f"Invalid contact_type. Must be one of: {', '.join(sorted(VALID_CONTACT_TYPES))}")
+        return clean
+
+
+class ContactUpdate(BaseModel):
+    full_name: Optional[str] = None
+    contact_type: Optional[str] = None
+    company: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    linkedin: Optional[str] = None
+    notes: Optional[str] = None
+    application_ids: Optional[List[int]] = None
+
+    @field_validator('full_name', 'company', 'email', 'phone', 'linkedin', 'notes', mode='before')
+    @classmethod
+    def _sanitize(cls, v):
+        return sanitize_text(v) if isinstance(v, str) else v
+
+    @field_validator('contact_type', mode='before')
+    @classmethod
+    def _validate_type(cls, v):
+        if v is None:
+            return v
+        clean = sanitize_text(v).lower()
+        if clean not in VALID_CONTACT_TYPES:
+            raise ValueError(f"Invalid contact_type. Must be one of: {', '.join(sorted(VALID_CONTACT_TYPES))}")
+        return clean
+
+
+class ContactOut(BaseModel):
+    id: int
+    full_name: str
+    contact_type: str
+    company: str
+    email: str
+    phone: str
+    linkedin: str
+    notes: str
+    created_at: datetime
+    updated_at: datetime
+    application_ids: List[int] = []
+    applications: List[ContactApplicationRef] = []
+
+    @model_validator(mode='before')
+    @classmethod
+    def _populate_applications(cls, v):
+        if isinstance(v, dict):
+            return v
+
+        apps = getattr(v, 'applications', []) or []
+        return {
+            'id': v.id,
+            'full_name': v.full_name,
+            'contact_type': v.contact_type,
+            'company': v.company or '',
+            'email': v.email or '',
+            'phone': v.phone or '',
+            'linkedin': v.linkedin or '',
+            'notes': v.notes or '',
+            'created_at': v.created_at,
+            'updated_at': v.updated_at,
+            'application_ids': [a.id for a in apps],
+            'applications': [
+                {
+                    'id': a.id,
+                    'company': a.company,
+                    'position': a.position,
+                    'status': a.status,
+                }
+                for a in apps
+            ],
         }
 
     class Config:

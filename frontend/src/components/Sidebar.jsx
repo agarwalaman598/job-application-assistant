@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   FileText,
   Briefcase,
+  Users,
   User,
   ScanSearch,
   Wand2,
@@ -18,6 +19,7 @@ import { cn } from '../lib/utils';
 const NAV_ITEMS = [
   { label: 'Dashboard',    href: '/dashboard',     icon: LayoutDashboard },
   { label: 'Applications', href: '/applications',  icon: Briefcase },
+  { label: 'Contacts',     href: '/contacts',      icon: Users },
   { label: 'Resumes',      href: '/resumes',       icon: FileText },
   { label: 'Analyze',      href: '/analyze',       icon: ScanSearch },
   { label: 'Autofill',     href: '/autofill',      icon: Wand2 },
