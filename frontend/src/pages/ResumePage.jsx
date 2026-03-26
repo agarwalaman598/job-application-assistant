@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
 import api from '../api';
-import { Upload, FileText, Star, Trash2, Loader2, Link2, Copy, Check, ExternalLink, Plus, X, Download, Eye } from 'lucide-react';
+import { Upload, FileText, Star, Trash2, Loader2, Link2, Copy, Check, ExternalLink, Plus, X, Download, Eye, Tag } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
@@ -18,10 +18,13 @@ export default function ResumePage() {
   const [linkTitle, setLinkTitle] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [addingLink, setAddingLink] = useState(false);
+  const [tagFilter, setTagFilter] = useState('');
 
   // Inline drive-link editing per resume
   const [editingLinkId, setEditingLinkId] = useState(null);
   const [editLinkVal, setEditLinkVal] = useState('');
+  const [editingTagsId, setEditingTagsId] = useState(null);
+  const [editTagsVal, setEditTagsVal] = useState('');
 
   // Copy feedback per resume
   const [copiedId, setCopiedId] = useState(null);
@@ -101,6 +104,57 @@ export default function ResumePage() {
     setTimeout(() => setCopiedId(null), 1800);
   };
 
+  const parseTags = (raw) => {
+    if (!raw) return [];
+    const seen = new Set();
+    const tags = [];
+    for (const tag of raw.split(',')) {
+      const clean = tag.trim();
+      if (!clean) continue;
+      const key = clean.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      tags.push(clean);
+      if (tags.length >= 20) break;
+    }
+    return tags;
+  };
+
+  const startEditTags = (r) => {
+    setEditingTagsId(r.id);
+    setEditTagsVal((r.tags || []).join(', '));
+  };
+
+  const saveTags = async (id) => {
+    try {
+      await api.patch(`/resumes/${id}/tags`, { tags: parseTags(editTagsVal) });
+      setEditingTagsId(null);
+      fetchResumes();
+    } catch (err) {
+      console.error(err);
+      setAlertMsg('Could not save tags. Please try again.');
+    }
+  };
+
+  const allTags = useMemo(() => {
+    const seen = new Set();
+    const out = [];
+    for (const resume of resumes) {
+      for (const tag of resume.tags || []) {
+        const key = String(tag).toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(tag);
+      }
+    }
+    return out.sort((a, b) => a.localeCompare(b));
+  }, [resumes]);
+
+  const visibleResumes = useMemo(() => {
+    if (!tagFilter) return resumes;
+    return resumes.filter((r) => (r.tags || []).some((t) => String(t).toLowerCase() === tagFilter.toLowerCase()));
+  }, [resumes, tagFilter]);
+
   const [downloadingId, setDownloadingId] = useState(null);
   const [viewingId, setViewingId] = useState(null);
 
@@ -160,6 +214,35 @@ export default function ResumePage() {
     <div className="px-4 py-6 md:px-8 md:py-8 max-w-4xl mx-auto">
       <Helmet><title>Resumes | JobAssist AI</title></Helmet>
       <h1 className="text-2xl font-semibold tracking-tight mb-6">Resumes</h1>
+
+      {/* Tag filter */}
+      {allTags.length > 0 && (
+        <div className="card mb-3" style={{ padding: '10px 12px' }}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Tag size={12} />
+              Filter by tag
+            </span>
+            <button
+              onClick={() => setTagFilter('')}
+              className="btn-secondary text-xs"
+              style={{ opacity: tagFilter ? 1 : 0.6 }}
+            >
+              All
+            </button>
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setTagFilter(tag)}
+                className="btn-secondary text-xs"
+                style={{ opacity: tagFilter === tag ? 1 : 0.75 }}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Upload area */}
       <div className="card p-8 mb-3 animate-enter"
@@ -231,14 +314,18 @@ export default function ResumePage() {
       </div>
 
       {/* Resume list */}
-      {resumes.length === 0 ? (
+      {visibleResumes.length === 0 ? (
         <div className="card p-8" style={{ textAlign: 'center' }}>
           <FileText size={28} style={{ color: 'var(--muted-foreground)', margin: '0 auto 8px', opacity: 0.3 }} />
-          <p style={{ color: 'var(--muted-foreground)', fontSize: '0.85rem' }}>No resumes yet. Upload a PDF or add a link above.</p>
+          <p style={{ color: 'var(--muted-foreground)', fontSize: '0.85rem' }}>
+            {resumes.length === 0
+              ? 'No resumes yet. Upload a PDF or add a link above.'
+              : 'No resumes match the selected tag.'}
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {resumes.map((r, i) => {
+          {visibleResumes.map((r, i) => {
             const isLinkOnly = !r.has_file;
             return (
               <div key={r.id} className="card animate-enter" style={{ animationDelay: `${i * 0.04}s` }}>
@@ -285,6 +372,13 @@ export default function ResumePage() {
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex' }}
                     >
                       <Link2 size={14} style={{ opacity: r.drive_link ? 1 : 0.45 }} />
+                    </button>
+                    <button
+                      onClick={() => editingTagsId === r.id ? setEditingTagsId(null) : startEditTags(r)}
+                      title="Edit tags"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex' }}
+                    >
+                      <Tag size={14} style={{ opacity: (r.tags || []).length > 0 ? 1 : 0.45 }} />
                     </button>
                     {r.drive_link && (
                       <button
@@ -355,6 +449,33 @@ export default function ResumePage() {
                   </div>
                 )}
 
+                {/* Inline tag editor */}
+                {editingTagsId === r.id && (
+                  <div style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <Tag size={13} style={{ color: 'var(--muted-foreground)', flexShrink: 0 }} />
+                    <input
+                      style={{ ...inputStyle, flex: 1 }}
+                      placeholder="Add tags separated by commas"
+                      value={editTagsVal}
+                      onChange={e => setEditTagsVal(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveTags(r.id); if (e.key === 'Escape') setEditingTagsId(null); }}
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveTags(r.id)}
+                      className="btn-primary"
+                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap' }}
+                    >Save</button>
+                    <button
+                      onClick={() => setEditingTagsId(null)}
+                      title="Cancel"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', display: 'flex', padding: '2px' }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+
                 {/* Drive link chip display (when not editing) */}
                 {r.drive_link && editingLinkId !== r.id && (
                   <div style={{ borderTop: '1px solid var(--border)', padding: '7px 16px', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -362,6 +483,23 @@ export default function ResumePage() {
                     <span style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
                       {r.drive_link}
                     </span>
+                  </div>
+                )}
+
+                {/* Tag chips display */}
+                {editingTagsId !== r.id && (r.tags || []).length > 0 && (
+                  <div style={{ borderTop: '1px solid var(--border)', padding: '7px 16px', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <Tag size={11} style={{ color: 'var(--muted-foreground)', flexShrink: 0, opacity: 0.7 }} />
+                    {(r.tags || []).map((tag) => (
+                      <button
+                        key={`${r.id}-${tag}`}
+                        onClick={() => setTagFilter(tag)}
+                        className="btn-secondary text-xs"
+                        style={{ padding: '3px 8px' }}
+                      >
+                        {tag}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>

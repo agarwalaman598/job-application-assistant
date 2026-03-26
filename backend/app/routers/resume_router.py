@@ -10,7 +10,7 @@ from typing import Optional
 
 from app.database import get_db
 from app.models import User, Resume
-from app.schemas import ResumeOut
+from app.schemas import ResumeOut, normalize_tags
 from app.auth import get_current_user
 from app.services import r2_service
 
@@ -20,6 +20,10 @@ class AddLinkPayload(BaseModel):
 
 class UpdateLinkPayload(BaseModel):
     drive_link: Optional[str] = None
+
+
+class UpdateTagsPayload(BaseModel):
+    tags: list[str]
 
 router = APIRouter(prefix="/api/resumes", tags=["Resumes"])
 
@@ -44,6 +48,7 @@ def add_resume_link(
         filename=payload.title,
         filepath="",
         drive_link=payload.url,
+        tags=[],
         is_default=existing_count == 0,
     )
     db.add(resume)
@@ -102,6 +107,7 @@ async def upload_resume(
         filename=file.filename,
         filepath=r2_key,
         is_r2=True,
+        tags=[],
         is_default=existing_count == 0,
     )
 
@@ -164,6 +170,24 @@ def set_default_resume(
     # Unset all defaults
     db.query(Resume).filter(Resume.user_id == current_user.id).update({"is_default": False})
     resume.is_default = True
+    db.commit()
+    db.refresh(resume)
+    return resume
+
+
+@router.patch("/{resume_id}/tags", response_model=ResumeOut)
+def update_resume_tags(
+    resume_id: int,
+    payload: UpdateTagsPayload,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Replace all tags on a resume with a normalized set."""
+    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    resume.tags = normalize_tags(payload.tags)
     db.commit()
     db.refresh(resume)
     return resume

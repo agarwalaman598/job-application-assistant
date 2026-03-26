@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import joinedload
 from typing import Optional
 
 from app.database import get_db
-from app.models import User, Application
+from app.models import User, Application, Resume
 from app.schemas import ApplicationCreate, ApplicationUpdate, ApplicationOut
 from app.auth import get_current_user
 
@@ -16,7 +17,7 @@ def list_applications(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    query = db.query(Application).filter(Application.user_id == current_user.id)
+    query = db.query(Application).options(joinedload(Application.resume)).filter(Application.user_id == current_user.id)
     if status:
         query = query.filter(Application.status == status)
     return query.order_by(Application.applied_at.desc()).all()
@@ -28,7 +29,14 @@ def create_application(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    app = Application(user_id=current_user.id, **payload.model_dump())
+    data = payload.model_dump()
+    resume_id = data.get("resume_id")
+    if resume_id is not None:
+        resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
+        if not resume:
+            raise HTTPException(status_code=400, detail="Selected resume not found")
+
+    app = Application(user_id=current_user.id, **data)
     db.add(app)
     db.commit()
     db.refresh(app)
@@ -47,8 +55,18 @@ def update_application(
         raise HTTPException(status_code=404, detail="Application not found")
 
     update_data = payload.model_dump(exclude_unset=True)
+    if "resume_id" in update_data and update_data["resume_id"] is not None:
+        resume = db.query(Resume).filter(
+            Resume.id == update_data["resume_id"],
+            Resume.user_id == current_user.id,
+        ).first()
+        if not resume:
+            raise HTTPException(status_code=400, detail="Selected resume not found")
+
     for key, value in update_data.items():
-        if value is not None:
+        if key == "resume_id":
+            setattr(app, key, value)
+        elif value is not None:
             setattr(app, key, value)
 
     db.commit()

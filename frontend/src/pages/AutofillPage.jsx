@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import api from '../api';
 import { Wand2, Link2, Loader2, CheckCircle, AlertCircle, Zap, BriefcaseBusiness, X } from 'lucide-react';
@@ -12,6 +12,7 @@ const PLATFORMS = [
 ];
 
 export default function AutofillPage() {
+  const [resumes, setResumes] = useState([]);
   const [url, setUrl] = useState('');
   const [fields, setFields] = useState([]);
   const [platform, setPlatform] = useState('');
@@ -21,7 +22,20 @@ export default function AutofillPage() {
   const [filling, setFilling] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
-  const [trackForm, setTrackForm] = useState(null); // { company, position, url }
+  const [trackForm, setTrackForm] = useState(null); // { company, position, url, resume_id }
+    const fetchResumes = async () => {
+      try {
+        const res = await api.get('/resumes');
+        setResumes(res.data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    useEffect(() => {
+      fetchResumes();
+    }, []);
+
   const [tracking, setTracking] = useState(false);
   const [tracked, setTracked] = useState(false);
 
@@ -100,7 +114,13 @@ export default function AutofillPage() {
       };
       const company = findValue(['company', 'organisation', 'organization', 'employer', 'firm']);
       const position = findValue(['position', 'role', 'title', 'internship', 'job', 'designation', 'post']);
-      setTrackForm({ company, position, url: formUrl || url });
+      const defaultResume = resumes.find(r => r.is_default) || resumes[0] || null;
+      setTrackForm({
+        company,
+        position,
+        url: formUrl || url,
+        resume_id: defaultResume?.id || '',
+      });
 
     } catch (err) {
       setError(err.response?.data?.detail || 'Fill failed');
@@ -116,6 +136,7 @@ export default function AutofillPage() {
         position: trackForm.position || 'Unknown',
         status: 'draft',
         url: trackForm.url,
+        resume_id: trackForm.resume_id ? Number(trackForm.resume_id) : null,
         notes: 'Auto-tracked via Autofill',
       });
       setTracked(true);
@@ -390,6 +411,20 @@ export default function AutofillPage() {
             Log this to your Dashboard as "applied" — edit details below if needed.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div className="sm:col-span-2">
+              <label style={{ display: 'block', fontSize: '0.7rem', color: '#8b8b92', marginBottom: '4px' }}>Resume Used</label>
+              <select
+                className="input-field w-full"
+                value={trackForm.resume_id || ''}
+                onChange={e => setTrackForm({ ...trackForm, resume_id: e.target.value })}
+              >
+                <option value="">Not selected</option>
+                {resumes.map(r => (
+                  <option key={r.id} value={r.id}>{r.filename}{r.is_default ? ' (Default)' : ''}</option>
+                ))}
+              </select>
+              <p style={{ fontSize: '0.68rem', color: '#8b8b92', marginTop: '4px' }}>Auto-selected from your default resume. You can change it.</p>
+            </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.7rem', color: '#8b8b92', marginBottom: '4px' }}>Company</label>
               <input className="input-field w-full" value={trackForm.company}

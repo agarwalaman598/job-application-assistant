@@ -55,10 +55,12 @@ class Resume(Base):
     filepath = Column(String(500), nullable=False, default="")
     drive_link = Column(String(1000), nullable=True)
     is_r2 = Column(Boolean, default=False, nullable=False)   # True = filepath is an R2 object key
+    tags = Column(JSON, default=list, nullable=False)
     is_default = Column(Boolean, default=False)
     uploaded_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     user = relationship("User", back_populates="resumes")
+    applications = relationship("Application", back_populates="resume")
 
     __table_args__ = (
         Index("ix_resumes_user_id", "user_id"),
@@ -70,6 +72,7 @@ class Application(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    resume_id = Column(Integer, ForeignKey("resumes.id"), nullable=True)
     company = Column(String(255), nullable=False)
     position = Column(String(255), nullable=False)
     url = Column(String(500), default="")
@@ -79,9 +82,11 @@ class Application(Base):
     notes = Column(Text, default="")
 
     user = relationship("User", back_populates="applications")
+    resume = relationship("Resume", back_populates="applications")
 
     __table_args__ = (
         Index("ix_applications_user_id", "user_id"),
+        Index("ix_applications_resume_id", "user_id", "resume_id"),
         Index("ix_applications_status", "user_id", "status"),
     )
 

@@ -12,7 +12,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 
 const STATUS_OPTIONS = ['draft', 'applied', 'interview', 'offer', 'rejected'];
 const STATUS_ORDER = { draft: 0, applied: 1, interview: 2, offer: 3, rejected: 4 };
-const EMPTY_FORM = { company: '', position: '', status: 'applied', url: '', notes: '' };
+const EMPTY_FORM = { company: '', position: '', status: 'applied', url: '', notes: '', resume_id: '' };
 
 const SORT_OPTIONS = [
   { key: 'date-desc',    label: 'Date',    sub: 'Newest first',   field: 'date',    dir: 'desc' },
@@ -25,6 +25,7 @@ const SORT_OPTIONS = [
 
 export default function ApplicationsPage() {
   const [apps, setApps]           = useState([]);
+  const [resumes, setResumes]     = useState([]);
   const [filter, setFilter]       = useState('');
   const [search, setSearch]       = useState('');
   const [sortKey, setSortKey]     = useState('date-desc');
@@ -53,11 +54,26 @@ export default function ApplicationsPage() {
     finally { setLoading(false); }
   };
 
+  const fetchResumes = async () => {
+    try {
+      const res = await api.get('/resumes');
+      setResumes(res.data);
+    } catch (e) { console.error(e); }
+  };
+
   useEffect(() => { fetchApps(); }, [filter]);
+  useEffect(() => { fetchResumes(); }, []);
 
   const openNew  = () => { setForm(EMPTY_FORM); setEditingId(null); setShowForm(true); };
   const openEdit = (app) => {
-    setForm({ company: app.company, position: app.position, status: app.status, url: app.url || '', notes: app.notes || '' });
+    setForm({
+      company: app.company,
+      position: app.position,
+      status: app.status,
+      url: app.url || '',
+      notes: app.notes || '',
+      resume_id: app.resume_id || '',
+    });
     setEditingId(app.id); setShowForm(true);
   };
   const closeForm = () => { setShowForm(false); setEditingId(null); };
@@ -66,8 +82,12 @@ export default function ApplicationsPage() {
     if (saving) return;
     setSaving(true);
     try {
-      if (editingId) await api.put(`/applications/${editingId}`, form);
-      else           await api.post('/applications', form);
+      const payload = {
+        ...form,
+        resume_id: form.resume_id ? Number(form.resume_id) : null,
+      };
+      if (editingId) await api.put(`/applications/${editingId}`, payload);
+      else           await api.post('/applications', payload);
       closeForm(); fetchApps();
       toast.success(editingId ? 'Application updated!' : 'Application added!');
     } catch (e) {
@@ -244,6 +264,14 @@ export default function ApplicationsPage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.2rem', flexWrap: 'wrap' }}>
                   <p className="text-xs text-[var(--muted-foreground)]">{app.position}</p>
+                  {app.resume_filename && (
+                    <>
+                      <span style={{ color: 'var(--muted-foreground)', fontSize: '0.55rem' }}>●</span>
+                      <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap" title={app.resume_filename}>
+                        Resume: {app.resume_filename}
+                      </p>
+                    </>
+                  )}
                   {app.applied_at && (
                     <>
                       <span style={{ color: 'var(--muted-foreground)', fontSize: '0.55rem' }}>●</span>
@@ -258,6 +286,12 @@ export default function ApplicationsPage() {
                 <a href={app.url} target="_blank" rel="noreferrer" title="Open link"
                   className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
                   <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              )}
+              {app.resume_drive_link && (
+                <a href={app.resume_drive_link} target="_blank" rel="noreferrer" title="Open resume link"
+                  className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
+                  <Briefcase className="h-3.5 w-3.5" />
                 </a>
               )}
               <div className="flex items-center gap-1">
@@ -290,6 +324,17 @@ export default function ApplicationsPage() {
             </div>
 
             <div className="space-y-4">
+              <div>
+                <Label htmlFor="m-resume">Resume Used</Label>
+                <select id="m-resume" value={form.resume_id}
+                  onChange={e => setForm(f => ({ ...f, resume_id: e.target.value }))}
+                  className="input-field">
+                  <option value="">Not selected</option>
+                  {resumes.map(r => (
+                    <option key={r.id} value={r.id}>{r.filename}{r.is_default ? ' (Default)' : ''}</option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <Label htmlFor="m-company">Company</Label>
                 <Input id="m-company" placeholder="Acme Corp" value={form.company}

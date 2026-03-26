@@ -5,6 +5,29 @@ from datetime import datetime
 from app.utils import sanitize_text
 
 
+def normalize_tags(raw_tags) -> List[str]:
+    """Normalize user-supplied tags into a stable, deduplicated list."""
+    if not raw_tags:
+        return []
+    seen = set()
+    normalized: List[str] = []
+    for tag in raw_tags:
+        if not isinstance(tag, str):
+            continue
+        clean = sanitize_text(tag)
+        clean = clean[:30].strip()
+        if not clean:
+            continue
+        key = clean.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        normalized.append(clean)
+        if len(normalized) >= 20:
+            break
+    return normalized
+
+
 # ── Auth ──────────────────────────────────────────────
 class UserCreate(BaseModel):
     email: EmailStr
@@ -119,6 +142,7 @@ class ResumeOut(BaseModel):
     is_default: bool
     is_r2: bool = False
     drive_link: Optional[str] = None
+    tags: List[str] = []
     uploaded_at: datetime
     has_file: bool = False
 
@@ -134,9 +158,11 @@ class ResumeOut(BaseModel):
                 'is_default': v.is_default,
                 'is_r2': getattr(v, 'is_r2', False),
                 'drive_link': getattr(v, 'drive_link', None),
+                'tags': normalize_tags(getattr(v, 'tags', []) or []),
                 'uploaded_at': v.uploaded_at,
                 'has_file': bool(filepath),
             }
+        v['tags'] = normalize_tags(v.get('tags', []))
         v.setdefault('has_file', bool(v.get('filepath', '')))
         return v
 
@@ -149,6 +175,7 @@ VALID_STATUSES = {"draft", "applied", "interview", "offer", "rejected"}
 
 
 class ApplicationCreate(BaseModel):
+    resume_id: Optional[int] = None
     company: str
     position: str
     url: Optional[str] = ""
@@ -170,6 +197,7 @@ class ApplicationCreate(BaseModel):
 
 
 class ApplicationUpdate(BaseModel):
+    resume_id: Optional[int] = None
     company: Optional[str] = None
     position: Optional[str] = None
     url: Optional[str] = None
@@ -192,6 +220,9 @@ class ApplicationUpdate(BaseModel):
 
 class ApplicationOut(BaseModel):
     id: int
+    resume_id: Optional[int] = None
+    resume_filename: Optional[str] = None
+    resume_drive_link: Optional[str] = None
     company: str
     position: str
     url: str
@@ -199,6 +230,26 @@ class ApplicationOut(BaseModel):
     match_score: Optional[float]
     applied_at: datetime
     notes: str
+
+    @model_validator(mode='before')
+    @classmethod
+    def _populate_resume_info(cls, v):
+        if isinstance(v, dict):
+            return v
+        resume = getattr(v, 'resume', None)
+        return {
+            'id': v.id,
+            'resume_id': getattr(v, 'resume_id', None),
+            'resume_filename': getattr(resume, 'filename', None) if resume else None,
+            'resume_drive_link': getattr(resume, 'drive_link', None) if resume else None,
+            'company': v.company,
+            'position': v.position,
+            'url': v.url,
+            'status': v.status,
+            'match_score': v.match_score,
+            'applied_at': v.applied_at,
+            'notes': v.notes,
+        }
 
     class Config:
         from_attributes = True
