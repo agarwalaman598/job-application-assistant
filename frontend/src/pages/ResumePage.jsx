@@ -167,6 +167,7 @@ export default function ResumePage() {
   const copyLink = (r) => {
     navigator.clipboard.writeText(r.drive_link);
     setCopiedId(r.id);
+    toast.success('Link copied!');
     setTimeout(() => setCopiedId(null), 1800);
   };
 
@@ -528,6 +529,7 @@ export default function ResumePage() {
                           onClick={() => handleView(r)}
                           title="View PDF"
                           disabled={viewingId === r.id}
+                          className="hidden md:block"
                           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex' }}
                         >
                           {viewingId === r.id
