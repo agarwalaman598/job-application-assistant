@@ -165,7 +165,7 @@ export default function DashboardPage() {
               return (
                 <div key={app.id}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '1rem',
+                    display: 'flex', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap',
                     padding: '1.1rem 1.5rem',
                     borderBottom: i < recent.length - 1 ? '1px solid var(--border)' : 'none',
                     transition: 'background 0.15s',
@@ -197,13 +197,13 @@ export default function DashboardPage() {
                       <StatusBadge status={app.status} />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 3 }}>
-                      <span style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', fontFamily: 'inherit', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', fontFamily: 'inherit', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                         {app.position}
                       </span>
                       {dateStr && (
                         <>
                           <span style={{ color: 'var(--muted-foreground)', fontSize: '0.6rem' }}>●</span>
-                          <span style={{ fontSize: '0.73rem', color: 'var(--muted-foreground)', whiteSpace: 'nowrap', fontFamily: 'inherit' }}>
+                          <span style={{ fontSize: '0.73rem', color: 'var(--muted-foreground)', fontFamily: 'inherit' }}>
                             {dateStr}
                           </span>
                         </>

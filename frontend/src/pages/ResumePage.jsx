@@ -483,7 +483,7 @@ export default function ResumePage() {
                     </div>
                   </div>
                   {/* Right: action buttons — wraps to new line on mobile */}
-                  <div className="flex items-center gap-2 flex-wrap" style={{ flexShrink: 0 }}>
+                  <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto" style={{ flexShrink: 0, maxWidth: '100%' }}>
                     {!r.is_default && (
                       <button onClick={() => setDefault(r.id)} disabled={settingDefaultId === r.id} title="Set as default" className="btn-secondary text-xs flex items-center gap-1">
                         {settingDefaultId === r.id ? <Loader2 size={12} className="animate-spin" /> : <Star size={12} />} 
@@ -569,8 +569,8 @@ export default function ResumePage() {
                     <button
                       onClick={() => saveEditLink(r.id)}
                       disabled={savingLinkId === r.id}
-                      className="btn-primary"
-                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}
+                      className="btn-primary sm:ml-auto"
+                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 0 }}
                     >
                       {savingLinkId === r.id ? <Loader2 size={12} className="animate-spin" /> : null}
                       Save
@@ -600,8 +600,8 @@ export default function ResumePage() {
                     <button
                       onClick={() => saveTags(r.id)}
                       disabled={savingTagsId === r.id}
-                      className="btn-primary"
-                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}
+                      className="btn-primary sm:ml-auto"
+                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 0 }}
                     >
                       {savingTagsId === r.id ? <Loader2 size={12} className="animate-spin" /> : null}
                       Save
@@ -631,8 +631,8 @@ export default function ResumePage() {
                     <button
                       onClick={() => saveEditFilename(r.id)}
                       disabled={savingFilenameId === r.id}
-                      className="btn-primary"
-                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}
+                      className="btn-primary sm:ml-auto"
+                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 0 }}
                     >
                       {savingFilenameId === r.id ? <Loader2 size={12} className="animate-spin" /> : null}
                       Save

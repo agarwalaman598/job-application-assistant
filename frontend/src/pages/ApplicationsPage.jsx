@@ -202,7 +202,7 @@ export default function ApplicationsPage() {
               background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10,
               padding: '7px 13px', fontSize: '0.82rem', fontWeight: 600,
               color: 'var(--muted-foreground)', cursor: 'pointer', fontFamily: 'inherit',
-              whiteSpace: 'nowrap',
+              whiteSpace: 'normal', textAlign: 'left', lineHeight: 1.2,
             }}
             onMouseEnter={e => e.currentTarget.style.color = 'var(--foreground)'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--muted-foreground)'}
@@ -217,7 +217,7 @@ export default function ApplicationsPage() {
               style={{
                 position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 200,
                 background: '#141414', border: '1px solid #2a2a2a', borderRadius: 12,
-                boxShadow: '0 12px 40px rgba(0,0,0,0.5)', overflow: 'hidden', minWidth: 200,
+                boxShadow: '0 12px 40px rgba(0,0,0,0.5)', overflow: 'hidden', minWidth: 160, maxWidth: 'min(92vw, 260px)',
               }}
             >
               {SORT_OPTIONS.map(opt => (
@@ -262,7 +262,7 @@ export default function ApplicationsPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {displayedApps.map((app, i) => (
-            <div key={app.id} className="card px-5 py-4 flex items-center gap-4 animate-fade-in"
+            <div key={app.id} className="card px-5 py-4 flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-3 sm:gap-4 animate-fade-in"
               style={{ animationDelay: `${i * 0.04}s` }}>
               {/* Serial number */}
               <div style={{
@@ -284,7 +284,16 @@ export default function ApplicationsPage() {
                   {app.resume_filename && (
                     <>
                       <span style={{ color: 'var(--muted-foreground)', fontSize: '0.55rem' }}>●</span>
-                      <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap" title={app.resume_filename}>
+                      <p
+                        className="text-xs text-[var(--muted-foreground)]"
+                        title={app.resume_filename}
+                        style={{
+                          minWidth: 0,
+                          maxWidth: '100%',
+                          overflowWrap: 'anywhere',
+                          wordBreak: 'break-word',
+                        }}
+                      >
                         Resume: {app.resume_filename}
                       </p>
                     </>
@@ -292,7 +301,7 @@ export default function ApplicationsPage() {
                   {app.applied_at && (
                     <>
                       <span style={{ color: 'var(--muted-foreground)', fontSize: '0.55rem' }}>●</span>
-                      <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap">
+                      <p className="text-xs text-[var(--muted-foreground)]">
                         {new Date(app.applied_at + 'Z').toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' })}
                       </p>
                     </>
@@ -311,7 +320,7 @@ export default function ApplicationsPage() {
                   <Briefcase className="h-3.5 w-3.5" />
                 </a>
               )}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-shrink-0 ml-auto sm:ml-0">
                 <button onClick={() => openEdit(app)} title="Edit"
                   className="h-7 w-7 rounded-md flex items-center justify-center bg-transparent border-none cursor-pointer text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-all">
                   <Edit2 className="h-3.5 w-3.5" />

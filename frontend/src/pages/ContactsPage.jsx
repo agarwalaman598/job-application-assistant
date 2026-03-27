@@ -249,7 +249,7 @@ export default function ContactsPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {displayedContacts.map((contact, i) => (
-            <div key={contact.id} className="card px-5 py-4 flex items-center gap-4 animate-fade-in" style={{ animationDelay: `${i * 0.04}s` }}>
+            <div key={contact.id} className="card px-5 py-4 flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-3 sm:gap-4 animate-fade-in" style={{ animationDelay: `${i * 0.04}s` }}>
               <div style={{
                 height: 32, width: 32, borderRadius: 8, flexShrink: 0,
                 background: '#1a1a1a', border: '1px solid #2a2a2a',
@@ -268,8 +268,16 @@ export default function ContactsPage() {
                 </div>
 
                 <div className="flex items-center gap-3 mt-1 flex-wrap text-xs text-[var(--muted-foreground)]">
-                  {contact.company && <span className="inline-flex items-center gap-1"><Building2 className="h-3 w-3" /> {contact.company}</span>}
-                  {contact.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {contact.email}</span>}
+                  {contact.company && (
+                    <span className="inline-flex items-center gap-1" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                      <Building2 className="h-3 w-3" /> {contact.company}
+                    </span>
+                  )}
+                  {contact.email && (
+                    <span className="inline-flex items-center gap-1" style={{ overflowWrap: 'anywhere', wordBreak: 'break-all' }}>
+                      <Mail className="h-3 w-3" /> {contact.email}
+                    </span>
+                  )}
                   {contact.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {contact.phone}</span>}
                   <span>{(contact.application_ids || []).length} linked application(s)</span>
                 </div>
@@ -287,7 +295,7 @@ export default function ContactsPage() {
                 </a>
               )}
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-shrink-0 ml-auto sm:ml-0">
                 <button
                   onClick={() => openEdit(contact)}
                   title="Edit"

@@ -179,7 +179,7 @@ export default function AutofillPage() {
       </div>
 
       {/* Platforms */}
-      <div className="flex gap-2 mb-5">
+      <div className="flex flex-wrap gap-2 mb-5">
         {PLATFORMS.map(p => (
           <span key={p.name} className="flex items-center gap-1.5 text-xs" style={{
             padding: '5px 10px', borderRadius: '6px',
@@ -198,12 +198,12 @@ export default function AutofillPage() {
           <Link2 size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
           Form URL
         </label>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Textarea value={url} onChange={(e) => setUrl(e.target.value)}
             className="input-field flex-1" placeholder="https://docs.google.com/forms/..."
             minRows={1} maxRows={4} expandOnFocusRows={2} singleLine />
           <button onClick={handleDetect} disabled={detecting || !url.trim()}
-            className="btn-primary flex items-center gap-2">
+            className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
             {detecting ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
             Detect
           </button>
@@ -233,7 +233,7 @@ export default function AutofillPage() {
       {/* Fields */}
       {visibleFields.length > 0 && (
         <div className="card p-5 mb-5 animate-enter">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap items-start sm:items-center justify-between gap-2 mb-3">
             <div>
               <label className="section-label">Detected Fields</label>
               <p style={{ fontSize: '0.75rem', color: '#5a5a63', marginTop: '2px' }}>
@@ -280,8 +280,8 @@ export default function AutofillPage() {
                 background: 'var(--color-surface)', border: '1px solid var(--color-border)',
                 minWidth: 0, overflow: 'hidden',
               }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{field.label}</span>
+                <div className="flex flex-wrap items-center gap-2 mb-2" style={{ minWidth: 0 }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 500, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{field.label}</span>
                   <span style={{
                     fontSize: '0.65rem', padding: '1px 6px', borderRadius: '4px',
                     background: 'var(--color-surface-overlay)', color: '#8b8b92',
@@ -391,9 +391,9 @@ export default function AutofillPage() {
       {/* Result */}
       {result && (
         <div className="card p-5 animate-enter">
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3" style={{ minWidth: 0 }}>
             {result.success ? <CheckCircle size={20} style={{ color: '#3eb370' }} /> : <AlertCircle size={20} style={{ color: '#d94f4f' }} />}
-            <div>
+            <div style={{ minWidth: 0 }}>
               <p style={{ fontWeight: 600, fontSize: '0.9rem', color: result.success ? '#3eb370' : '#d94f4f' }}>
                 {result.success ? 'Pre-filled form opened in new tab!' : 'Could not generate link'}
               </p>
@@ -422,8 +422,8 @@ export default function AutofillPage() {
       {/* Track Application Prompt */}
       {trackForm && !tracked && (
         <div className="card p-5 animate-enter" style={{ border: '1px solid rgba(212,148,46,0.3)', background: 'rgba(212,148,46,0.04)' }}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-start sm:items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2" style={{ minWidth: 0 }}>
               <BriefcaseBusiness size={14} style={{ color: 'var(--color-primary)' }} />
               <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Track this application?</span>
             </div>
