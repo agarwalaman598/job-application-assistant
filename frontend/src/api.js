@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const NETWORK_ERROR_EVENT = 'app:network-error';
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
   withCredentials: true,
@@ -18,6 +20,12 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (!error?.response && error?.code !== 'ERR_CANCELED') {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(NETWORK_ERROR_EVENT));
+      }
+    }
+
     if (
       error.response?.status === 401 &&
       !error.config?.url?.includes('/auth/')

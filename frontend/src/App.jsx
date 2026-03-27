@@ -6,6 +6,7 @@ import { NavigationGuardProvider } from './context/NavigationGuardContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Sidebar } from './components/Sidebar';
+import NetworkStatusModal from './components/NetworkStatusModal';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
@@ -99,6 +100,7 @@ export default function App() {
         </Routes>
       </AuthProvider>
         </NavigationGuardProvider>
+        <NetworkStatusModal />
       </ErrorBoundary>
     </BrowserRouter>
   );
