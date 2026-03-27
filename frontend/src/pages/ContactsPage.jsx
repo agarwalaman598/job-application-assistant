@@ -198,7 +198,7 @@ export default function ContactsPage() {
         </Button>
       </div>
 
-      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--muted)', width: 'fit-content', maxWidth: '100%', overflowX: 'auto' }}>
+      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--muted)', width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
         {['', ...CONTACT_TYPES].map((t) => (
           <button
             key={t}

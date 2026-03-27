@@ -43,7 +43,7 @@ function StatCard({ label, value, icon: Icon, color, bg, loading, sub }) {
       <div>
         {loading
           ? <div style={{ height: 44, width: 56, borderRadius: 8, background: 'var(--muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-          : <p style={{ fontSize: '2.6rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color }}>
+          : <p style={{ fontSize: 'clamp(1.7rem, 5.8vw, 2.6rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color }}>
               {value}
             </p>
         }

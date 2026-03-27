@@ -159,7 +159,7 @@ export default function ApplicationsPage() {
       </div>
 
       {/* Status filter tabs */}
-        <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--muted)', width: 'fit-content', maxWidth: '100%', overflowX: 'auto' }}>
+        <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--muted)', width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
         {['', ...STATUS_OPTIONS].map(s => (
           <button key={s} onClick={() => setFilter(s)}
             className="px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border-none"

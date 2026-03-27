@@ -126,7 +126,7 @@ export default function AnalyzePage() {
             }}
           >
             {/* Modal header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid #1f1f1f' }}>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between" style={{ padding: '1rem 1rem', borderBottom: '1px solid #1f1f1f' }}>
               <div>
                 <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.01em' }}>Job Description</h2>
                 <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', marginTop: 3 }}>Paste the full job description to analyze against your profile</p>
@@ -141,7 +141,7 @@ export default function AnalyzePage() {
             </div>
 
             {/* Textarea */}
-            <div style={{ padding: '1.25rem 1.5rem' }}>
+            <div style={{ padding: '1rem 1rem' }}>
               <Textarea
                 ref={jdTextareaRef}
                 value={jdDraft}
@@ -165,9 +165,9 @@ export default function AnalyzePage() {
             </div>
 
             {/* Modal footer */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '1rem 1.5rem', borderTop: '1px solid #1f1f1f' }}>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end" style={{ gap: 8, padding: '1rem 1rem', borderTop: '1px solid #1f1f1f' }}>
               <button onClick={closeJdModal}
-                style={{ padding: '7px 16px', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 9, fontSize: '0.82rem', fontWeight: 600, color: 'var(--muted-foreground)', cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ padding: '7px 16px', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: 9, fontSize: '0.82rem', fontWeight: 600, color: 'var(--muted-foreground)', cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = '#3a3a3a'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = '#2a2a2a'}
               >
@@ -175,7 +175,7 @@ export default function AnalyzePage() {
               </button>
               <button
                 onClick={() => { setJd(jdDraft); closeJdModal(); }}
-                style={{ padding: '7px 18px', background: '#202020', border: '1px solid #303030', borderRadius: 9, fontSize: '0.82rem', fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}
+                style={{ padding: '7px 18px', background: '#202020', border: '1px solid #303030', borderRadius: 9, fontSize: '0.82rem', fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%' }}
                 onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
                 onMouseLeave={e => e.currentTarget.style.background = '#202020'}
               >

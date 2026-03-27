@@ -499,10 +499,10 @@ export default function ResumePage() {
 
                 {/* Inline drive-link editor */}
                 {editingLinkId === r.id && (
-                  <div style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     <Link2 size={13} style={{ color: 'var(--muted-foreground)', flexShrink: 0 }} />
                     <input
-                      style={{ ...inputStyle, flex: 1 }}
+                      style={{ ...inputStyle, flex: '1 1 220px', minWidth: 0 }}
                       placeholder="Paste Google Drive or other link"
                       value={editLinkVal}
                       onChange={e => setEditLinkVal(e.target.value)}
@@ -513,7 +513,7 @@ export default function ResumePage() {
                       onClick={() => saveEditLink(r.id)}
                       disabled={savingLinkId === r.id}
                       className="btn-primary"
-                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}
                     >
                       {savingLinkId === r.id ? <Loader2 size={12} className="animate-spin" /> : null}
                       Save
@@ -530,10 +530,10 @@ export default function ResumePage() {
 
                 {/* Inline tag editor */}
                 {editingTagsId === r.id && (
-                  <div style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     <Tag size={13} style={{ color: 'var(--muted-foreground)', flexShrink: 0 }} />
                     <input
-                      style={{ ...inputStyle, flex: 1 }}
+                      style={{ ...inputStyle, flex: '1 1 220px', minWidth: 0 }}
                       placeholder="Add tags separated by commas"
                       value={editTagsVal}
                       onChange={e => setEditTagsVal(e.target.value)}
@@ -544,7 +544,7 @@ export default function ResumePage() {
                       onClick={() => saveTags(r.id)}
                       disabled={savingTagsId === r.id}
                       className="btn-primary"
-                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}
                     >
                       {savingTagsId === r.id ? <Loader2 size={12} className="animate-spin" /> : null}
                       Save
