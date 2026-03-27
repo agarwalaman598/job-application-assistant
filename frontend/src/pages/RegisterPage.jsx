@@ -46,8 +46,9 @@ export default function RegisterPage() {
       setRegistered(true);
       if (data?.dev_link) setDevLink(data.dev_link);
     } catch (err) {
-      setLoading(false);
       setError(err.response?.data?.detail || 'Registration failed');
+    } finally {
+      setLoading(false);
     }
   };
 

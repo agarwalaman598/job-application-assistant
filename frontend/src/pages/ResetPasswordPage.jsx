@@ -38,8 +38,14 @@ export default function ResetPasswordPage() {
     if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
 
     setLoading(true);
+    const startedAt = Date.now();
     try {
       await api.post('/auth/reset-password', { token, new_password: password });
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
       setDone(true);
     } catch (err) {
       setError(err.response?.data?.detail || 'Reset failed. The link may have expired.');

@@ -16,8 +16,14 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     if (loading) return;
     setLoading(true); setError('');
+    const startedAt = Date.now();
     try {
       const res = await api.post('/auth/forgot-password', { email });
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
       setSent(true);
       if (res.data.dev_link) setDevLink(res.data.dev_link);
     } catch (err) {

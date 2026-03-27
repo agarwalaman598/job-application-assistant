@@ -40,8 +40,9 @@ export default function LoginPage() {
       }
       navigate('/dashboard');
     } catch (err) {
-      setLoading(false);
       setError(err.response?.data?.detail || (err.response ? 'Invalid credentials' : 'Network error — please check your connection.'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,8 +96,9 @@ export default function LoginPage() {
             {error}
             {unverifiedError && (
               <button type="button" onClick={handleResend} disabled={resending}
-                style={{ display: 'block', marginTop: '6px', background: 'none', border: 'none', padding: 0,
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '6px', background: 'none', border: 'none', padding: 0,
                   color: 'var(--primary)', fontSize: '0.78rem', cursor: 'pointer', opacity: resending ? 0.5 : 1 }}>
+                {resending && <Loader2 size={12} className="animate-spin" />}
                 {resending ? 'Sending…' : 'Resend verification email →'}
               </button>
             )}
