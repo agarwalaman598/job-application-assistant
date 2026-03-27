@@ -5,6 +5,7 @@ import api from '../api';
 import { Upload, FileText, Star, Trash2, Loader2, Link2, Copy, Check, ExternalLink, Plus, X, Download, Eye, Tag } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { PageLoadingState } from '../components/PageLoadingState';
 
 export default function ResumePage() {
   const [resumes, setResumes] = useState([]);
@@ -321,20 +322,7 @@ export default function ResumePage() {
 
       {/* Resume list */}
       {loadingResumes ? (
-        <div className="card p-6" style={{ textAlign: 'center' }}>
-          <div className="flex items-center justify-center gap-2" style={{ color: 'var(--muted-foreground)', fontSize: '0.82rem' }}>
-            <Loader2 size={16} className="animate-spin" />
-            <span>Loading resumes...</span>
-          </div>
-          <div className="flex flex-col gap-2 mt-4">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="card animate-pulse" style={{ padding: '12px 16px' }}>
-                <div style={{ height: 10, width: '45%', background: 'var(--muted)', borderRadius: 6, marginBottom: 8 }} />
-                <div style={{ height: 8, width: '30%', background: 'var(--muted)', borderRadius: 6 }} />
-              </div>
-            ))}
-          </div>
-        </div>
+        <PageLoadingState label="Loading resumes..." rows={3} />
       ) : visibleResumes.length === 0 ? (
         <div className="card p-8" style={{ textAlign: 'center' }}>
           <FileText size={28} style={{ color: 'var(--muted-foreground)', margin: '0 auto 8px', opacity: 0.3 }} />

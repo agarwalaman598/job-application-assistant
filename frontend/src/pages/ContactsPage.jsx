@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
-import { Plus, Edit2, Trash2, X, Loader2, Users, Mail, Phone, Link as LinkIcon, Building2, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Users, Mail, Phone, Link as LinkIcon, Building2, Search } from 'lucide-react';
 
 import api from '../api';
 import { Button } from '../components/ui/button';
@@ -9,6 +9,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { PageLoadingState } from '../components/PageLoadingState';
 
 const CONTACT_TYPES = ['hr', 'recruiter', 'interviewer', 'referral', 'other'];
 const EMPTY_FORM = {
@@ -208,9 +209,7 @@ export default function ContactsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-[var(--muted-foreground)]" />
-        </div>
+        <PageLoadingState label="Loading contacts..." rows={4} />
       ) : displayedContacts.length === 0 ? (
         <div className="card p-16 text-center">
           <Users className="h-10 w-10 text-[var(--muted-foreground)] mx-auto mb-3 opacity-30" />

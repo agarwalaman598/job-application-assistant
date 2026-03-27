@@ -3,8 +3,9 @@ import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
-import { Briefcase, FileText, TrendingUp, Award, ArrowRight, Loader2, Plus } from 'lucide-react';
+import { Briefcase, FileText, TrendingUp, Award, ArrowRight, Plus } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
+import { PageLoadingState } from '../components/PageLoadingState';
 
 function StatCard({ label, value, icon: Icon, color, bg, loading, sub }) {
   return (
@@ -144,9 +145,7 @@ export default function DashboardPage() {
         </div>
 
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '3.5rem 0' }}>
-            <Loader2 style={{ height: 20, width: 20, color: 'var(--muted-foreground)', animation: 'spin 1s linear infinite' }} />
-          </div>
+          <PageLoadingState label="Loading dashboard data..." rows={3} className="p-6" framed={false} />
         ) : recent.length === 0 ? (
           <div style={{ padding: '3.5rem 0', textAlign: 'center' }}>
             <Briefcase style={{ height: 32, width: 32, margin: '0 auto 12px', color: 'var(--muted-foreground)', opacity: 0.35 }} />

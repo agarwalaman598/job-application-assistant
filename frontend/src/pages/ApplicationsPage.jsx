@@ -9,6 +9,7 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { StatusBadge } from '../components/StatusBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { PageLoadingState } from '../components/PageLoadingState';
 
 const STATUS_OPTIONS = ['draft', 'applied', 'interview', 'offer', 'rejected'];
 const STATUS_ORDER = { draft: 0, applied: 1, interview: 2, offer: 3, rejected: 4 };
@@ -231,9 +232,7 @@ export default function ApplicationsPage() {
 
       {/* List */}
       {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-[var(--muted-foreground)]" />
-        </div>
+        <PageLoadingState label="Loading applications..." rows={4} />
       ) : displayedApps.length === 0 ? (
         <div className="card p-16 text-center">
           <Briefcase className="h-10 w-10 text-[var(--muted-foreground)] mx-auto mb-3 opacity-30" />

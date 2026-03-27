@@ -6,6 +6,7 @@ import api from '../api';
 import { Save, Plus, X, Loader2, Briefcase, GraduationCap, Globe, BookOpen, Pencil, Trash2, Check, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
 import { ConfirmDialog, UnsavedChangesDialog } from '../components/ConfirmDialog';
 import { Textarea } from '../components/ui/textarea';
+import { PageLoadingState } from '../components/PageLoadingState';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState({
@@ -235,16 +236,7 @@ export default function ProfilePage() {
   if (loading) return (
     <div className="px-4 py-6 md:px-8 md:py-8 max-w-3xl mx-auto">
       <Helmet><title>Profile | JobAssist AI</title></Helmet>
-      <div className="flex items-center justify-between mb-6">
-        <div style={{ height: 28, width: 90, borderRadius: 8, background: 'var(--muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-        <div style={{ height: 34, width: 72, borderRadius: 9999, background: 'var(--muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-      </div>
-      {[0, 1, 2, 3].map(i => (
-        <div key={i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '1.5rem', marginBottom: '1rem' }}>
-          <div style={{ height: 13, width: '35%', borderRadius: 6, background: 'var(--muted)', marginBottom: '0.85rem', animation: 'pulse 1.5s ease-in-out infinite' }} />
-          <div style={{ height: 40, borderRadius: 9999, background: 'var(--muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-        </div>
-      ))}
+      <PageLoadingState label="Loading profile..." rows={4} />
     </div>
   );
 
