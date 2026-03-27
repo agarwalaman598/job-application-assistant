@@ -30,6 +30,9 @@ function formatType(value) {
 export default function ContactsPage() {
   const [contacts, setContacts] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [contactsLoadError, setContactsLoadError] = useState('');
+  const [applicationsLoadError, setApplicationsLoadError] = useState('');
+  const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
@@ -42,6 +45,7 @@ export default function ContactsPage() {
 
   const fetchContacts = async () => {
     setLoading(true);
+    setContactsLoadError('');
     try {
       const params = {};
       if (typeFilter) params.contact_type = typeFilter;
@@ -50,19 +54,20 @@ export default function ContactsPage() {
       setContacts(res.data || []);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to load contacts.');
+      setContactsLoadError('Failed to load contacts. Please refresh or try again in a moment.');
     } finally {
       setLoading(false);
     }
   };
 
   const fetchApplications = async () => {
+    setApplicationsLoadError('');
     try {
       const res = await api.get('/applications');
       setApplications(res.data || []);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to load applications.');
+      setApplicationsLoadError('Failed to load applications for linking. You can still create contacts.');
     }
   };
 
@@ -84,10 +89,12 @@ export default function ContactsPage() {
   const openNew = () => {
     setForm(EMPTY_FORM);
     setEditingId(null);
+    setFormError('');
     setShowForm(true);
   };
 
   const openEdit = (contact) => {
+    setFormError('');
     setForm({
       full_name: contact.full_name || '',
       contact_type: contact.contact_type || 'recruiter',
@@ -105,6 +112,7 @@ export default function ContactsPage() {
   const closeForm = () => {
     setShowForm(false);
     setEditingId(null);
+    setFormError('');
   };
 
   const toggleApplication = (appId) => {
@@ -121,9 +129,10 @@ export default function ContactsPage() {
 
   const handleSave = async () => {
     if (!form.full_name.trim()) {
-      toast.error('Name is required.');
+      setFormError('Name is required.');
       return;
     }
+    setFormError('');
     if (saving) return;
 
     setSaving(true);
@@ -220,6 +229,12 @@ export default function ContactsPage() {
           }}
         />
       </div>
+
+      {contactsLoadError && (
+        <div className="card mb-4" style={{ padding: '10px 12px', borderColor: 'rgba(239,68,68,0.35)', background: 'rgba(239,68,68,0.08)', color: '#f87171', fontSize: '0.8rem' }}>
+          {contactsLoadError}
+        </div>
+      )}
 
       {loading ? (
         <PageLoadingState label="Loading contacts..." rows={4} />
@@ -320,6 +335,7 @@ export default function ContactsPage() {
               <div>
                 <Label htmlFor="c-name">Name</Label>
                 <Input id="c-name" value={form.full_name} onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} placeholder="Jane Doe" />
+                {formError && <p className="text-xs mt-1" style={{ color: '#f87171' }}>{formError}</p>}
               </div>
 
               <div>
@@ -349,6 +365,7 @@ export default function ContactsPage() {
                     <option key={company} value={company}>{company}</option>
                   ))}
                 </select>
+                {applicationsLoadError && <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>{applicationsLoadError}</p>}
               </div>
 
               <div className="grid md:grid-cols-2 gap-3">

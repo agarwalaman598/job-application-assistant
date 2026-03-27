@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { Eye, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
@@ -20,7 +19,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (sessionStorage.getItem('sessionExpired')) {
       sessionStorage.removeItem('sessionExpired');
-      toast.error('Your session has expired. Please sign in again.');
+      setError('Your session has expired. Please sign in again.');
     }
   }, []);
 

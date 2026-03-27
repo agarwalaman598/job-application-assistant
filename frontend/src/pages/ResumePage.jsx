@@ -87,6 +87,10 @@ export default function ResumePage() {
         await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
       }
       fetchResumes();
+      toast.success('Set as default.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to set default.');
     } finally {
       setSettingDefaultId(null);
     }
@@ -106,6 +110,10 @@ export default function ResumePage() {
       }
       setConfirmDeleteId(null);
       fetchResumes();
+      toast.success('Resume deleted.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete resume.');
     } finally {
       setDeletingId(null);
     }
@@ -141,8 +149,10 @@ export default function ResumePage() {
       }
       setEditingLinkId(null);
       fetchResumes();
+      toast.success('Link saved.');
     } catch (err) { 
       console.error(err);
+      toast.error('Failed to save link.');
       setSavingLinkId(null);
     }
   };
@@ -186,9 +196,10 @@ export default function ResumePage() {
       }
       setEditingTagsId(null);
       fetchResumes();
+      toast.success('Tags saved.');
     } catch (err) {
       console.error(err);
-      setAlertMsg('Could not save tags. Please try again.');
+      toast.error('Failed to save tags.');
       setSavingTagsId(null);
     }
   };

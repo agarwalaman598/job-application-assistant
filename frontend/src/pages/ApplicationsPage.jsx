@@ -114,6 +114,10 @@ export default function ApplicationsPage() {
       await new Promise(resolve => setTimeout(resolve, remainingTime));
       setConfirmId(null);
       fetchApps();
+      toast.success('Application deleted.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete application.');
     } finally {
       setDeletingId(null);
     }
