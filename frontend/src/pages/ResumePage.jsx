@@ -128,7 +128,11 @@ export default function ResumePage() {
       setLinkUrl('');
       setShowLinkForm(false);
       fetchResumes();
-    } catch (err) { console.error(err); }
+      toast.success('Link added.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to add link.');
+    }
     finally { setAddingLink(false); }
   };
 
