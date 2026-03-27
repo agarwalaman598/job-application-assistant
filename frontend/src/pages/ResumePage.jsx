@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
 import api from '../api';
-import { Upload, FileText, Star, Trash2, Loader2, Link2, Copy, Check, ExternalLink, Plus, X, Download, Eye, Tag } from 'lucide-react';
+import { Upload, FileText, Star, Trash2, Loader2, Link2, Copy, Check, ExternalLink, Plus, X, Download, Eye, Tag, Edit } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PageLoadingState } from '../components/PageLoadingState';
@@ -27,6 +27,8 @@ export default function ResumePage() {
   const [editLinkVal, setEditLinkVal] = useState('');
   const [editingTagsId, setEditingTagsId] = useState(null);
   const [editTagsVal, setEditTagsVal] = useState('');
+  const [editingFilenameId, setEditingFilenameId] = useState(null);
+  const [editFilenameVal, setEditFilenameVal] = useState('');
 
   // Copy feedback per resume
   const [copiedId, setCopiedId] = useState(null);
@@ -35,6 +37,7 @@ export default function ResumePage() {
   const [settingDefaultId, setSettingDefaultId] = useState(null);
   const [savingLinkId, setSavingLinkId] = useState(null);
   const [savingTagsId, setSavingTagsId] = useState(null);
+  const [savingFilenameId, setSavingFilenameId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
   const fetchResumes = async ({ showLoader = false } = {}) => {
@@ -205,6 +208,49 @@ export default function ResumePage() {
       console.error(err);
       toast.error('Failed to save tags.');
       setSavingTagsId(null);
+    }
+  };
+
+  const startEditFilename = (r) => {
+    setEditingFilenameId(r.id);
+    // Extract filename without extension
+    const lastDot = r.filename.lastIndexOf('.');
+    const nameWithoutExt = lastDot > 0 ? r.filename.substring(0, lastDot) : r.filename;
+    setEditFilenameVal(nameWithoutExt);
+  };
+
+  const saveEditFilename = async (id) => {
+    const newName = editFilenameVal.trim();
+    if (!newName) {
+      toast.error('Filename cannot be empty.');
+      return;
+    }
+
+    // Validate for dangerous characters
+    const dangerousChars = ['/', '\\', '..', '\0', '<', '>', ':', '"', '|', '?', '*'];
+    for (const char of dangerousChars) {
+      if (newName.includes(char)) {
+        toast.error('Filename contains invalid characters.');
+        return;
+      }
+    }
+
+    setSavingFilenameId(id);
+    const startedAt = Date.now();
+    try {
+      await api.patch(`/resumes/${id}/filename`, { filename: newName });
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
+      setEditingFilenameId(null);
+      fetchResumes();
+      toast.success('Filename updated.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update filename.');
+      setSavingFilenameId(null);
     }
   };
 
@@ -412,7 +458,16 @@ export default function ResumePage() {
                       : <FileText size={16} style={{ color: 'var(--muted-foreground)', flexShrink: 0 }} />
                     }
                     <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.filename}</p>
+                      <div className="flex items-center gap-1" style={{ minWidth: 0 }}>
+                        <p style={{ fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, minWidth: 0 }}>{r.filename}</p>
+                        <button
+                          onClick={() => editingFilenameId === r.id ? setEditingFilenameId(null) : startEditFilename(r)}
+                          title="Edit filename"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex', flexShrink: 0 }}
+                        >
+                          <Edit size={14} style={{ opacity: 0.45 }} />
+                        </button>
+                      </div>
                       <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)' }}>
                         {new Date(r.uploaded_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                         {r.is_default && (
@@ -551,6 +606,37 @@ export default function ResumePage() {
                     </button>
                     <button
                       onClick={() => setEditingTagsId(null)}
+                      title="Cancel"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', display: 'flex', padding: '2px' }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Inline filename editor */}
+                {editingFilenameId === r.id && (
+                  <div style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Edit size={13} style={{ color: 'var(--muted-foreground)', flexShrink: 0 }} />
+                    <input
+                      style={{ ...inputStyle, flex: '1 1 220px', minWidth: 0 }}
+                      placeholder="Enter new filename (without extension)"
+                      value={editFilenameVal}
+                      onChange={e => setEditFilenameVal(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveEditFilename(r.id); if (e.key === 'Escape') setEditingFilenameId(null); }}
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveEditFilename(r.id)}
+                      disabled={savingFilenameId === r.id}
+                      className="btn-primary"
+                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}
+                    >
+                      {savingFilenameId === r.id ? <Loader2 size={12} className="animate-spin" /> : null}
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingFilenameId(null)}
                       title="Cancel"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', display: 'flex', padding: '2px' }}
                     >

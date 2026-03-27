@@ -25,6 +25,9 @@ class UpdateLinkPayload(BaseModel):
 class UpdateTagsPayload(BaseModel):
     tags: list[str]
 
+class UpdateFilenamePayload(BaseModel):
+    filename: str
+
 router = APIRouter(prefix="/api/resumes", tags=["Resumes"])
 
 logger = logging.getLogger(__name__)
@@ -188,6 +191,40 @@ def update_resume_tags(
         raise HTTPException(status_code=404, detail="Resume not found")
 
     resume.tags = normalize_tags(payload.tags)
+    db.commit()
+    db.refresh(resume)
+    return resume
+
+
+@router.patch("/{resume_id}/filename", response_model=ResumeOut)
+def update_resume_filename(
+    resume_id: int,
+    payload: UpdateFilenamePayload,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Update the filename of a resume (without extension)."""
+    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    new_name = payload.filename.strip()
+    if not new_name:
+        raise HTTPException(status_code=400, detail="Filename cannot be empty")
+
+    # Prevent dangerous characters and path traversal
+    dangerous_chars = ['/', '\\', '..', '\0', '<', '>', ':', '"', '|', '?', '*']
+    for char in dangerous_chars:
+        if char in new_name:
+            raise HTTPException(status_code=400, detail="Filename contains invalid characters")
+
+    # Extract extension from current filename
+    old_ext = ''
+    if '.' in resume.filename:
+        old_ext = '.' + resume.filename.rsplit('.', 1)[1]
+
+    # Update filename with extension
+    resume.filename = new_name + old_ext
     db.commit()
     db.refresh(resume)
     return resume
