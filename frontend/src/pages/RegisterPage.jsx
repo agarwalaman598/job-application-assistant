@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Eye, Mail } from 'lucide-react';
+import { Eye, Mail, Loader2 } from 'lucide-react';
 
 const INPUT_STYLE = {
   width: '100%', padding: '10px 16px',
@@ -35,13 +35,20 @@ export default function RegisterPage() {
     if (loading) return;
     if (password !== confirmPwd) { setError('Passwords do not match.'); return; }
     setError(''); setLoading(true);
+    const startedAt = Date.now();
     try {
       const data = await register(email, password, fullName);
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
       setRegistered(true);
       if (data?.dev_link) setDevLink(data.dev_link);
     } catch (err) {
+      setLoading(false);
       setError(err.response?.data?.detail || 'Registration failed');
-    } finally { setLoading(false); }
+    }
   };
 
   const focus = (e) => { e.target.style.borderColor = 'var(--primary)'; };
@@ -208,9 +215,14 @@ export default function RegisterPage() {
             color: 'var(--foreground)', border: '1px solid #2e2e2e',
             borderRadius: '9999px', fontWeight: 700, fontSize: '0.95rem',
             cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-            transition: 'background 0.15s',
+            transition: 'background 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
           }}>
-            {loading ? 'Creating account…' : 'Create account'}
+            {loading ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Creating account…
+              </>
+            ) : 'Create account'}
           </button>
         </form>
 

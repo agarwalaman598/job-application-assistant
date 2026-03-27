@@ -31,6 +31,12 @@ export default function ResumePage() {
   // Copy feedback per resume
   const [copiedId, setCopiedId] = useState(null);
 
+  // Loading states for inline actions
+  const [settingDefaultId, setSettingDefaultId] = useState(null);
+  const [savingLinkId, setSavingLinkId] = useState(null);
+  const [savingTagsId, setSavingTagsId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+
   const fetchResumes = async ({ showLoader = false } = {}) => {
     if (showLoader) setLoadingResumes(true);
     try {
@@ -50,8 +56,12 @@ export default function ResumePage() {
     const fd = new FormData();
     fd.append('file', file);
     setUploading(true);
+    const uploadStartTime = Date.now();
     try {
       await api.post('/resumes/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const elapsedTime = Date.now() - uploadStartTime;
+      const remainingTime = Math.max(0, 800 - elapsedTime);
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
       fetchResumes();
       toast.success('Resume uploaded successfully!');
     } catch (err) {
@@ -67,16 +77,38 @@ export default function ResumePage() {
   };
 
   const setDefault = async (id) => {
-    await api.put(`/resumes/${id}/default`);
-    fetchResumes();
+    setSettingDefaultId(id);
+    const startedAt = Date.now();
+    try {
+      await api.put(`/resumes/${id}/default`);
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
+      fetchResumes();
+    } finally {
+      setSettingDefaultId(null);
+    }
   };
 
   const deleteResume = (id) => setConfirmDeleteId(id);
 
   const confirmDeleteResume = async () => {
-    await api.delete(`/resumes/${confirmDeleteId}`);
-    setConfirmDeleteId(null);
-    fetchResumes();
+    setDeletingId(confirmDeleteId);
+    const startedAt = Date.now();
+    try {
+      await api.delete(`/resumes/${confirmDeleteId}`);
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
+      setConfirmDeleteId(null);
+      fetchResumes();
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleAddLink = async () => {
@@ -98,11 +130,21 @@ export default function ResumePage() {
   };
 
   const saveEditLink = async (id) => {
+    setSavingLinkId(id);
+    const startedAt = Date.now();
     try {
       await api.patch(`/resumes/${id}/link`, { drive_link: editLinkVal.trim() || null });
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
       setEditingLinkId(null);
       fetchResumes();
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      setSavingLinkId(null);
+    }
   };
 
   const copyLink = (r) => {
@@ -133,13 +175,21 @@ export default function ResumePage() {
   };
 
   const saveTags = async (id) => {
+    setSavingTagsId(id);
+    const startedAt = Date.now();
     try {
       await api.patch(`/resumes/${id}/tags`, { tags: parseTags(editTagsVal) });
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
       setEditingTagsId(null);
       fetchResumes();
     } catch (err) {
       console.error(err);
       setAlertMsg('Could not save tags. Please try again.');
+      setSavingTagsId(null);
     }
   };
 
@@ -364,8 +414,9 @@ export default function ResumePage() {
                   {/* Right: action buttons — wraps to new line on mobile */}
                   <div className="flex items-center gap-2 flex-wrap" style={{ flexShrink: 0 }}>
                     {!r.is_default && (
-                      <button onClick={() => setDefault(r.id)} title="Set as default" className="btn-secondary text-xs flex items-center gap-1">
-                        <Star size={12} /> Set default
+                      <button onClick={() => setDefault(r.id)} disabled={settingDefaultId === r.id} title="Set as default" className="btn-secondary text-xs flex items-center gap-1">
+                        {settingDefaultId === r.id ? <Loader2 size={12} className="animate-spin" /> : <Star size={12} />} 
+                        Set default
                       </button>
                     )}
                     {/* Link icon: opens drive_link */}
@@ -425,8 +476,8 @@ export default function ResumePage() {
                         </button>
                       </>
                     )}
-                    <button onClick={() => deleteResume(r.id)} title="Delete resume" className="btn-danger flex items-center gap-1 text-xs">
-                      <Trash2 size={12} />
+                    <button onClick={() => deleteResume(r.id)} disabled={deletingId === r.id} title="Delete resume" className="btn-danger flex items-center gap-1 text-xs">
+                      {deletingId === r.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                     </button>
                   </div>
                 </div>
@@ -445,9 +496,13 @@ export default function ResumePage() {
                     />
                     <button
                       onClick={() => saveEditLink(r.id)}
+                      disabled={savingLinkId === r.id}
                       className="btn-primary"
-                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap' }}
-                    >Save</button>
+                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      {savingLinkId === r.id ? <Loader2 size={12} className="animate-spin" /> : null}
+                      Save
+                    </button>
                     <button
                       onClick={() => setEditingLinkId(null)}
                       title="Cancel"
@@ -472,9 +527,13 @@ export default function ResumePage() {
                     />
                     <button
                       onClick={() => saveTags(r.id)}
+                      disabled={savingTagsId === r.id}
                       className="btn-primary"
-                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap' }}
-                    >Save</button>
+                      style={{ fontSize: '0.75rem', padding: '5px 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      {savingTagsId === r.id ? <Loader2 size={12} className="animate-spin" /> : null}
+                      Save
+                    </button>
                     <button
                       onClick={() => setEditingTagsId(null)}
                       title="Cancel"

@@ -134,6 +134,7 @@ export function ConfirmDialog({
   message,
   confirmLabel = 'Delete',
   danger = false,
+  isLoading = false,
   onConfirm,
   onCancel,
 }) {
@@ -245,18 +246,35 @@ export function ConfirmDialog({
           )}
           <button
             onClick={handleConfirm}
+            disabled={isLoading}
             style={{
               padding: '8px 18px', borderRadius: 9, fontSize: '0.84rem', fontWeight: 600,
               background: danger ? 'rgba(239,68,68,0.15)' : 'var(--primary)',
               border: `1px solid ${danger ? 'rgba(239,68,68,0.35)' : 'transparent'}`,
               color: danger ? '#f87171' : '#fff',
-              cursor: 'pointer', fontFamily: 'inherit',
+              cursor: isLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
               transition: 'background 0.15s',
+              opacity: isLoading ? 0.7 : 1,
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = danger ? 'rgba(239,68,68,0.25)' : 'rgba(99,102,241,0.9)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = danger ? 'rgba(239,68,68,0.15)' : 'var(--primary)'; }}
+            onMouseEnter={e => { if (!isLoading) e.currentTarget.style.background = danger ? 'rgba(239,68,68,0.25)' : 'rgba(99,102,241,0.9)'; }}
+            onMouseLeave={e => { if (!isLoading) e.currentTarget.style.background = danger ? 'rgba(239,68,68,0.15)' : 'var(--primary)'; }}
           >
-            {confirmLabel}
+            {isLoading ? (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{
+                  height: 14, width: 14,
+                  border: '2px solid',
+                  borderColor: danger ? 'rgba(248,113,113,0.3)' : 'rgba(255,255,255,0.3)',
+                  borderTopColor: danger ? '#f87171' : '#fff',
+                  borderRadius: '50%',
+                  animation: 'spin 0.6s linear infinite',
+                  display: 'inline-block',
+                }} />
+                {confirmLabel}
+              </span>
+            ) : (
+              confirmLabel
+            )}
           </button>
         </div>
       </div>

@@ -51,6 +51,7 @@ export default function AnalyzePage() {
   const handleAnalyze = async () => {
     if (loading || !jd.trim()) return;
     setLoading(true);
+    const startedAt = Date.now();
     setMatchResult(null);
     setJdAnalysis(null);
     setDisplayedAnswer('');
@@ -61,6 +62,11 @@ export default function AnalyzePage() {
         api.post('/ai/match', { job_description: jd }),
         api.post('/ai/analyze-jd', { job_description: jd }),
       ]);
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
       setMatchResult(matchRes.data);
       setJdAnalysis(analyzeRes.data);
     } catch (err) {
@@ -73,11 +79,20 @@ export default function AnalyzePage() {
   const handleGenerate = async () => {
     if (genLoading || !question.trim()) return;
     setGenLoading(true);
+    const startedAt = Date.now();
     try {
       const res = await api.post('/ai/generate-answer', { question, job_description: jd });
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
       animateAnswer(res.data.answer);
-    } catch (err) { console.error(err); }
-    finally { setGenLoading(false); }
+    } catch (err) { 
+      console.error(err);
+    } finally {
+      setGenLoading(false);
+    }
   };
 
   return (

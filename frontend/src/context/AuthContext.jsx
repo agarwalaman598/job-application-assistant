@@ -54,13 +54,15 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    // Clear local state immediately so UI reacts instantly
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
     try {
       await api.post('/auth/logout'); // tells backend to clear the httpOnly cookie
     } catch (e) { /* ignore — token will expire on its own */ }
+    finally {
+      // Clear local auth after request settles so sign-out loading UI can render.
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+    }
   };
 
   return (

@@ -46,9 +46,16 @@ export default function AutofillPage() {
 
   const handleDetect = async () => {
     if (detecting || !url.trim()) return;
-    setDetecting(true); setFields([]); setError(''); setResult(null); setMapError(''); setRecalledCount(null);
+    setDetecting(true); 
+    const startedAt = Date.now();
+    setFields([]); setError(''); setResult(null); setMapError(''); setRecalledCount(null);
     try {
       const res = await api.post('/ai/detect-fields', { url });
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
       setFields(res.data.fields);
       setPlatform(res.data.platform);
       setFormUrl(res.data.form_url || url);
@@ -65,7 +72,9 @@ export default function AutofillPage() {
   const [recalledCount, setRecalledCount] = useState(null); // number of saved answers used
 
   const handleAutoMap = async () => {
-    setMapping(true); setMapError(''); setRecalledCount(null);
+    setMapping(true);
+    const startedAt = Date.now();
+    setMapError(''); setRecalledCount(null);
     try {
       const fieldData = visibleFields.map(f => ({
         field_id: f.field_id,
@@ -74,6 +83,11 @@ export default function AutofillPage() {
         options: f.options || [],
       }));
       const res = await api.post('/ai/auto-map', { fields: fieldData });
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
       if (res.data.field_values) {
         setFieldValues({ ...fieldValues, ...res.data.field_values });
       }
@@ -88,9 +102,16 @@ export default function AutofillPage() {
   };
 
   const handleFill = async () => {
-    setFilling(true); setResult(null); setError(''); setTracked(false); setTrackForm(null);
+    setFilling(true);
+    const startedAt = Date.now();
+    setResult(null); setError(''); setTracked(false); setTrackForm(null);
     try {
       const res = await api.post('/ai/fill-form', { url: formUrl, field_map: fieldValues });
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
       setResult(res.data);
 
       // Open the pre-filled form in a new tab
@@ -130,6 +151,7 @@ export default function AutofillPage() {
   const handleTrack = async () => {
     if (!trackForm) return;
     setTracking(true);
+    const trackStartTime = Date.now();
     try {
       await api.post('/applications', {
         company: trackForm.company || 'Unknown',
@@ -139,6 +161,9 @@ export default function AutofillPage() {
         resume_id: trackForm.resume_id ? Number(trackForm.resume_id) : null,
         notes: 'Auto-tracked via Autofill',
       });
+      const elapsedTime = Date.now() - trackStartTime;
+      const remainingTime = Math.max(0, 800 - elapsedTime);
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
       setTracked(true);
       setTrackForm(null);
     } catch (err) { console.error(err); }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Eye } from 'lucide-react';
+import { Eye, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
@@ -30,12 +30,19 @@ export default function LoginPage() {
     e.preventDefault();
     if (loading) return;
     setError(''); setMessage(''); setLoading(true);
+    const startedAt = Date.now();
     try {
       await login(email, password);
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
       navigate('/dashboard');
     } catch (err) {
+      setLoading(false);
       setError(err.response?.data?.detail || (err.response ? 'Invalid credentials' : 'Network error — please check your connection.'));
-    } finally { setLoading(false); }
+    }
   };
 
   const handleResend = async () => {
@@ -184,9 +191,14 @@ export default function LoginPage() {
             color: 'var(--foreground)', border: '1px solid #2e2e2e',
             borderRadius: '9999px', fontWeight: 700, fontSize: '0.95rem',
             cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-            transition: 'background 0.15s',
+            transition: 'background 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
           }}>
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Signing in…
+              </>
+            ) : 'Sign in'}
           </button>
         </form>
 

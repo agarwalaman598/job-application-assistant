@@ -37,6 +37,7 @@ export default function ApplicationsPage() {
   const [form, setForm]           = useState(EMPTY_FORM);
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
 
   // Close sort dropdown on outside click
@@ -82,6 +83,7 @@ export default function ApplicationsPage() {
   const handleSave = async () => {
     if (saving) return;
     setSaving(true);
+    const saveStartTime = Date.now();
     try {
       const payload = {
         ...form,
@@ -89,6 +91,9 @@ export default function ApplicationsPage() {
       };
       if (editingId) await api.put(`/applications/${editingId}`, payload);
       else           await api.post('/applications', payload);
+      const elapsedTime = Date.now() - saveStartTime;
+      const remainingTime = Math.max(0, 800 - elapsedTime);
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
       closeForm(); fetchApps();
       toast.success(editingId ? 'Application updated!' : 'Application added!');
     } catch (e) {
@@ -100,9 +105,18 @@ export default function ApplicationsPage() {
   const handleDelete = (id) => setConfirmId(id);
 
   const confirmDelete = async () => {
-    await api.delete(`/applications/${confirmId}`);
-    setConfirmId(null);
-    fetchApps();
+    setDeletingId(confirmId);
+    const deleteStartTime = Date.now();
+    try {
+      await api.delete(`/applications/${confirmId}`);
+      const elapsedTime = Date.now() - deleteStartTime;
+      const remainingTime = Math.max(0, 800 - elapsedTime);
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+      setConfirmId(null);
+      fetchApps();
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // Filter + sort
@@ -299,8 +313,13 @@ export default function ApplicationsPage() {
                   <Edit2 className="h-3.5 w-3.5" />
                 </button>
                 <button onClick={() => handleDelete(app.id)} title="Delete"
-                  className="h-7 w-7 rounded-md flex items-center justify-center bg-transparent border-none cursor-pointer text-[var(--muted-foreground)] hover:text-[var(--destructive)] hover:bg-[rgba(239,68,68,0.08)] transition-all">
-                  <Trash2 className="h-3.5 w-3.5" />
+                  disabled={deletingId === app.id}
+                  className="h-7 w-7 rounded-md flex items-center justify-center bg-transparent border-none cursor-pointer text-[var(--muted-foreground)] hover:text-[var(--destructive)] hover:bg-[rgba(239,68,68,0.08)] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                  {deletingId === app.id ? (
+                    <div className="h-3.5 w-3.5 border-2 border-[rgba(239,68,68,0.3)] border-t-[var(--destructive)] rounded-full animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3.5 w-3.5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -369,7 +388,14 @@ export default function ApplicationsPage() {
             </div>
 
             <Button className="w-full mt-5" onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving…' : (editingId ? 'Update' : 'Add') + ' application'}
+              {saving ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="h-4 w-4 border-2 border-current border-opacity-20 border-t-current rounded-full animate-spin" />
+                  Saving…
+                </span>
+              ) : (
+                (editingId ? 'Update' : 'Add') + ' application'
+              )}
             </Button>
           </div>
         </div>
@@ -381,6 +407,7 @@ export default function ApplicationsPage() {
         message="This will permanently remove the application from your tracker."
         confirmLabel="Delete"
         danger
+        isLoading={deletingId !== null}
         onConfirm={confirmDelete}
         onCancel={() => setConfirmId(null)}
       />

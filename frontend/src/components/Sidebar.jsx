@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
@@ -39,10 +40,23 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
   const { logout, user } = useAuth();
   const { requestNavigate } = useNavigationGuard() ?? {};
   const [confirming, setConfirming] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
-  function handleLogout() {
-    logout();
-    navigate('/login');
+  async function handleLogout() {
+    if (signingOut) return;
+    setSigningOut(true);
+    const startedAt = Date.now();
+    try {
+      await logout();
+      const elapsed = Date.now() - startedAt;
+      const minVisibleMs = 800;
+      if (elapsed < minVisibleMs) {
+        await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
+      }
+      navigate('/login');
+    } finally {
+      setSigningOut(false);
+    }
   }
 
   const w = collapsed ? 'w-16' : 'w-64';
@@ -186,8 +200,34 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
               Are you sure you want to sign out of your account?
             </p>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button onClick={() => setConfirming(false)} style={{ flex: 1, padding: '9px', borderRadius: '9999px', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer', fontFamily: 'inherit', background: 'var(--input)', color: 'var(--foreground)', border: '1px solid var(--border)' }}>Cancel</button>
-              <button onClick={handleLogout} style={{ flex: 1, padding: '9px', borderRadius: '9999px', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', fontFamily: 'inherit', background: '#1f1f1f', color: 'var(--foreground)', border: '1px solid #2e2e2e' }}>Sign out</button>
+              <button
+                onClick={() => setConfirming(false)}
+                disabled={signingOut}
+                style={{
+                  flex: 1, padding: '9px', borderRadius: '9999px', fontWeight: 600, fontSize: '0.875rem', fontFamily: 'inherit',
+                  background: 'var(--input)', color: 'var(--foreground)', border: '1px solid var(--border)',
+                  cursor: signingOut ? 'not-allowed' : 'pointer', opacity: signingOut ? 0.65 : 1,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                disabled={signingOut}
+                style={{
+                  flex: 1, padding: '9px', borderRadius: '9999px', fontWeight: 700, fontSize: '0.875rem', fontFamily: 'inherit',
+                  background: '#1f1f1f', color: 'var(--foreground)', border: '1px solid #2e2e2e',
+                  cursor: signingOut ? 'not-allowed' : 'pointer', opacity: signingOut ? 0.85 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                }}
+              >
+                {signingOut ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Signing out…
+                  </>
+                ) : 'Sign out'}
+              </button>
             </div>
           </div>
         </div>

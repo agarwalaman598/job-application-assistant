@@ -32,6 +32,7 @@ export default function ContactsPage() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -126,6 +127,7 @@ export default function ContactsPage() {
     if (saving) return;
 
     setSaving(true);
+    const saveStartTime = Date.now();
     try {
       const payload = {
         ...form,
@@ -134,6 +136,10 @@ export default function ContactsPage() {
       };
       if (editingId) await api.put(`/contacts/${editingId}`, payload);
       else await api.post('/contacts', payload);
+
+      const elapsedTime = Date.now() - saveStartTime;
+      const remainingTime = Math.max(0, 800 - elapsedTime);
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
 
       closeForm();
       fetchContacts();
@@ -147,14 +153,21 @@ export default function ContactsPage() {
   };
 
   const confirmDelete = async () => {
+    setDeletingId(confirmId);
+    const deleteStartTime = Date.now();
     try {
       await api.delete(`/contacts/${confirmId}`);
+      const elapsedTime = Date.now() - deleteStartTime;
+      const remainingTime = Math.max(0, 800 - elapsedTime);
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
       setConfirmId(null);
       fetchContacts();
       toast.success('Contact deleted.');
     } catch (err) {
       console.error(err);
       toast.error('Failed to delete contact.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -269,10 +282,15 @@ export default function ContactsPage() {
                 </button>
                 <button
                   onClick={() => setConfirmId(contact.id)}
+                  disabled={deletingId === contact.id}
                   title="Delete"
-                  className="h-7 w-7 rounded-md flex items-center justify-center bg-transparent border-none cursor-pointer text-[var(--muted-foreground)] hover:text-[var(--destructive)] hover:bg-[rgba(239,68,68,0.08)] transition-all"
+                  className="h-7 w-7 rounded-md flex items-center justify-center bg-transparent border-none cursor-pointer text-[var(--muted-foreground)] hover:text-[var(--destructive)] hover:bg-[rgba(239,68,68,0.08)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  {deletingId === contact.id ? (
+                    <div className="h-3.5 w-3.5 border-2 border-[rgba(239,68,68,0.3)] border-t-[var(--destructive)] rounded-full animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3.5 w-3.5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -393,6 +411,7 @@ export default function ContactsPage() {
         message="This will permanently remove the contact and its application links."
         confirmLabel="Delete"
         danger
+        isLoading={deletingId !== null}
         onConfirm={confirmDelete}
         onCancel={() => setConfirmId(null)}
       />
