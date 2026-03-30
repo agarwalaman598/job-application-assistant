@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +14,7 @@ export function Navbar() {
   const navigate = useNavigate();
 
   return (
-    <motion.nav
+    <Motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.6 }}
@@ -23,7 +23,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <motion.div
+          <Motion.div
             whileHover={{ scale: 1.05 }}
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => navigate('/')}
@@ -36,12 +36,12 @@ export function Navbar() {
                     stroke="white" strokeWidth="2" strokeLinejoin="round"/>
             </svg>
             <span className="text-xl font-normal text-white">JobAssist AI</span>
-          </motion.div>
+          </Motion.div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
             {navItems.map((item, index) => (
-              <motion.a
+              <Motion.a
                 key={item.label}
                 href={item.href}
                 initial={{ opacity: 0, y: -20 }}
@@ -50,13 +50,13 @@ export function Navbar() {
                 className="text-gray-300 hover:text-white transition-colors duration-300 font-light"
               >
                 {item.label}
-              </motion.a>
+              </Motion.a>
             ))}
           </div>
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <motion.button
+            <Motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.4 }}
@@ -64,8 +64,8 @@ export function Navbar() {
               onClick={() => navigate('/login')}
             >
               Sign In
-            </motion.button>
-            <motion.button
+            </Motion.button>
+            <Motion.button
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.5 }}
@@ -74,7 +74,7 @@ export function Navbar() {
               onClick={() => navigate('/register')}
             >
               Get Started
-            </motion.button>
+            </Motion.button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -89,7 +89,7 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -118,9 +118,9 @@ export function Navbar() {
                 </a>
               ))}
             </div>
-          </motion.div>
+          </Motion.div>
         )}
       </div>
-    </motion.nav>
+    </Motion.nav>
   );
 }

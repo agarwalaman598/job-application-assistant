@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { createElement, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useNavigationGuard } from '../context/NavigationGuardContext';
 import {
@@ -53,7 +53,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
       if (elapsed < minVisibleMs) {
         await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
       }
-      navigate('/login');
+      navigate('/');
     } finally {
       setSigningOut(false);
     }
@@ -154,7 +154,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
                   : 'text-[var(--muted-foreground)] hover:text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)]'
               )}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              {createElement(Icon, { className: 'h-4 w-4 shrink-0' })}
               {!collapsed && <span className="flex-1">{label}</span>}
               {!collapsed && active && (
                 <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: 'var(--primary)' }} />

@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { 
   Target, 
   Brain, 
@@ -46,7 +46,7 @@ export function Features() {
     <section className="relative py-32 bg-black overflow-hidden">
       {/* Animated Grid Background */}
       <div className="absolute inset-0">
-        <motion.div
+        <Motion.div
           className="absolute inset-0 opacity-5"
           style={{
             backgroundImage: `
@@ -68,7 +68,7 @@ export function Features() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8">
         {/* Section Header */}
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -81,12 +81,12 @@ export function Features() {
           <p className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto font-light px-4">
             Powered by cutting-edge AI to automate your entire job application workflow
           </p>
-        </motion.div>
+        </Motion.div>
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {features.map((feature, index) => (
-            <motion.div
+            <Motion.div
               key={feature.title}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -96,7 +96,7 @@ export function Features() {
               className="relative p-5 md:p-6 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm group cursor-pointer overflow-hidden"
             >
               {/* Hover Effect */}
-              <motion.div
+              <Motion.div
                 className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
               />
 
@@ -108,7 +108,7 @@ export function Features() {
               {/* Content */}
               <h3 className="relative text-lg md:text-xl font-normal text-white mb-2">{feature.title}</h3>
               <p className="relative text-xs md:text-sm text-gray-400 leading-relaxed font-light">{feature.description}</p>
-            </motion.div>
+            </Motion.div>
           ))}
         </div>
       </div>

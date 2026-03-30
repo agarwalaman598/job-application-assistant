@@ -1,6 +1,8 @@
 import axios from 'axios';
 
 const NETWORK_ERROR_EVENT = 'app:network-error';
+const LOGOUT_MARKER_KEY = 'auth:logoutAt';
+const LOGOUT_GRACE_MS = 15000;
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
@@ -30,10 +32,21 @@ api.interceptors.response.use(
       error.response?.status === 401 &&
       !error.config?.url?.includes('/auth/')
     ) {
+      const logoutAt = Number(sessionStorage.getItem(LOGOUT_MARKER_KEY) || 0);
+      const isLogoutFlow = logoutAt > 0 && Date.now() - logoutAt < LOGOUT_GRACE_MS;
+      if (isLogoutFlow) {
+        return Promise.reject(error);
+      }
+
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       sessionStorage.setItem('sessionExpired', '1');
-      window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        if (!window.location.pathname.startsWith('/login')) {
+          window.location.href = `/login?next=${encodeURIComponent(current)}`;
+        }
+      }
     }
     return Promise.reject(error);
   }

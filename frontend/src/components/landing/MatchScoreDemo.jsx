@@ -1,4 +1,4 @@
-import { motion, useInView } from 'motion/react';
+import { motion as Motion, useInView } from 'motion/react';
 import { Target, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useRef } from 'react';
 
@@ -32,7 +32,7 @@ export function MatchScoreDemo() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8">
         {/* Section Header */}
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -45,14 +45,14 @@ export function MatchScoreDemo() {
           <p className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto font-light px-4">
             Instant compatibility analysis for every job application
           </p>
-        </motion.div>
+        </Motion.div>
 
         {/* Dynamic Results Display */}
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
             {/* Main Score Card - Always animating */}
             <div className="lg:col-span-1">
-              <motion.div
+              <Motion.div
                 key={`score-card-${isInView}`}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -61,30 +61,30 @@ export function MatchScoreDemo() {
               >
                 <div className="flex items-start justify-between mb-8 md:mb-10">
                   <div>
-                    <motion.h3
+                    <Motion.h3
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.2 }}
                       className="text-white text-xs md:text-sm mb-2 uppercase tracking-widest"
                     >
                       Overall Match Score
-                    </motion.h3>
-                    <motion.p
+                    </Motion.h3>
+                    <Motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.3 }}
                       className="text-gray-600 text-[10px] md:text-xs"
                     >
                       Senior Software Engineer - Google
-                    </motion.p>
+                    </Motion.p>
                   </div>
-                  <motion.div
+                  <Motion.div
                     initial={{ opacity: 0, rotate: -90 }}
                     animate={{ opacity: 1, rotate: 0 }}
                     transition={{ delay: 0.3 }}
                   >
                     <Target className="w-4 h-4 md:w-5 md:h-5 text-gray-700" strokeWidth={1.5} />
-                  </motion.div>
+                  </Motion.div>
                 </div>
 
                 {/* Circular Progress */}
@@ -109,7 +109,7 @@ export function MatchScoreDemo() {
                         fill="none"
                         className="hidden md:block"
                       />
-                      <motion.circle
+                      <Motion.circle
                         key={`circle-mobile-${isInView}`}
                         cx="88"
                         cy="88"
@@ -126,7 +126,7 @@ export function MatchScoreDemo() {
                         }}
                         className="md:hidden"
                       />
-                      <motion.circle
+                      <Motion.circle
                         key={`circle-desktop-${isInView}`}
                         cx="104"
                         cy="104"
@@ -145,7 +145,7 @@ export function MatchScoreDemo() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center flex-col">
-                      <motion.div
+                      <Motion.div
                         key={`score-${isInView}`}
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -154,8 +154,8 @@ export function MatchScoreDemo() {
                         style={{ fontWeight: 200 }}
                       >
                         {matchData.overall}
-                      </motion.div>
-                      <motion.span
+                      </Motion.div>
+                      <Motion.span
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 0.6 }}
                         transition={{ delay: 1 }}
@@ -163,7 +163,7 @@ export function MatchScoreDemo() {
                         style={{ fontWeight: 300 }}
                       >
                         out of 100
-                      </motion.span>
+                      </Motion.span>
                     </div>
                   </div>
                 </div>
@@ -171,7 +171,7 @@ export function MatchScoreDemo() {
                 {/* Dimension Scores */}
                 <div className="space-y-4 md:space-y-5">
                   {matchData.dimensions.map((dim, index) => (
-                    <motion.div
+                    <Motion.div
                       key={`${dim.name}-${isInView}`}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -180,17 +180,17 @@ export function MatchScoreDemo() {
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-gray-500 text-[10px] md:text-xs">{dim.name}</span>
-                        <motion.span
+                        <Motion.span
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: 1.4 + index * 0.1 }}
                           className="text-white text-xs md:text-sm"
                         >
                           {dim.score}%
-                        </motion.span>
+                        </Motion.span>
                       </div>
                       <div className="h-1 bg-white/[0.06] rounded-full overflow-hidden">
-                        <motion.div
+                        <Motion.div
                           key={`bar-${isInView}-${index}`}
                           initial={{ width: '0%' }}
                           animate={{ width: `${dim.score}%` }}
@@ -198,23 +198,23 @@ export function MatchScoreDemo() {
                           className="h-full bg-white rounded-full"
                         />
                       </div>
-                    </motion.div>
+                    </Motion.div>
                   ))}
                 </div>
-              </motion.div>
+              </Motion.div>
             </div>
 
             {/* Right Side - Gap Analysis */}
             <div className="lg:col-span-2 space-y-6 md:space-y-8">
               {/* Skills to Improve */}
-              <motion.div
+              <Motion.div
                 key={`skills-${isInView}`}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
                 className="bg-neutral-950/50 border border-white/[0.08] rounded-xl p-6 md:p-8"
               >
-                <motion.div
+                <Motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 }}
@@ -222,11 +222,11 @@ export function MatchScoreDemo() {
                 >
                   <AlertCircle className="w-3 h-3 md:w-4 md:h-4 text-gray-600" strokeWidth={1.5} />
                   <h4 className="text-white uppercase tracking-widest text-[10px] md:text-xs">Skills to Improve</h4>
-                </motion.div>
+                </Motion.div>
 
                 <div className="grid sm:grid-cols-3 gap-3 md:gap-4">
                   {matchData.gaps.map((gap, index) => (
-                    <motion.div
+                    <Motion.div
                       key={`${gap.skill}-${isInView}`}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -235,7 +235,7 @@ export function MatchScoreDemo() {
                     >
                       <div className="flex items-start justify-between mb-2 md:mb-3">
                         <span className="text-gray-300 text-xs md:text-sm">{gap.skill}</span>
-                        <motion.span
+                        <Motion.span
                           initial={{ opacity: 0, scale: 0 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: 1 + index * 0.15 }}
@@ -246,25 +246,25 @@ export function MatchScoreDemo() {
                           }`}
                         >
                           {gap.severity}
-                        </motion.span>
+                        </Motion.span>
                       </div>
                       <p className="text-gray-600 text-[10px] md:text-xs leading-relaxed">
                         {gap.severity === 'high' ? 'Critical for role' : gap.severity === 'medium' ? 'Recommended skill' : 'Nice to have'}
                       </p>
-                    </motion.div>
+                    </Motion.div>
                   ))}
                 </div>
-              </motion.div>
+              </Motion.div>
 
               {/* Your Strengths */}
-              <motion.div
+              <Motion.div
                 key={`strengths-${isInView}`}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.6 }}
                 className="bg-neutral-950/50 border border-white/[0.08] rounded-xl p-6 md:p-8"
               >
-                <motion.div
+                <Motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.8 }}
@@ -272,31 +272,31 @@ export function MatchScoreDemo() {
                 >
                   <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-gray-600" strokeWidth={1.5} />
                   <h4 className="text-white uppercase tracking-widest text-[10px] md:text-xs">Your Strengths</h4>
-                </motion.div>
+                </Motion.div>
 
                 <div className="grid sm:grid-cols-2 gap-2 md:gap-3">
                   {['React & TypeScript', 'System Architecture', 'Cloud Infrastructure', 'Team Leadership'].map((strength, index) => (
-                    <motion.div
+                    <Motion.div
                       key={`${strength}-${isInView}`}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 1.2 + index * 0.1 }}
                       className="flex items-center gap-2 md:gap-3 py-2.5 md:py-3 px-3 md:px-4 bg-neutral-900/30 border border-white/[0.06] rounded-lg"
                     >
-                      <motion.div
+                      <Motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 1.3 + index * 0.1 }}
                         className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-green-500"
                       />
                       <span className="text-gray-400 text-xs md:text-sm">{strength}</span>
-                    </motion.div>
+                    </Motion.div>
                   ))}
                 </div>
-              </motion.div>
+              </Motion.div>
 
               {/* Recommendation */}
-              <motion.div
+              <Motion.div
                 key={`recommendation-${isInView}`}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -304,33 +304,33 @@ export function MatchScoreDemo() {
                 className="bg-blue-500/[0.03] border border-blue-500/20 rounded-xl p-5 md:p-6"
               >
                 <div className="flex items-start gap-3 md:gap-4">
-                  <motion.div
+                  <Motion.div
                     initial={{ opacity: 0, rotate: -45 }}
                     animate={{ opacity: 1, rotate: 0 }}
                     transition={{ delay: 1.1 }}
                   >
                     <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-blue-500 flex-shrink-0 mt-1" strokeWidth={1.5} />
-                  </motion.div>
+                  </Motion.div>
                   <div>
-                    <motion.h5
+                    <Motion.h5
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 1.2 }}
                       className="text-white uppercase tracking-widest text-[10px] md:text-xs mb-2 md:mb-3"
                     >
                       AI Recommendation
-                    </motion.h5>
-                    <motion.p
+                    </Motion.h5>
+                    <Motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 1.4 }}
                       className="text-gray-500 text-xs md:text-sm leading-relaxed"
                     >
                       Focus on Kubernetes and System Design to increase your match score to 95%+. Consider taking online courses or building relevant projects.
-                    </motion.p>
+                    </Motion.p>
                   </div>
                 </div>
-              </motion.div>
+              </Motion.div>
             </div>
           </div>
         </div>

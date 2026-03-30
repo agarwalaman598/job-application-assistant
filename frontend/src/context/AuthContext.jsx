@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../api';
 
 const AuthContext = createContext(null);
+const LOGOUT_MARKER_KEY = 'auth:logoutAt';
+const LOGOUT_GRACE_MS = 15000;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -44,6 +46,7 @@ export function AuthProvider({ children }) {
     }
     const userData = res.data.user;
     localStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.removeItem(LOGOUT_MARKER_KEY);
     setUser(userData);
     return res.data;
   };
@@ -54,9 +57,13 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
+    sessionStorage.setItem(LOGOUT_MARKER_KEY, String(Date.now()));
+    setTimeout(() => {
+      sessionStorage.removeItem(LOGOUT_MARKER_KEY);
+    }, LOGOUT_GRACE_MS);
     try {
       await api.post('/auth/logout'); // tells backend to clear the httpOnly cookie
-    } catch (e) { /* ignore — token will expire on its own */ }
+    } catch { /* ignore — token will expire on its own */ }
     finally {
       // Clear local auth after request settles so sign-out loading UI can render.
       localStorage.removeItem('token');
@@ -72,5 +79,6 @@ export function AuthProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
 

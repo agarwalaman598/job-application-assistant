@@ -1,9 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+
+function getSafeNextPath(rawNext) {
+  if (!rawNext) return '/dashboard';
+  if (!rawNext.startsWith('/')) return '/dashboard';
+  if (rawNext.startsWith('//')) return '/dashboard';
+  if (rawNext.startsWith('/login')) return '/dashboard';
+  if (rawNext.startsWith('/register')) return '/dashboard';
+  return rawNext;
+}
 
 export default function LoginPage() {
   const [email, setEmail]       = useState('');
@@ -15,6 +24,7 @@ export default function LoginPage() {
   const [resending, setResending] = useState(false);
   const { login }  = useAuth();
   const navigate   = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     if (sessionStorage.getItem('sessionExpired')) {
@@ -37,7 +47,8 @@ export default function LoginPage() {
       if (elapsed < minVisibleMs) {
         await new Promise((resolve) => setTimeout(resolve, minVisibleMs - elapsed));
       }
-      navigate('/dashboard');
+      const next = getSafeNextPath(searchParams.get('next'));
+      navigate(next, { replace: true });
     } catch (err) {
       setError(err.response?.data?.detail || (err.response ? 'Invalid credentials' : 'Network error — please check your connection.'));
     } finally {

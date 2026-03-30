@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { Briefcase, MapPin, Building2, TrendingUp, Target, CheckCircle2 } from 'lucide-react';
 
 const jobCards = [
@@ -58,7 +58,7 @@ export function FloatingJobCards() {
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
       {/* Job Application Cards */}
       {jobCards.map((card, index) => (
-        <motion.div
+        <Motion.div
           key={index}
           initial={{ opacity: 0, y: 50, scale: 0.8 }}
           animate={{ 
@@ -106,11 +106,11 @@ export function FloatingJobCards() {
             </div>
             <span className="text-white font-medium text-sm">{card.matchScore}%</span>
           </div>
-        </motion.div>
+        </Motion.div>
       ))}
 
       {/* Resume Card */}
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
         animate={{ 
           opacity: [0.6, 0.9, 0.6],
@@ -146,10 +146,10 @@ export function FloatingJobCards() {
           <CheckCircle2 className="w-4 h-4 text-green-400" />
           <span className="text-green-400 text-xs">Default Resume</span>
         </div>
-      </motion.div>
+      </Motion.div>
 
       {/* Floating Stats Badges */}
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ 
           opacity: [0.5, 0.9, 0.5],
@@ -168,9 +168,9 @@ export function FloatingJobCards() {
           <TrendingUp className="w-4 h-4 text-green-400" />
           <span className="text-white text-sm font-medium">12 Active Applications</span>
         </div>
-      </motion.div>
+      </Motion.div>
 
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ 
           opacity: [0.5, 0.9, 0.5],
@@ -189,7 +189,7 @@ export function FloatingJobCards() {
           <CheckCircle2 className="w-4 h-4 text-blue-400" />
           <span className="text-white text-sm font-medium">AI Analysis Complete</span>
         </div>
-      </motion.div>
+      </Motion.div>
     </div>
   );
 }

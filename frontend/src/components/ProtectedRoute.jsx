@@ -1,8 +1,13 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+
+const LOGOUT_MARKER_KEY = 'auth:logoutAt';
 
 export default function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+
+  const isLogoutFlow = !!sessionStorage.getItem(LOGOUT_MARKER_KEY);
 
   if (loading) {
     return (
@@ -13,7 +18,13 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    if (isLogoutFlow) {
+      return <Navigate to="/" replace />;
+    }
+
+    const next = `${location.pathname}${location.search}${location.hash}`;
+    const target = `/login?next=${encodeURIComponent(next)}`;
+    return <Navigate to={target} replace />;
   }
 
   return children;

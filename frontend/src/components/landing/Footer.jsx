@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { Github, Linkedin, Mail } from 'lucide-react';
 
 const socialLinks = [
@@ -14,7 +14,7 @@ export function Footer() {
         {/* Centered Footer Content */}
         <div className="flex flex-col items-center gap-6">
           {/* Brand */}
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -29,10 +29,10 @@ export function Footer() {
                     stroke="white" strokeWidth="2" strokeLinejoin="round"/>
             </svg>
             <span className="text-lg font-normal text-white">JobAssist AI</span>
-          </motion.div>
+          </Motion.div>
 
           {/* Social Links */}
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -40,7 +40,7 @@ export function Footer() {
             className="flex gap-3"
           >
             {socialLinks.map((social, index) => (
-              <motion.a
+              <Motion.a
                 key={social.label}
                 href={social.href}
                 initial={{ opacity: 0, scale: 0 }}
@@ -52,12 +52,12 @@ export function Footer() {
                 aria-label={social.label}
               >
                 <social.icon className="w-4 h-4" />
-              </motion.a>
+              </Motion.a>
             ))}
-          </motion.div>
+          </Motion.div>
 
           {/* Copyright */}
-          <motion.p
+          <Motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -65,7 +65,7 @@ export function Footer() {
             className="text-gray-500 text-xs md:text-sm font-light text-center"
           >
             © 2026 JobAssist AI. All rights reserved.
-          </motion.p>
+          </Motion.p>
         </div>
       </div>
     </footer>

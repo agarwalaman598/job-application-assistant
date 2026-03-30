@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { Upload, Search, Sparkles, Send, ArrowRight } from 'lucide-react';
 
 const steps = [
@@ -36,7 +36,7 @@ export function HowItWorks() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8">
         {/* Section Header */}
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -49,7 +49,7 @@ export function HowItWorks() {
           <p className="text-base md:text-lg text-gray-500 max-w-2xl mx-auto px-4">
             Four simple steps to transform your job application workflow
           </p>
-        </motion.div>
+        </Motion.div>
 
         {/* Flowchart Steps */}
         <div className="relative max-w-6xl mx-auto">
@@ -58,7 +58,7 @@ export function HowItWorks() {
             {steps.map((step, index) => (
               <div key={step.title} className="flex items-center flex-1">
                 {/* Step Card */}
-                <motion.div
+                <Motion.div
                   initial={{ opacity: 0, y: 50 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -66,7 +66,7 @@ export function HowItWorks() {
                   className="relative flex-1"
                 >
                   {/* Animated Step Card */}
-                  <motion.div
+                  <Motion.div
                     animate={{
                       borderColor: [
                         'rgba(255, 255, 255, 0.2)',
@@ -84,7 +84,7 @@ export function HowItWorks() {
                     className="border-2 border-dashed border-white/20 rounded-lg p-4 text-center bg-neutral-950/50"
                   >
                     {/* Icon with pulse animation */}
-                    <motion.div
+                    <Motion.div
                       animate={{
                         scale: [1, 1.1, 1],
                       }}
@@ -98,13 +98,13 @@ export function HowItWorks() {
                       className="w-10 h-10 mx-auto flex items-center justify-center mb-3"
                     >
                       <step.icon className="w-7 h-7 text-white" strokeWidth={1.5} />
-                    </motion.div>
+                    </Motion.div>
 
                     {/* Content */}
                     <h3 className="text-base text-white mb-2 uppercase tracking-wide">{step.title}</h3>
                     <p className="text-gray-500 text-xs leading-relaxed">{step.description}</p>
-                  </motion.div>
-                </motion.div>
+                  </Motion.div>
+                </Motion.div>
 
                 {/* Animated Arrow Connector */}
                 {index < steps.length - 1 && (
@@ -113,7 +113,7 @@ export function HowItWorks() {
                     <div className="absolute w-full h-0.5 border-t-2 border-dashed border-white/20" />
                     
                     {/* Animated flowing dots */}
-                    <motion.div
+                    <Motion.div
                       animate={{
                         x: [-30, 30],
                         opacity: [0, 1, 0]
@@ -127,7 +127,7 @@ export function HowItWorks() {
                       }}
                       className="absolute w-1.5 h-1.5 bg-white rounded-full"
                     />
-                    <motion.div
+                    <Motion.div
                       animate={{
                         x: [-30, 30],
                         opacity: [0, 1, 0]
@@ -153,14 +153,14 @@ export function HowItWorks() {
             {steps.map((step, index) => (
               <div key={step.title}>
                 {/* Step Card */}
-                <motion.div
+                <Motion.div
                   initial={{ opacity: 0, x: -50 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.15 }}
                   className="relative"
                 >
-                  <motion.div
+                  <Motion.div
                     animate={{
                       borderColor: [
                         'rgba(255, 255, 255, 0.2)',
@@ -178,7 +178,7 @@ export function HowItWorks() {
                     className="border-2 border-dashed border-white/20 rounded-lg p-4 bg-neutral-950/50"
                   >
                     {/* Icon */}
-                    <motion.div
+                    <Motion.div
                       animate={{
                         scale: [1, 1.1, 1],
                       }}
@@ -192,13 +192,13 @@ export function HowItWorks() {
                       className="w-10 h-10 flex items-center justify-center mb-3"
                     >
                       <step.icon className="w-7 h-7 text-white" strokeWidth={1.5} />
-                    </motion.div>
+                    </Motion.div>
 
                     {/* Content */}
                     <h3 className="text-base text-white mb-2 uppercase tracking-wide">{step.title}</h3>
                     <p className="text-gray-500 text-xs leading-relaxed">{step.description}</p>
-                  </motion.div>
-                </motion.div>
+                  </Motion.div>
+                </Motion.div>
 
                 {/* Animated Arrow Connector */}
                 {index < steps.length - 1 && (
@@ -206,7 +206,7 @@ export function HowItWorks() {
                     {/* Dashed line */}
                     <div className="absolute h-full w-0.5 border-l-2 border-dashed border-white/20" />
                     
-                    <motion.div
+                    <Motion.div
                       animate={{
                         y: [-20, 20],
                         opacity: [0, 1, 0]
@@ -220,7 +220,7 @@ export function HowItWorks() {
                       }}
                       className="absolute w-1.5 h-1.5 bg-white rounded-full"
                     />
-                    <motion.div
+                    <Motion.div
                       animate={{
                         y: [-20, 20],
                         opacity: [0, 1, 0]

@@ -1,4 +1,6 @@
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
+
+const PARTICLE_DURATIONS = [2, 2.2, 2.4, 2.6, 2.8, 3, 2.3, 2.5, 2.7, 2.9];
 
 export function SectionDivider() {
   return (
@@ -8,7 +10,7 @@ export function SectionDivider() {
         {/* Horizontal flowing line */}
         <div className="relative h-px bg-white/10">
           {/* Flowing pulse effect */}
-          <motion.div
+          <Motion.div
             className="absolute top-0 left-0 h-full w-20 md:w-32 bg-gradient-to-r from-transparent via-white to-transparent"
             animate={{
               x: ['-100%', '100vw'],
@@ -28,7 +30,7 @@ export function SectionDivider() {
         {/* Floating Particles */}
         <div className="absolute inset-0 flex items-center justify-center">
           {[...Array(10)].map((_, i) => (
-            <motion.div
+            <Motion.div
               key={i}
               className="absolute w-0.5 h-0.5 md:w-1 md:h-1 bg-white/40 rounded-full"
               style={{
@@ -40,7 +42,7 @@ export function SectionDivider() {
                 scale: [1, 1.5, 1],
               }}
               transition={{
-                duration: 2 + Math.random() * 2,
+                duration: PARTICLE_DURATIONS[i % PARTICLE_DURATIONS.length],
                 delay: i * 0.2,
                 repeat: Infinity,
                 ease: "easeInOut",
@@ -50,7 +52,7 @@ export function SectionDivider() {
         </div>
 
         {/* Central Glow */}
-        <motion.div
+        <Motion.div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 md:w-24 md:h-24 rounded-full"
           animate={{
             scale: [1, 1.5, 1],

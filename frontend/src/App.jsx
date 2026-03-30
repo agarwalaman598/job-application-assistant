@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { NavigationGuardProvider } from './context/NavigationGuardContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
+import PublicOnlyRoute from './components/PublicOnlyRoute';
 import { Sidebar } from './components/Sidebar';
 import NetworkStatusModal from './components/NetworkStatusModal';
 import LoginPage from './pages/LoginPage';
@@ -75,6 +76,20 @@ function HomeRoute() {
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />;
 }
 
+function NotFoundRoute() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -83,11 +98,11 @@ export default function App() {
         <AuthProvider>
           <Routes>
           {/* Public routes */}
-          <Route path="/login"          element={<LoginPage />} />
-          <Route path="/register"       element={<RegisterPage />} />
+          <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+          <Route path="/register" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
           <Route path="/verify-email"   element={<VerifyEmailPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/forgot-password" element={<PublicOnlyRoute><ForgotPasswordPage /></PublicOnlyRoute>} />
+          <Route path="/reset-password" element={<PublicOnlyRoute><ResetPasswordPage /></PublicOnlyRoute>} />
           <Route path="/" element={<HomeRoute />} />
 
           {/* Protected routes with sidebar layout */}
@@ -112,7 +127,7 @@ export default function App() {
           <Route path="/autofill" element={
             <ProtectedRoute><AppLayout><AutofillPage /></AppLayout></ProtectedRoute>
           } />
-          <Route path="*"  element={<Navigate to="/" replace />} />
+          <Route path="*"  element={<NotFoundRoute />} />
         </Routes>
       </AuthProvider>
         </NavigationGuardProvider>

@@ -7,12 +7,12 @@ import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react';
 export default function VerifyEmailPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState('loading'); // loading | success | error | missing
+  const token = params.get('token');
+  const [status, setStatus] = useState(token ? 'loading' : 'missing'); // loading | success | error | missing
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const token = params.get('token');
-    if (!token) { setStatus('missing'); return; }
+    if (!token) return;
 
     api.get(`/auth/verify-email?token=${token}`)
       .then(res => {
@@ -23,7 +23,7 @@ export default function VerifyEmailPage() {
         setStatus('error');
         setMessage(err.response?.data?.detail || 'Verification failed. The link may have expired.');
       });
-  }, []);
+  }, [token]);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)', padding: '24px' }}>

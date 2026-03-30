@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { createElement, useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import api from '../api';
@@ -35,7 +35,7 @@ function StatCard({ label, value, icon: Icon, color, bg, loading, sub }) {
           background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}>
-          <Icon style={{ height: 28, width: 28, color }} strokeWidth={1.75} />
+          {createElement(Icon, { style: { height: 28, width: 28, color }, strokeWidth: 1.75 })}
         </div>
       </div>
 

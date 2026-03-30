@@ -1,20 +1,20 @@
-import { motion, AnimatePresence } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { CheckCircle2, Zap, Sparkles, User, MousePointer2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 const formFields = [
-  { label: 'Full Name', value: 'John Doe' },
-  { label: 'Email Address', value: 'john.doe@email.com' },
-  { label: 'Phone Number', value: '+1 (555) 123-4567' },
-  { label: 'LinkedIn Profile', value: 'linkedin.com/in/johndoe' },
+  { label: 'Full Name', value: 'Raj' },
+  { label: 'Email Address', value: 'raj@example.com' },
+  { label: 'Phone Number', value: '+91 12345 67890' },
+  { label: 'LinkedIn Profile', value: 'linkedin.com/in/username' },
   { label: 'Years of Experience', value: '5 years' }
 ];
 
 const profileData = [
-  { label: 'Name', value: 'John Doe' },
-  { label: 'Email', value: 'john.doe@email.com' },
-  { label: 'Phone', value: '+1 (555) 123-4567' },
-  { label: 'LinkedIn', value: 'linkedin.com/in/johndoe' },
+  { label: 'Name', value: 'Raj' },
+  { label: 'Email', value: 'raj@example.com' },
+  { label: 'Phone', value: '+91 12345 67890' },
+  { label: 'LinkedIn', value: 'linkedin.com/in/username' },
   { label: 'Experience', value: '5 years' }
 ];
 
@@ -39,7 +39,7 @@ export function AutoFillDemo() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8">
         {/* Section Header */}
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -52,12 +52,12 @@ export function AutoFillDemo() {
           <p className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto font-light px-4">
             Click once, fill everything instantly
           </p>
-        </motion.div>
+        </Motion.div>
 
         {/* Demo Container */}
         <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-start">
           {/* Left - Profile Card with Click Animation */}
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -79,7 +79,7 @@ export function AutoFillDemo() {
               {/* Profile Fields */}
               <div className="space-y-3">
                 {profileData.map((field, index) => (
-                  <motion.div
+                  <Motion.div
                     key={field.label}
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -89,12 +89,12 @@ export function AutoFillDemo() {
                   >
                     <span className="text-gray-400 text-sm">{field.label}</span>
                     <span className="text-white text-sm font-medium">{field.value}</span>
-                  </motion.div>
+                  </Motion.div>
                 ))}
               </div>
 
               {/* Click to Auto-Fill Badge */}
-              <motion.div
+              <Motion.div
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -105,7 +105,7 @@ export function AutoFillDemo() {
                 <span className="text-blue-400 text-sm font-medium">Click to auto-fill forms</span>
 
                 {/* Animated Mouse Cursor - moves to badge and clicks */}
-                <motion.div
+                <Motion.div
                   key={`cursor-${animationKey}`}
                   initial={{ opacity: 0, x: -150, y: -80 }}
                   animate={{
@@ -121,10 +121,10 @@ export function AutoFillDemo() {
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20"
                 >
                   <MousePointer2 className="w-6 h-6 text-white drop-shadow-lg" fill="white" />
-                </motion.div>
+                </Motion.div>
 
                 {/* Click Ripple Effect on Badge */}
-                <motion.div
+                <Motion.div
                   key={`ripple-${animationKey}`}
                   initial={{ scale: 1, opacity: 0 }}
                   animate={{ 
@@ -138,18 +138,18 @@ export function AutoFillDemo() {
                   }}
                   className="absolute inset-0 border-2 border-blue-400 rounded-lg pointer-events-none"
                 />
-              </motion.div>
+              </Motion.div>
             </div>
 
             {/* Arrow Indicator */}
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 2.2, duration: 0.5 }}
               className="hidden lg:block absolute top-1/2 -right-16 -translate-y-1/2"
             >
-              <motion.div
+              <Motion.div
                 animate={{ x: [0, 10, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
               >
@@ -163,12 +163,12 @@ export function AutoFillDemo() {
                     strokeDasharray="4 4"
                   />
                 </svg>
-              </motion.div>
-            </motion.div>
-          </motion.div>
+              </Motion.div>
+            </Motion.div>
+          </Motion.div>
 
           {/* Right - Animated Form with Sequential Fill */}
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -178,7 +178,7 @@ export function AutoFillDemo() {
             <div className="space-y-3 md:space-y-4">
               {/* Form Fields with Typing Animation */}
               {formFields.map((field, index) => (
-                <motion.div
+                <Motion.div
                   key={field.label}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -199,7 +199,7 @@ export function AutoFillDemo() {
                     </div>
                     
                     {/* Check Mark */}
-                    <motion.div
+                    <Motion.div
                       key={`check-${animationKey}-${index}`}
                       initial={{ opacity: 0, scale: 0 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -207,13 +207,13 @@ export function AutoFillDemo() {
                       className="absolute right-3 top-1/2 -translate-y-1/2"
                     >
                       <CheckCircle2 className="w-4 h-4 text-green-400" />
-                    </motion.div>
+                    </Motion.div>
                   </div>
-                </motion.div>
+                </Motion.div>
               ))}
 
               {/* Success Badge */}
-              <motion.div
+              <Motion.div
                 key={`success-${animationKey}`}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -222,9 +222,9 @@ export function AutoFillDemo() {
               >
                 <Zap className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
                 <span className="text-green-400 font-medium text-xs md:text-base">All fields detected and auto-filled!</span>
-              </motion.div>
+              </Motion.div>
             </div>
-          </motion.div>
+          </Motion.div>
         </div>
       </div>
     </section>
@@ -234,7 +234,7 @@ export function AutoFillDemo() {
 // Typewriter Component with Loop Support
 function TypewriterText({ text, delay, animationKey }) {
   return (
-    <motion.span
+    <Motion.span
       key={`text-${animationKey}`}
       initial={{ width: 0 }}
       animate={{ width: "auto" }}
@@ -246,6 +246,6 @@ function TypewriterText({ text, delay, animationKey }) {
       className="inline-block overflow-hidden whitespace-nowrap text-white text-xs md:text-sm"
     >
       {text}
-    </motion.span>
+    </Motion.span>
   );
 }
