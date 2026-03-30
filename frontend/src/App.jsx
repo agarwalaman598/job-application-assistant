@@ -19,6 +19,8 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ApplicationsPage from './pages/ApplicationsPage';
 import ContactsPage from './pages/ContactsPage';
+import LandingPage from './pages/LandingPage';
+import { useAuth } from './context/AuthContext';
 import './index.css';
 
 function AppLayout({ children }) {
@@ -59,6 +61,20 @@ function AppLayout({ children }) {
   );
 }
 
+function HomeRoute() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -72,6 +88,7 @@ export default function App() {
           <Route path="/verify-email"   element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/" element={<HomeRoute />} />
 
           {/* Protected routes with sidebar layout */}
           <Route path="/dashboard" element={
@@ -95,8 +112,7 @@ export default function App() {
           <Route path="/autofill" element={
             <ProtectedRoute><AppLayout><AutofillPage /></AppLayout></ProtectedRoute>
           } />
-          <Route path="/"  element={<Navigate to="/dashboard" replace />} />
-          <Route path="*"  element={<Navigate to="/dashboard" replace />} />
+          <Route path="*"  element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
         </NavigationGuardProvider>
