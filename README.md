@@ -246,7 +246,6 @@ job-application-assistant/
 │   │       └── email_service.py        # Resend email sending
 │   ├── alembic/                 # Database migration scripts
 │   ├── requirements.txt         # Python dependencies
-│   └── Dockerfile               # Backend container
 │
 ├── frontend/
 │   ├── src/
@@ -276,9 +275,7 @@ job-application-assistant/
 │   │       └── NavigationGuardContext.jsx # Unsaved changes guard
 │   ├── index.html
 │   ├── vite.config.js
-│   └── Dockerfile               # Frontend container
 │
-├── docker-compose.yml           # Local development stack
 └── README.md
 ```
 
@@ -493,13 +490,6 @@ npm run dev
 
 App available at: http://localhost:5173
 
-### 4. Docker (optional)
-
-Run the full stack with Docker Compose:
-
-```bash
-docker-compose up --build
-```
 
 ---
 

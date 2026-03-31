@@ -170,6 +170,75 @@ class ResumeOut(BaseModel):
         from_attributes = True
 
 
+class JobSearchRequest(BaseModel):
+    query: str
+    location: Optional[str] = ""
+    resume_ids: List[int]
+    page: int = 1
+    num_pages: int = 1
+    date_posted: str = "week"
+
+    @field_validator('query', mode='before')
+    @classmethod
+    def _sanitize_query(cls, v):
+        return sanitize_text(v) if isinstance(v, str) else v
+
+    @field_validator('location', mode='before')
+    @classmethod
+    def _sanitize_location(cls, v):
+        return sanitize_text(v) if isinstance(v, str) else v
+
+    @field_validator('resume_ids')
+    @classmethod
+    def _validate_resume_ids(cls, v):
+        unique_ids = []
+        seen = set()
+        for item in v or []:
+            if not isinstance(item, int) or item <= 0:
+                continue
+            if item in seen:
+                continue
+            seen.add(item)
+            unique_ids.append(item)
+        if not unique_ids:
+            raise ValueError("Select at least one resume")
+        return unique_ids
+
+    @field_validator('page', 'num_pages')
+    @classmethod
+    def _validate_paging(cls, v):
+        if v < 1:
+            raise ValueError("Paging values must be >= 1")
+        return min(v, 3)
+
+    @field_validator('date_posted')
+    @classmethod
+    def _validate_date_posted(cls, v):
+        allowed = {"all", "today", "3days", "week", "month"}
+        value = (v or "week").strip().lower()
+        if value not in allowed:
+            raise ValueError("date_posted must be one of: all, today, 3days, week, month")
+        return value
+
+
+class JobSearchItem(BaseModel):
+    job_id: str
+    title: str
+    company: str
+    location: str
+    apply_link: str
+    score: int
+    tags: List[str]
+    matched_resumes: List[str]
+    posted_at: Optional[str] = None
+
+
+class JobSearchResponse(BaseModel):
+    query: str
+    total_jobs: int
+    jobs: List[JobSearchItem]
+
+
 # ── Application ──────────────────────────────────────
 VALID_STATUSES = {"draft", "applied", "interview", "offer", "rejected"}
 VALID_CONTACT_TYPES = {"hr", "recruiter", "interviewer", "referral", "other"}

@@ -470,7 +470,12 @@ export default function ResumePage() {
                         </button>
                       </div>
                       <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)' }}>
-                        {new Date(r.uploaded_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {new Date(r.uploaded_at).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          timeZone: 'Asia/Kolkata',
+                        })}
                         {r.is_default && (
                           <span style={{
                             marginLeft: 8, fontSize: '0.7rem', fontWeight: 600,

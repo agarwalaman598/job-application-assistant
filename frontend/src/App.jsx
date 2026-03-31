@@ -20,6 +20,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ApplicationsPage from './pages/ApplicationsPage';
 import ContactsPage from './pages/ContactsPage';
+import SearchJobsPage from './pages/SearchJobsPage';
 import LandingPage from './pages/LandingPage';
 import { useAuth } from './context/AuthContext';
 import './index.css';
@@ -120,6 +121,9 @@ export default function App() {
           } />
           <Route path="/resumes" element={
             <ProtectedRoute><AppLayout><ResumePage /></AppLayout></ProtectedRoute>
+          } />
+          <Route path="/search-jobs" element={
+            <ProtectedRoute><AppLayout><SearchJobsPage /></AppLayout></ProtectedRoute>
           } />
           <Route path="/analyze" element={
             <ProtectedRoute><AppLayout><AnalyzePage /></AppLayout></ProtectedRoute>
