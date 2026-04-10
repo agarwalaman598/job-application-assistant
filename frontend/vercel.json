@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://job-application-assistant-wa20.onrender.com/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://jobassistai.amanlabs.dev//api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
