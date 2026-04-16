@@ -5,11 +5,65 @@ import { Wand2, Link2, Loader2, CheckCircle, AlertCircle, Zap, BriefcaseBusiness
 import { Textarea } from '../components/ui/textarea';
 
 const PLATFORMS = [
-  { name: 'Google Forms', color: '#4285f4' },
-  { name: 'MS Forms', color: '#00a4ef' },
-  { name: 'Typeform', color: '#8b8b92' },
-  { name: 'JotForm', color: '#d4942e' },
+  { key: 'google_forms', name: 'Google Forms' },
+  { key: 'ms_forms', name: 'MS Forms' },
+  { key: 'typeform', name: 'Typeform' },
+  { key: 'jotform', name: 'JotForm' },
 ];
+
+function PlatformLogo({ platform }) {
+  const common = {
+    width: 14,
+    height: 14,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    xmlns: 'http://www.w3.org/2000/svg',
+    style: { display: 'block' },
+  };
+
+  if (platform === 'google_forms') {
+    return (
+      <svg {...common}>
+        {/* Google "G" style mark */}
+        <path d="M21.6 12.23c0-.67-.06-1.31-.17-1.93H12v3.66h5.39a4.6 4.6 0 0 1-2 3.02v2.5h3.24c1.9-1.75 2.97-4.32 2.97-7.25z" fill="#4285F4" />
+        <path d="M12 22c2.7 0 4.96-.9 6.62-2.43l-3.24-2.5c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.58-4.12H3.07v2.59A10 10 0 0 0 12 22z" fill="#34A853" />
+        <path d="M6.42 13.91A6.02 6.02 0 0 1 6.1 12c0-.67.12-1.3.32-1.91V7.5H3.07A10 10 0 0 0 2 12c0 1.61.39 3.13 1.07 4.5l3.35-2.59z" fill="#FBBC05" />
+        <path d="M12 5.97c1.47 0 2.79.5 3.83 1.47l2.88-2.88A9.96 9.96 0 0 0 12 2a10 10 0 0 0-8.93 5.5l3.35 2.59c.78-2.36 2.98-4.12 5.58-4.12z" fill="#EA4335" />
+      </svg>
+    );
+  }
+
+  if (platform === 'ms_forms') {
+    return (
+      <svg {...common}>
+        {/* Microsoft 4-square logo */}
+        <rect x="3" y="3" width="8.5" height="8.5" fill="#F35325" />
+        <rect x="12.5" y="3" width="8.5" height="8.5" fill="#81BC06" />
+        <rect x="3" y="12.5" width="8.5" height="8.5" fill="#05A6F0" />
+        <rect x="12.5" y="12.5" width="8.5" height="8.5" fill="#FFBA08" />
+      </svg>
+    );
+  }
+
+  if (platform === 'typeform') {
+    return (
+      <svg {...common}>
+        <rect x="3" y="7" width="4" height="10" rx="1" fill="#E5E7EB" />
+        <rect x="8.5" y="7" width="4" height="10" rx="1" fill="#E5E7EB" />
+        <rect x="14" y="7" width="4" height="6.2" rx="1" fill="#E5E7EB" />
+        <circle cx="20.5" cy="12" r="2.5" fill="#E5E7EB" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      {/* Jotform-inspired mark */}
+      <circle cx="12" cy="12" r="9" fill="#FF6100" />
+      <path d="M14.2 6.7h-2.5v7.2c0 1.03-.56 1.57-1.5 1.57-.48 0-.86-.1-1.16-.25v1.93c.38.16.93.27 1.64.27 2.24 0 3.86-1.22 3.86-3.65V6.7h-.34z" fill="#FFFFFF" />
+    </svg>
+  );
+}
 
 export default function AutofillPage() {
   const [resumes, setResumes] = useState([]);
@@ -186,7 +240,9 @@ export default function AutofillPage() {
             background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)',
             color: '#8b8b92',
           }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.color, display: 'inline-block' }} />
+            <span style={{ width: 14, height: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <PlatformLogo platform={p.key} />
+            </span>
             {p.name}
           </span>
         ))}
@@ -240,7 +296,22 @@ export default function AutofillPage() {
                 {visibleFields.length} fields · {platform.replace('_', ' ')}
               </p>
             </div>
-            <button onClick={handleAutoMap} disabled={mapping} className="btn-secondary flex items-center gap-1 text-xs">
+            <button
+              onClick={handleAutoMap}
+              disabled={mapping}
+              className="flex items-center gap-1 text-xs"
+              style={{
+                padding: '6px 12px',
+                background: '#ffffff',
+                color: '#000000',
+                border: '1px solid #e5e5e5',
+                borderRadius: '8px',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+                opacity: mapping ? 0.5 : 1,
+                cursor: mapping ? 'not-allowed' : 'pointer',
+              }}
+            >
               {mapping ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
               {mapping ? 'Mapping...' : 'Map from Profile'}
             </button>
@@ -380,8 +451,24 @@ export default function AutofillPage() {
             ))}
           </div>
 
-          <button onClick={handleFill} disabled={filling}
-            className="btn-primary flex items-center justify-center gap-2 mt-4" style={{ width: '100%' }}>
+          <button
+            onClick={handleFill}
+            disabled={filling}
+            className="flex items-center justify-center gap-2 mt-4"
+            style={{
+              width: '100%',
+              padding: '10px 16px',
+              background: '#ffffff',
+              color: '#000000',
+              border: '1px solid #e5e5e5',
+              borderRadius: '8px',
+              fontWeight: 600,
+              fontSize: '0.8rem',
+              transition: 'all 0.2s ease',
+              opacity: filling ? 0.5 : 1,
+              cursor: filling ? 'not-allowed' : 'pointer',
+            }}
+          >
             {filling ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
             {filling ? 'Generating...' : 'Open Pre-filled Form'}
           </button>

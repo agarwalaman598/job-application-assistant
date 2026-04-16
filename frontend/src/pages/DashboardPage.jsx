@@ -175,11 +175,10 @@ export default function DashboardPage() {
                 >
                   {/* Serial number */}
                   <div style={{
-                    height: 32, width: 32, borderRadius: 8, flexShrink: 0,
-                    background: '#1a1a1a', border: '1px solid #2a2a2a',
+                    flexShrink: 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted-foreground)',
-                    fontFamily: 'inherit', letterSpacing: '-0.01em',
+                    fontSize: '0.8rem', fontWeight: 700, color: 'var(--muted-foreground)',
+                    fontFamily: 'inherit', letterSpacing: '-0.01em', minWidth: 16,
                   }}>
                     {i + 1}
                   </div>
@@ -188,7 +187,7 @@ export default function DashboardPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <p style={{
-                        fontSize: '0.9rem', fontWeight: 700, letterSpacing: '-0.02em',
+                        fontSize: '0.95rem', fontWeight: 700, letterSpacing: '-0.02em',
                         color: 'var(--foreground)', fontFamily: 'inherit',
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       }}>
@@ -196,17 +195,33 @@ export default function DashboardPage() {
                       </p>
                       <StatusBadge status={app.status} />
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 3 }}>
-                      <span style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', fontFamily: 'inherit', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                    <div style={{ marginTop: 4 }}>
+                      <span style={{ fontSize: '0.83rem', color: 'var(--muted-foreground)', fontFamily: 'inherit', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                         {app.position}
                       </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 5, flexWrap: 'wrap' }}>
+                      {app.resume_filename && (
+                        <span
+                          title={app.resume_filename}
+                          style={{
+                            fontSize: '0.73rem',
+                            color: 'var(--muted-foreground)',
+                            fontFamily: 'inherit',
+                            overflowWrap: 'anywhere',
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          Resume: {app.resume_filename}
+                        </span>
+                      )}
+                      {app.resume_filename && dateStr && (
+                        <span style={{ color: 'var(--muted-foreground)', fontSize: '0.6rem' }}>●</span>
+                      )}
                       {dateStr && (
-                        <>
-                          <span style={{ color: 'var(--muted-foreground)', fontSize: '0.6rem' }}>●</span>
-                          <span style={{ fontSize: '0.73rem', color: 'var(--muted-foreground)', fontFamily: 'inherit' }}>
-                            {dateStr}
-                          </span>
-                        </>
+                        <span style={{ fontSize: '0.73rem', color: 'var(--muted-foreground)', fontFamily: 'inherit' }}>
+                          {dateStr}
+                        </span>
                       )}
                     </div>
                   </div>

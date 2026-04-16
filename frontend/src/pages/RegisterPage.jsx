@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Eye, Mail, Loader2 } from 'lucide-react';
-import { motion } from 'motion/react';
 
 const INPUT_STYLE = {
   width: '100%', padding: '10px 16px',
@@ -238,13 +237,13 @@ export default function RegisterPage() {
           <div style={{ marginBottom: '1rem' }}>
             <label style={LABEL_STYLE}>Full Name</label>
             <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
-              placeholder="John Doe" required style={INPUT_STYLE} onFocus={focus} onBlur={blur} />
+              placeholder="Rahul Sharma" required style={INPUT_STYLE} onFocus={focus} onBlur={blur} />
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
             <label style={LABEL_STYLE}>Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com" required style={INPUT_STYLE} onFocus={focus} onBlur={blur} />
+              placeholder="rahul.sharma@example.in" required style={INPUT_STYLE} onFocus={focus} onBlur={blur} />
           </div>
 
           <div style={{ marginBottom: '1rem' }}>

@@ -39,6 +39,7 @@ class Profile(Base):
     linkedin = Column(String(255), default="")
     github = Column(String(255), default="")
     website = Column(String(255), default="")
+    contact_fields = Column(JSON, default=list)
     skills = Column(JSON, default=list)
     experience = Column(JSON, default=list)
     education = Column(JSON, default=list)

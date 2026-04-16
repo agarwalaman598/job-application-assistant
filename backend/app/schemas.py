@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator, model_validator, EmailStr
-from typing import Optional, List
+from typing import Optional, List, Literal
 from datetime import datetime
 
 from app.utils import sanitize_text
@@ -91,6 +91,19 @@ class EducationItem(BaseModel):
     # legacy fields kept for backward compat
     year: str = ""
     gpa: str = ""
+    gpa_scale: str = ""
+
+
+class ContactFieldItem(BaseModel):
+    id: Optional[int] = None
+    label: str = ""
+    value: str = ""
+    type: Literal['text', 'email', 'phone', 'url'] = 'text'
+
+    @field_validator('label', 'value', mode='before')
+    @classmethod
+    def _sanitize(cls, v):
+        return sanitize_text(v) if isinstance(v, str) else v
 
 
 class ProfileUpdate(BaseModel):
@@ -98,6 +111,7 @@ class ProfileUpdate(BaseModel):
     linkedin: Optional[str] = ""
     github: Optional[str] = ""
     website: Optional[str] = ""
+    contact_fields: Optional[List[ContactFieldItem]] = []
     skills: Optional[List[str]] = []
     experience: Optional[List[ExperienceItem]] = []
     education: Optional[List[EducationItem]] = []
@@ -108,6 +122,30 @@ class ProfileUpdate(BaseModel):
     def _sanitize(cls, v):
         return sanitize_text(v) if isinstance(v, str) else v
 
+    @field_validator('skills', mode='before')
+    @classmethod
+    def _normalize_skills(cls, v):
+        if not v:
+            return []
+        items = v if isinstance(v, list) else [v]
+        out = []
+        seen = set()
+        for item in items:
+            if not isinstance(item, str):
+                continue
+            # Support clients sending comma-separated skills in a single value
+            parts = item.split(',') if ',' in item else [item]
+            for part in parts:
+                clean = sanitize_text(part).strip()
+                if not clean:
+                    continue
+                key = clean.casefold()
+                if key in seen:
+                    continue
+                seen.add(key)
+                out.append(clean)
+        return out
+
 
 class ProfileOut(BaseModel):
     id: int
@@ -116,6 +154,7 @@ class ProfileOut(BaseModel):
     linkedin: str
     github: str
     website: str
+    contact_fields: list
     skills: List[str]
     experience: list
     education: list

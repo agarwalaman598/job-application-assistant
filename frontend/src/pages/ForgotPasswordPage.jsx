@@ -135,7 +135,7 @@ export default function ForgotPasswordPage() {
             <form onSubmit={handleSubmit}>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--foreground)', marginBottom: '8px', fontWeight: 600 }}>Email</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com" required style={{ ...inputStyle, marginBottom: '12px' }}
+                placeholder="rahul.sharma@example.in" required style={{ ...inputStyle, marginBottom: '12px' }}
                 onFocus={e => e.target.style.borderColor = 'var(--primary)'}
                 onBlur={e => e.target.style.borderColor = 'var(--border)'} />
               {error && <p style={{ color: '#d94f4f', fontSize: '0.78rem', marginBottom: '10px' }}>{error}</p>}

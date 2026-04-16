@@ -342,7 +342,7 @@ export default function ContactsPage() {
             <div className="space-y-4 max-h-[65vh] overflow-auto pr-1">
               <div>
                 <Label htmlFor="c-name">Name</Label>
-                <Input id="c-name" value={form.full_name} onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} placeholder="Jane Doe" />
+                <Input id="c-name" value={form.full_name} onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} placeholder="Priya Mehta" />
                 {formError && <p className="text-xs mt-1" style={{ color: '#f87171' }}>{formError}</p>}
               </div>
 
@@ -379,11 +379,11 @@ export default function ContactsPage() {
               <div className="grid md:grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="c-email">Email</Label>
-                  <Input id="c-email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="jane@example.com" />
+                  <Input id="c-email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="priya.mehta@example.in" />
                 </div>
                 <div>
                   <Label htmlFor="c-phone">Phone</Label>
-                  <Input id="c-phone" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+1 555 000 111" />
+                  <Input id="c-phone" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+91 98765 43210" />
                 </div>
               </div>
 

@@ -224,7 +224,7 @@ export default function LoginPage() {
             </label>
             <input
               type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com" required autoFocus
+              placeholder="rahul.sharma@example.in" required autoFocus
               style={inputStyle}
               onFocus={focus}
               onBlur={blur}

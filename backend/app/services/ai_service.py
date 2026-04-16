@@ -460,6 +460,15 @@ def auto_map_fields(fields: list, profile_data: dict, saved_answers: dict = None
                     end_year = edu.get('end_year', edu.get('year', ''))
                     edu_text += f"  - {degree}{(' in ' + major) if major else ''} from {institution} ({start_year}–{end_year})\n"
 
+        contact_text = ""
+        if profile_data.get("contact_fields"):
+            for field in profile_data["contact_fields"]:
+                if isinstance(field, dict):
+                    label = str(field.get("label", "")).strip()
+                    value = str(field.get("value", "")).strip()
+                    if label and value:
+                        contact_text += f"  - {label}: {value}\n"
+
         profile_text = f"""Full Name: {profile_data.get('full_name', '')}
 Email: {profile_data.get('email', '')}
 Phone: {profile_data.get('phone', '')}
@@ -467,6 +476,8 @@ LinkedIn: {profile_data.get('linkedin', '')}
 GitHub: {profile_data.get('github', '')}
 Website: {profile_data.get('website', '')}
 Resume Link: {profile_data.get('resume_link', '')}
+Additional Contact Fields:
+{contact_text}
 Skills: {', '.join(profile_data.get('skills', []))}
 Summary: {profile_data.get('summary', '')}
 Experience:
@@ -494,6 +505,7 @@ Experience:
             "'stream' → the degree subject, 'secondary school' → 12th institution).\n"
             "4. If you cannot determine an appropriate value, set it to an empty string \"\".\n"
             "5. Saved answers from past submissions are high priority — reuse them for similar fields.\n\n"
+            "6. Use Additional Contact Fields for custom form labels (e.g. alternate phone, portfolio, socials, custom identifiers).\n\n"
             "Be smart: 'High School' maps to 12th; 'Undergraduate' maps to B.Tech/B.Sc/B.E; "
             "'Branch/Stream' maps to the major/specialisation; 'Passing year' maps to the graduation year."
         )

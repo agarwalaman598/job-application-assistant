@@ -1,4 +1,6 @@
 import logging
+import re
+from urllib.parse import urlsplit
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -154,6 +156,7 @@ def auto_map(
         "linkedin": profile.linkedin or "",
         "github": profile.github or "",
         "website": profile.website or "",
+        "contact_fields": profile.contact_fields or [],
         "skills": profile.skills or [],
         "experience": profile.experience or [],
         "education": profile.education or [],
@@ -182,13 +185,164 @@ def save_answers(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Save filled form field values for future auto-mapping."""
+    """
+    Save filled form field values for future auto-mapping.
+    Skip saving if the answer is already present in profile or resume data.
+    """
+    # Fetch user's profile and default resume
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    default_resume = db.query(Resume).filter(
+        Resume.user_id == current_user.id,
+        Resume.is_default == True,
+    ).first()
+    
+    def _norm_text(value: str) -> str:
+        return re.sub(r"\s+", " ", str(value or "").strip().lower())
+
+    def _norm_email(value: str) -> str:
+        return _norm_text(value)
+
+    def _norm_phone(value: str) -> str:
+        return "".join(ch for ch in str(value or "") if ch.isdigit())
+
+    def _norm_url(value: str) -> str:
+        raw = str(value or "").strip()
+        if not raw:
+            return ""
+        parsed = urlsplit(raw)
+        # Handle URLs provided without scheme
+        if not parsed.netloc and parsed.path:
+            parsed = urlsplit("https://" + raw)
+        netloc = parsed.netloc.lower().removeprefix("www.")
+        path = parsed.path.rstrip("/")
+        return f"{netloc}{path}" if netloc else _norm_text(raw)
+
+    def _norm_number(value: str) -> str:
+        text = _norm_text(value).rstrip("%").strip()
+        if re.fullmatch(r"\d+(\.\d+)?", text):
+            return text
+        return ""
+
+    def _same_value(left: str, right: str) -> bool:
+        lt = _norm_text(left)
+        rt = _norm_text(right)
+        if not lt or not rt:
+            return False
+        if lt == rt:
+            return True
+        ln = _norm_number(lt)
+        rn = _norm_number(rt)
+        return bool(ln and rn and ln == rn)
+
+    def _infer_bucket(label: str) -> str:
+        l = _norm_text(label)
+        if any(k in l for k in ["resume", "cv", "drive link", "resume link", "updated resume"]):
+            return "resume_link"
+        if "email" in l:
+            return "contact_email"
+        if any(k in l for k in ["phone", "mobile", "whatsapp", "contact number"]):
+            return "contact_phone"
+        if "linkedin" in l:
+            return "contact_linkedin"
+        if "github" in l:
+            return "contact_github"
+        if any(k in l for k in ["website", "portfolio"]):
+            return "contact_website"
+        if any(k in l for k in ["skill", "tech stack", "technology", "tools", "programming language"]):
+            return "skills"
+        if any(k in l for k in [
+            "10th", "12th", "diploma", "graduation", "degree", "branch", "cgpa", "gpa", "percentage",
+            "college", "school", "university", "yop", "year of passing", "education"
+        ]):
+            return "education"
+        if any(k in l for k in ["experience", "current company", "previous company", "internship", "designation", "role", "title"]):
+            return "experience"
+        if any(k in l for k in ["summary", "about", "objective", "profile"]):
+            return "summary"
+        return "unknown"
+
+    def _flatten_dict_values(items) -> list[str]:
+        values = []
+        for item in items or []:
+            if isinstance(item, dict):
+                for val in item.values():
+                    if val is not None and str(val).strip():
+                        values.append(str(val))
+        return values
+
+    def _should_skip(label: str, value: str) -> tuple[bool, str]:
+        bucket = _infer_bucket(label)
+
+        # Unknown labels are preserved to avoid accidental data loss.
+        if bucket == "unknown":
+            return False, "unknown-label"
+
+        if bucket == "resume_link":
+            if default_resume and default_resume.drive_link and _norm_url(value) == _norm_url(default_resume.drive_link):
+                return True, "matches-default-resume-link"
+            return False, "resume-link-not-matched"
+
+        if not profile:
+            return False, "profile-not-found"
+
+        if bucket == "contact_email":
+            return _norm_email(value) == _norm_email(current_user.email), "matches-user-email"
+
+        if bucket == "contact_phone":
+            phone_match = bool(_norm_phone(value) and _norm_phone(value) == _norm_phone(profile.phone or ""))
+            return phone_match, "matches-profile-phone"
+
+        if bucket == "contact_linkedin":
+            link_match = bool(_norm_url(value) and _norm_url(value) == _norm_url(profile.linkedin or ""))
+            return link_match, "matches-profile-linkedin"
+
+        if bucket == "contact_github":
+            github_match = bool(_norm_url(value) and _norm_url(value) == _norm_url(profile.github or ""))
+            return github_match, "matches-profile-github"
+
+        if bucket == "contact_website":
+            website_match = bool(_norm_url(value) and _norm_url(value) == _norm_url(profile.website or ""))
+            return website_match, "matches-profile-website"
+
+        if bucket == "skills":
+            for skill in profile.skills or []:
+                if _same_value(value, str(skill)):
+                    return True, "matches-profile-skill"
+            return False, "skill-not-matched"
+
+        if bucket == "education":
+            for edu_value in _flatten_dict_values(profile.education):
+                if _same_value(value, edu_value):
+                    return True, "matches-profile-education"
+            return False, "education-not-matched"
+
+        if bucket == "experience":
+            for exp_value in _flatten_dict_values(profile.experience):
+                if _same_value(value, exp_value):
+                    return True, "matches-profile-experience"
+            return False, "experience-not-matched"
+
+        if bucket == "summary":
+            if profile.summary and _same_value(value, profile.summary):
+                return True, "matches-profile-summary"
+            return False, "summary-not-matched"
+
+        return False, "no-rule"
+    
     saved_count = 0
+    skipped_count = 0
 
     for item in payload.fields:
         label = item.label.strip()
         value = item.value.strip()
         if not label or not value:
+            continue
+
+        # Skip only when label intent and normalized value match existing profile/resume data.
+        should_skip, reason = _should_skip(label, value)
+        if should_skip:
+            skipped_count += 1
+            logger.info(f"[Save Answers] Skipping '{label}' — {reason}")
             continue
 
         # Update existing or create new
@@ -204,7 +358,7 @@ def save_answers(
         saved_count += 1
 
     db.commit()
-    return {"saved_count": saved_count}
+    return {"saved_count": saved_count, "skipped_count": skipped_count}
 
 
 @router.post("/fill-form", response_model=FillFormResponse)

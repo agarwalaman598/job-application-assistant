@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
 import api from '../api';
-import { Plus, Edit2, Trash2, X, Loader2, Briefcase, ExternalLink, Search, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Loader2, Briefcase, ExternalLink, Search, ArrowUpDown, ChevronUp, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -39,6 +39,7 @@ export default function ApplicationsPage() {
   const [saving, setSaving]       = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
+  const [pinnedNotesId, setPinnedNotesId] = useState(null);
 
   // Close sort dropdown on outside click
   useEffect(() => {
@@ -121,6 +122,10 @@ export default function ApplicationsPage() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const togglePinnedNotes = (id) => {
+    setPinnedNotesId((current) => (current === id ? null : id));
   };
 
   // Filter + sort
@@ -279,47 +284,51 @@ export default function ApplicationsPage() {
               style={{ animationDelay: `${i * 0.04}s` }}>
               {/* Serial number */}
               <div style={{
-                height: 32, width: 32, borderRadius: 8, flexShrink: 0,
-                background: '#1a1a1a', border: '1px solid #2a2a2a',
+                flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted-foreground)',
-                fontFamily: 'inherit', letterSpacing: '-0.01em',
+                fontSize: '0.8rem', fontWeight: 700, color: 'var(--muted-foreground)',
+                fontFamily: 'inherit', letterSpacing: '-0.01em', minWidth: 16,
               }}>
                 {i + 1}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-medium text-sm truncate">{app.company}</p>
+                  <p className="font-semibold text-[0.95rem] leading-tight truncate">{app.company}</p>
                   <StatusBadge status={app.status} />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.2rem', flexWrap: 'wrap' }}>
-                  <p className="text-xs text-[var(--muted-foreground)]">{app.position}</p>
+                <p className="text-sm text-[var(--muted-foreground)] mt-1 break-words">{app.position}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
                   {app.resume_filename && (
-                    <>
-                      <span style={{ color: 'var(--muted-foreground)', fontSize: '0.55rem' }}>●</span>
-                      <p
-                        className="text-xs text-[var(--muted-foreground)]"
-                        title={app.resume_filename}
-                        style={{
-                          minWidth: 0,
-                          maxWidth: '100%',
-                          overflowWrap: 'anywhere',
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        Resume: {app.resume_filename}
-                      </p>
-                    </>
+                    <p
+                      className="text-xs text-[var(--muted-foreground)]"
+                      title={app.resume_filename}
+                      style={{
+                        minWidth: 0,
+                        maxWidth: '100%',
+                        overflowWrap: 'anywhere',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      Resume: {app.resume_filename}
+                    </p>
+                  )}
+                  {app.resume_filename && app.applied_at && (
+                    <span style={{ color: 'var(--muted-foreground)', fontSize: '0.55rem' }}>●</span>
                   )}
                   {app.applied_at && (
-                    <>
-                      <span style={{ color: 'var(--muted-foreground)', fontSize: '0.55rem' }}>●</span>
-                      <p className="text-xs text-[var(--muted-foreground)]">
-                        {new Date(app.applied_at + 'Z').toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' })}
-                      </p>
-                    </>
+                    <p className="text-xs text-[var(--muted-foreground)]">
+                      {new Date(app.applied_at + 'Z').toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' })}
+                    </p>
                   )}
                 </div>
+                {app.notes && pinnedNotesId === app.id && (
+                  <div
+                    className="mt-2 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-[var(--muted-foreground)]"
+                    style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                  >
+                    {app.notes}
+                  </div>
+                )}
               </div>
               {app.url && (
                 <a href={app.url} target="_blank" rel="noreferrer" title="Open link"
@@ -334,6 +343,16 @@ export default function ApplicationsPage() {
                 </a>
               )}
               <div className="flex items-center gap-1 flex-shrink-0 ml-auto sm:ml-0">
+                {app.notes && (
+                  <button
+                    type="button"
+                    title={pinnedNotesId === app.id ? 'Hide notes' : 'View notes'}
+                    onClick={() => togglePinnedNotes(app.id)}
+                    className="h-7 w-7 rounded-md flex items-center justify-center bg-transparent border-none cursor-pointer text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-all"
+                  >
+                    {pinnedNotesId === app.id ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                )}
                 <button onClick={() => openEdit(app)} title="Edit"
                   className="h-7 w-7 rounded-md flex items-center justify-center bg-transparent border-none cursor-pointer text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-all">
                   <Edit2 className="h-3.5 w-3.5" />
@@ -381,7 +400,7 @@ export default function ApplicationsPage() {
               </div>
               <div>
                 <Label htmlFor="m-company">Company</Label>
-                <Input id="m-company" placeholder="Acme Corp" value={form.company}
+                <Input id="m-company" placeholder="Infosys" value={form.company}
                   onChange={e => setForm(f => ({ ...f, company: e.target.value }))} />
               </div>
               <div>
