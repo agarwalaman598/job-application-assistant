@@ -353,7 +353,7 @@ export default function SearchJobsPage() {
                   ) : (
                     <div className="flex flex-wrap gap-1">
                       {job.tags.map((tag) => (
-                        <span key={tag} className="text-xs px-2 py-0.5 rounded-md border" style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}>
+                        <span key={tag} className="tag-chip text-xs" style={{ padding: '3px 10px' }}>
                           {tag}
                         </span>
                       ))}

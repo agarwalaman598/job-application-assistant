@@ -85,6 +85,7 @@ export default function ResetPasswordPage() {
                 <button type="button"
                   aria-label="Hold to show password"
                   title="Hold to show password"
+                  className="icon-btn"
                   style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#5a5a63', padding: 0, display: 'flex', alignItems: 'center' }}
                   {...holdShowHandlers(setShowPassword)}>
                   <Eye size={14} />
@@ -98,6 +99,7 @@ export default function ResetPasswordPage() {
                 <button type="button"
                   aria-label="Hold to show confirm password"
                   title="Hold to show confirm password"
+                  className="icon-btn"
                   style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#5a5a63', padding: 0, display: 'flex', alignItems: 'center' }}
                   {...holdShowHandlers(setShowConfirmPassword)}>
                   <Eye size={14} />

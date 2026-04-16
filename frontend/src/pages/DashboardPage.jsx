@@ -95,7 +95,7 @@ export default function DashboardPage() {
           <p className="text-sm text-[var(--muted-foreground)] mt-1">Here&apos;s your job search progress</p>
         </div>
         <Link to="/applications">
-          <button style={{
+          <button className="btn-lift" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '9px 18px', background: '#202020', color: '#fff',
             border: '1px solid #303030', borderRadius: 10, fontWeight: 600,
@@ -151,7 +151,7 @@ export default function DashboardPage() {
             <Briefcase style={{ height: 32, width: 32, margin: '0 auto 12px', color: 'var(--muted-foreground)', opacity: 0.35 }} />
             <p style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>No applications yet.</p>
             <Link to="/applications">
-              <button style={{ marginTop: 12, padding: '7px 18px', background: '#202020', color: '#fff', border: '1px solid #303030', borderRadius: 9, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button className="btn-lift" style={{ marginTop: 12, padding: '7px 18px', background: '#202020', color: '#fff', border: '1px solid #303030', borderRadius: 9, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Add your first
               </button>
             </Link>

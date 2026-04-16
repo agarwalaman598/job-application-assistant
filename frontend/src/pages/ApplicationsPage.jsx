@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
 import api from '../api';
@@ -47,14 +47,14 @@ export default function ApplicationsPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const fetchApps = async () => {
+  const fetchApps = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/applications', { params: filter ? { status: filter } : {} });
       setApps(res.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  };
+  }, [filter]);
 
   const fetchResumes = async () => {
     try {
@@ -63,7 +63,7 @@ export default function ApplicationsPage() {
     } catch (e) { console.error(e); }
   };
 
-  useEffect(() => { fetchApps(); }, [filter]);
+  useEffect(() => { fetchApps(); }, [fetchApps]);
   useEffect(() => { fetchResumes(); }, []);
 
   const openNew  = () => { setForm(EMPTY_FORM); setEditingId(null); setShowForm(true); };
@@ -159,15 +159,28 @@ export default function ApplicationsPage() {
       </div>
 
       {/* Status filter tabs */}
-        <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--muted)', width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
+      <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--muted)', width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
         {['', ...STATUS_OPTIONS].map(s => (
-          <button key={s} onClick={() => setFilter(s)}
-            className="px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border-none"
+          <button
+            key={s}
+            onClick={() => setFilter(s)}
+            className="px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border-none btn-lift"
             style={{
               background: filter === s ? 'var(--card)' : 'transparent',
               color: filter === s ? 'var(--foreground)' : 'var(--muted-foreground)',
               boxShadow: filter === s ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
-            }}>
+            }}
+            onMouseEnter={e => {
+              if (filter !== s) {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                e.currentTarget.style.color = 'var(--foreground)';
+              }
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = filter === s ? 'var(--card)' : 'transparent';
+              e.currentTarget.style.color = filter === s ? 'var(--foreground)' : 'var(--muted-foreground)';
+            }}
+          >
             {s ? s.charAt(0).toUpperCase() + s.slice(1) : 'All'}
           </button>
         ))}

@@ -205,6 +205,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
               <button
                 onClick={() => setConfirming(false)}
                 disabled={signingOut}
+                className="btn-lift"
                 style={{
                   flex: 1, padding: '9px', borderRadius: '9999px', fontWeight: 600, fontSize: '0.875rem', fontFamily: 'inherit',
                   background: 'var(--input)', color: 'var(--foreground)', border: '1px solid var(--border)',
@@ -216,6 +217,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
               <button
                 onClick={handleLogout}
                 disabled={signingOut}
+                className="btn-lift"
                 style={{
                   flex: 1, padding: '9px', borderRadius: '9999px', fontWeight: 700, fontSize: '0.875rem', fontFamily: 'inherit',
                   background: '#1f1f1f', color: 'var(--foreground)', border: '1px solid #2e2e2e',
@@ -241,7 +243,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
       {/* Mobile overlay */}
       {mobileOpen && (
         <>
-          <div className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={onClose} />
+          <div className="fixed inset-0 z-30 bg-black/60 md:hidden cursor-pointer" onClick={onClose} />
           <div className="md:hidden">{sidebarContent}</div>
         </>
       )}

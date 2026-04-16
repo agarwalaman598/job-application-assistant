@@ -389,6 +389,7 @@ export default function ProfilePage() {
             </div>
             <button
               onClick={() => setSummaryExpanded(v => !v)}
+              className="text-btn"
               style={{
                 marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4,
                 background: 'none', border: 'none', cursor: 'pointer', padding: 0,
@@ -467,6 +468,7 @@ export default function ProfilePage() {
               {s}
               <button
                 onClick={() => removeSkill(i)}
+                className="icon-btn"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center', color: '#5a5a63' }}
                 title={`Remove ${s}`}
               >
@@ -498,7 +500,7 @@ export default function ProfilePage() {
             position: 'relative',
           }}>
             <button onClick={() => removeExperience(i)} title="Remove"
-              className="bg-transparent border-none cursor-pointer"
+              className="bg-transparent border-none cursor-pointer icon-btn"
               style={{ position: 'absolute', top: '8px', right: '8px', color: 'var(--muted-foreground)' }}>
               <X size={14} />
             </button>
@@ -536,7 +538,7 @@ export default function ProfilePage() {
               position: 'relative',
             }}>
               <button onClick={() => removeEducation(i)} title="Remove"
-                className="bg-transparent border-none cursor-pointer"
+                className="bg-transparent border-none cursor-pointer icon-btn"
                 style={{ position: 'absolute', top: '10px', right: '10px', color: 'var(--muted-foreground)' }}>
                 <X size={14} />
               </button>
@@ -622,19 +624,19 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-1">
                     {editingId === item.id ? (
                       <button onClick={() => saveEdit(item.id)} title="Save"
-                        className="bg-transparent border-none cursor-pointer"
+                        className="bg-transparent border-none cursor-pointer icon-btn"
                         style={{ color: '#10b981', padding: '2px' }}>
                         <Check size={14} />
                       </button>
                     ) : (
                       <button onClick={() => startEdit(item)} title="Edit"
-                        className="bg-transparent border-none cursor-pointer"
+                        className="bg-transparent border-none cursor-pointer icon-btn"
                         style={{ color: 'var(--muted-foreground)', padding: '2px' }}>
                         <Pencil size={12} />
                       </button>
                     )}
                     <button onClick={() => setConfirmAnswerId(item.id)} title="Delete"
-                      className="bg-transparent border-none cursor-pointer"
+                      className="bg-transparent border-none cursor-pointer icon-btn"
                       style={{ color: 'var(--muted-foreground)', padding: '2px' }}>
                       <Trash2 size={12} />
                     </button>

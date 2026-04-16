@@ -82,14 +82,14 @@ export default function RegisterPage() {
               <p style={{ color: 'var(--muted-foreground)', fontSize: '0.82rem', marginBottom: '14px', lineHeight: '1.6', textAlign: 'left' }}>
                 Account created. Use the link below to verify:
               </p>
-              <a href={devLink} style={{
+              <a href={devLink} className="hover-link-primary" style={{
                 display: 'block', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)',
                 borderRadius: '8px', padding: '10px 12px', fontSize: '0.75rem', color: 'var(--primary)',
                 wordBreak: 'break-all', textDecoration: 'none', textAlign: 'left', marginBottom: '16px',
               }}>
                 {devLink}
               </a>
-              <Link to="/login" style={{ color: 'var(--muted-foreground)', fontSize: '0.85rem' }}>Go to login →</Link>
+              <Link to="/login" className="hover-link" style={{ fontSize: '0.85rem' }}>Go to login →</Link>
             </>
           ) : (
             <>
@@ -114,7 +114,7 @@ export default function RegisterPage() {
                   emails sometimes land there. Mark it as "Not spam" to receive future emails in your inbox.
                 </p>
               </div>
-              <Link to="/login" style={{
+              <Link to="/login" className="btn-lift" style={{
                 display: 'inline-block', padding: '10px 28px',
                 background: '#1f1f1f', color: 'var(--foreground)', border: '1px solid #2e2e2e',
                 borderRadius: '9999px', fontWeight: 700, fontSize: '0.92rem', textDecoration: 'none',
@@ -173,6 +173,7 @@ export default function RegisterPage() {
                 type="button"
                 aria-label="Hold to show password"
                 title="Hold to show password"
+                className="icon-btn"
                 style={{
                   position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)',
@@ -198,6 +199,7 @@ export default function RegisterPage() {
                 type="button"
                 aria-label="Hold to show confirm password"
                 title="Hold to show confirm password"
+                className="icon-btn"
                 style={{
                   position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)',
@@ -210,7 +212,7 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <button type="submit" disabled={loading} style={{
+          <button type="submit" disabled={loading} className="btn-lift" style={{
             width: '100%', padding: '11px',
             background: loading ? 'var(--muted)' : '#1f1f1f',
             color: 'var(--foreground)', border: '1px solid #2e2e2e',
@@ -229,9 +231,7 @@ export default function RegisterPage() {
 
         <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.875rem', color: 'var(--muted-foreground)' }}>
           Already have an account?{' '}
-          <Link to="/login" style={{ color: 'var(--muted-foreground)', textDecoration: 'none' }}
-            onMouseOver={e => e.target.style.color = 'var(--foreground)'}
-            onMouseOut={e => e.target.style.color = 'var(--muted-foreground)'}>
+          <Link to="/login" className="hover-link" style={{ textDecoration: 'none' }}>
             Sign in
           </Link>
         </p>

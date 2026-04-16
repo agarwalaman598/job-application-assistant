@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)', padding: '24px' }}>
       <Helmet><title>Forgot Password | JobAssist AI</title></Helmet>
       <div className="card p-8 animate-enter" style={{ maxWidth: '400px', width: '100%' }}>
-        <button onClick={() => navigate('/login')}
+        <button onClick={() => navigate('/login')} className="text-btn"
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5a5a63', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', marginBottom: '20px', padding: 0 }}>
           <ArrowLeft size={14} /> Back to Login
         </button>
@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
                   Resend sandbox can only deliver to your Resend account email.<br/>
                   Use this link directly to test the reset flow:
                 </p>
-                <a href={devLink} style={{
+                <a href={devLink} className="hover-link-primary" style={{
                   display: 'block', background: 'rgba(212,148,46,0.08)', border: '1px solid rgba(212,148,46,0.2)',
                   borderRadius: '8px', padding: '10px 12px', fontSize: '0.75rem', color: '#d4942e',
                   wordBreak: 'break-all', textDecoration: 'none',

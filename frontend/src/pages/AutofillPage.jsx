@@ -405,8 +405,8 @@ export default function AutofillPage() {
           {result.prefilled_url && (
             <div style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
               <p style={{ fontSize: '0.7rem', color: '#8b8b92', marginBottom: '4px' }}>If the tab didn't open, click below:</p>
-              <a href={result.prefilled_url} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: '0.75rem', color: 'var(--color-primary)', wordBreak: 'break-all' }}>
+              <a href={result.prefilled_url} target="_blank" rel="noopener noreferrer" className="hover-link-primary"
+                style={{ fontSize: '0.75rem', color: 'var(--color-primary)', wordBreak: 'break-all', textDecoration: 'none' }}>
                 Open pre-filled form →
               </a>
             </div>
@@ -428,7 +428,7 @@ export default function AutofillPage() {
               <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Track this application?</span>
             </div>
             <button onClick={() => setTrackForm(null)}
-              className="bg-transparent border-none cursor-pointer" style={{ color: '#5a5a63' }}>
+              className="bg-transparent border-none cursor-pointer icon-btn" style={{ color: '#5a5a63' }}>
               <X size={14} />
             </button>
           </div>

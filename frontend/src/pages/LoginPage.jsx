@@ -105,7 +105,7 @@ export default function LoginPage() {
           }}>
             {error}
             {unverifiedError && (
-              <button type="button" onClick={handleResend} disabled={resending}
+              <button type="button" onClick={handleResend} disabled={resending} className="text-btn"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '6px', background: 'none', border: 'none', padding: 0,
                   color: 'var(--primary)', fontSize: '0.78rem', cursor: 'pointer', opacity: resending ? 0.5 : 1 }}>
                 {resending && <Loader2 size={12} className="animate-spin" />}
@@ -152,7 +152,7 @@ export default function LoginPage() {
               <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--foreground)' }}>
                 Password
               </label>
-              <Link to="/forgot-password" style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', textDecoration: 'none' }}>
+              <Link to="/forgot-password" className="hover-link" style={{ fontSize: '0.78rem', textDecoration: 'none' }}>
                 Forgot password?
               </Link>
             </div>
@@ -174,6 +174,7 @@ export default function LoginPage() {
                 type="button"
                 aria-label="Hold to show password"
                 title="Hold to show password"
+                className="icon-btn"
                 style={{
                   position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)',
@@ -197,7 +198,7 @@ export default function LoginPage() {
           </div>
 
           {/* Submit */}
-          <button type="submit" disabled={loading} style={{
+          <button type="submit" disabled={loading} className="btn-lift" style={{
             width: '100%', padding: '11px',
             background: loading ? 'var(--muted)' : '#1f1f1f',
             color: 'var(--foreground)', border: '1px solid #2e2e2e',
@@ -216,9 +217,7 @@ export default function LoginPage() {
 
         <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.875rem', color: 'var(--muted-foreground)' }}>
           Don&apos;t have an account?{' '}
-          <Link to="/register" style={{ color: 'var(--muted-foreground)', textDecoration: 'none' }}
-            onMouseOver={e => e.target.style.color = 'var(--foreground)'}
-            onMouseOut={e => e.target.style.color = 'var(--muted-foreground)'}>
+          <Link to="/register" className="hover-link" style={{ textDecoration: 'none' }}>
             Sign up
           </Link>
         </p>

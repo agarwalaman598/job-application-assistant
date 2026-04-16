@@ -344,8 +344,8 @@ export default function ResumePage() {
             </span>
             <button
               onClick={() => setTagFilter('')}
-              className="btn-secondary text-xs"
-              style={{ opacity: tagFilter ? 1 : 0.6 }}
+              className={`tag-chip tag-chip-muted text-xs ${tagFilter ? 'tag-chip-muted' : 'tag-chip-active'}`}
+              style={{ opacity: tagFilter ? 1 : 0.95 }}
             >
               All
             </button>
@@ -353,8 +353,8 @@ export default function ResumePage() {
               <button
                 key={tag}
                 onClick={() => setTagFilter(tag)}
-                className="btn-secondary text-xs"
-                style={{ opacity: tagFilter === tag ? 1 : 0.75 }}
+                className={`tag-chip text-xs ${tagFilter === tag ? 'tag-chip-active' : 'tag-chip-muted'}`}
+                style={{ opacity: tagFilter === tag ? 1 : 0.9 }}
               >
                 {tag}
               </button>
@@ -391,7 +391,7 @@ export default function ResumePage() {
       <div className="card mb-6 animate-enter" style={{ overflow: 'hidden' }}>
         <button
           onClick={() => setShowLinkForm(v => !v)}
-          className="flex items-center gap-2 w-full"
+          className="text-btn flex items-center gap-2 w-full"
           style={{ padding: '12px 16px', fontSize: '0.82rem', color: 'var(--muted-foreground)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
         >
           <Link2 size={14} />
@@ -416,7 +416,7 @@ export default function ResumePage() {
                 onKeyDown={e => e.key === 'Enter' && handleAddLink()}
               />
               <div className="flex gap-2 justify-end mt-1">
-                <button onClick={() => setShowLinkForm(false)} style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                <button onClick={() => setShowLinkForm(false)} className="text-btn" style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
                 <button
                   onClick={handleAddLink}
                   disabled={addingLink || !linkTitle.trim() || !linkUrl.trim()}
@@ -464,6 +464,7 @@ export default function ResumePage() {
                         <button
                           onClick={() => editingFilenameId === r.id ? setEditingFilenameId(null) : startEditFilename(r)}
                           title="Edit filename"
+                          className="icon-btn"
                           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex', flexShrink: 0 }}
                         >
                           <Edit size={14} style={{ opacity: 0.45 }} />
@@ -497,7 +498,7 @@ export default function ResumePage() {
                     )}
                     {/* Link icon: opens drive_link */}
                     {r.drive_link && (
-                      <a href={r.drive_link} target="_blank" rel="noopener noreferrer" title="Open link" style={{ color: 'var(--muted-foreground)', display: 'flex' }}>
+                      <a href={r.drive_link} target="_blank" rel="noopener noreferrer" title="Open link" className="hover-link" style={{ display: 'flex' }}>
                         <ExternalLink size={14} />
                       </a>
                     )}
@@ -505,6 +506,7 @@ export default function ResumePage() {
                     <button
                       onClick={() => editingLinkId === r.id ? setEditingLinkId(null) : startEditLink(r)}
                       title={r.drive_link ? 'Edit link' : 'Add link'}
+                      className="icon-btn"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex' }}
                     >
                       <Link2 size={14} style={{ opacity: r.drive_link ? 1 : 0.45 }} />
@@ -512,6 +514,7 @@ export default function ResumePage() {
                     <button
                       onClick={() => editingTagsId === r.id ? setEditingTagsId(null) : startEditTags(r)}
                       title="Edit tags"
+                      className="icon-btn"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex' }}
                     >
                       <Tag size={14} style={{ opacity: (r.tags || []).length > 0 ? 1 : 0.45 }} />
@@ -520,6 +523,7 @@ export default function ResumePage() {
                       <button
                         onClick={() => copyLink(r)}
                         title="Copy link"
+                        className="icon-btn"
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex' }}
                       >
                         {copiedId === r.id
@@ -534,7 +538,7 @@ export default function ResumePage() {
                           onClick={() => handleView(r)}
                           title="View PDF"
                           disabled={viewingId === r.id}
-                          className="hidden md:block"
+                          className="icon-btn hidden md:block"
                           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex' }}
                         >
                           {viewingId === r.id
@@ -545,6 +549,7 @@ export default function ResumePage() {
                           onClick={() => handleDownload(r)}
                           title="Download PDF"
                           disabled={downloadingId === r.id}
+                          className="icon-btn"
                           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: '2px', display: 'flex' }}
                         >
                           {downloadingId === r.id
@@ -583,6 +588,7 @@ export default function ResumePage() {
                     <button
                       onClick={() => setEditingLinkId(null)}
                       title="Cancel"
+                      className="icon-btn"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', display: 'flex', padding: '2px' }}
                     >
                       <X size={14} />
@@ -614,6 +620,7 @@ export default function ResumePage() {
                     <button
                       onClick={() => setEditingTagsId(null)}
                       title="Cancel"
+                      className="icon-btn"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', display: 'flex', padding: '2px' }}
                     >
                       <X size={14} />
@@ -645,6 +652,7 @@ export default function ResumePage() {
                     <button
                       onClick={() => setEditingFilenameId(null)}
                       title="Cancel"
+                      className="icon-btn"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', display: 'flex', padding: '2px' }}
                     >
                       <X size={14} />
@@ -670,7 +678,7 @@ export default function ResumePage() {
                       <button
                         key={`${r.id}-${tag}`}
                         onClick={() => setTagFilter(tag)}
-                        className="btn-secondary text-xs"
+                        className="tag-chip text-xs"
                         style={{ padding: '3px 8px' }}
                       >
                         {tag}
