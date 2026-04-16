@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { Mail, Loader2, ArrowLeft, CheckCircle } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -31,13 +32,51 @@ export default function ForgotPasswordPage() {
     } finally { setLoading(false); }
   };
 
+  const inputStyle = {
+    width: '100%',
+    padding: '10px 16px',
+    background: 'var(--input)',
+    border: '1px solid var(--border)',
+    borderRadius: '9999px',
+    color: 'var(--foreground)',
+    fontSize: '0.9rem',
+    fontFamily: 'inherit',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)', padding: '24px' }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background:
+          'radial-gradient(900px 420px at -20% -10%, rgba(99,102,241,0.16), transparent), radial-gradient(800px 340px at 120% 110%, rgba(99,102,241,0.12), transparent), var(--background)',
+        padding: '24px',
+      }}
+    >
       <Helmet><title>Forgot Password | JobAssist AI</title></Helmet>
-      <div className="card p-8 animate-enter" style={{ maxWidth: '400px', width: '100%' }}>
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        style={{
+          maxWidth: '420px',
+          width: '100%',
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: '16px',
+          padding: '1.8rem',
+        }}
+      >
         <button onClick={() => navigate('/login')} className="text-btn"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5a5a63', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', marginBottom: '20px', padding: 0 }}>
-          <ArrowLeft size={14} /> Back to Login
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', marginBottom: '20px', padding: 0 }}>
+          <ArrowLeft size={14} /> Back to Sign in
         </button>
 
         {sent ? (
@@ -48,7 +87,7 @@ export default function ForgotPasswordPage() {
             </h2>
             {devLink ? (
               <div style={{ textAlign: 'left' }}>
-                <p style={{ color: '#8b8b92', fontSize: '0.82rem', marginBottom: '12px', lineHeight: '1.5' }}>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.82rem', marginBottom: '12px', lineHeight: '1.5' }}>
                   Resend sandbox can only deliver to your Resend account email.<br/>
                   Use this link directly to test the reset flow:
                 </p>
@@ -59,14 +98,14 @@ export default function ForgotPasswordPage() {
                 }}>
                   {devLink}
                 </a>
-                <p style={{ color: '#5a5a63', fontSize: '0.72rem', marginTop: '10px' }}>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.72rem', marginTop: '10px' }}>
                   To fix this: verify a domain at resend.com/domains and update RESEND_FROM_EMAIL in .env
                 </p>
               </div>
             ) : (
               <>
-                <p style={{ color: '#8b8b92', fontSize: '0.85rem', lineHeight: '1.6', marginBottom: '16px' }}>
-                  If <strong style={{ color: '#ececed' }}>{email}</strong> is registered, you'll receive a reset link within a few minutes.
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.85rem', lineHeight: '1.6', marginBottom: '16px' }}>
+                  If <strong style={{ color: 'var(--foreground)' }}>{email}</strong> is registered, you'll receive a reset link within a few minutes.
                 </p>
                 {/* Spam notice */}
                 <div style={{
@@ -89,23 +128,46 @@ export default function ForgotPasswordPage() {
               <Mail size={18} style={{ color: 'var(--color-primary)' }} />
               <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Forgot Password</h2>
             </div>
-            <p style={{ color: '#8b8b92', fontSize: '0.8rem', marginBottom: '20px' }}>
+            <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8rem', marginBottom: '20px' }}>
               Enter your account email and we'll send a reset link.
             </p>
 
             <form onSubmit={handleSubmit}>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: '#8b8b92', marginBottom: '4px' }}>Email</label>
+              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--foreground)', marginBottom: '8px', fontWeight: 600 }}>Email</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                className="input-field" placeholder="you@example.com" required style={{ marginBottom: '12px' }} />
+                placeholder="you@example.com" required style={{ ...inputStyle, marginBottom: '12px' }}
+                onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+                onBlur={e => e.target.style.borderColor = 'var(--border)'} />
               {error && <p style={{ color: '#d94f4f', fontSize: '0.78rem', marginBottom: '10px' }}>{error}</p>}
-              <button type="submit" disabled={loading || !email.trim()} className="btn-primary flex items-center gap-2" style={{ width: '100%' }}>
+              <button
+                type="submit"
+                disabled={loading || !email.trim()}
+                className="btn-lift"
+                style={{
+                  width: '100%',
+                  padding: '11px',
+                  background: loading ? 'var(--muted)' : '#1f1f1f',
+                  color: 'var(--foreground)',
+                  border: '1px solid #2e2e2e',
+                  borderRadius: '9999px',
+                  fontWeight: 700,
+                  fontSize: '0.95rem',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontFamily: 'inherit',
+                  transition: 'background 0.15s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
+              >
                 {loading ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
                 {loading ? 'Sending…' : 'Send Reset Link'}
               </button>
             </form>
           </>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

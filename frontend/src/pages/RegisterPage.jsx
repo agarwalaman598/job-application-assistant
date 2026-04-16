@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Eye, Mail, Loader2 } from 'lucide-react';
+import { motion } from 'motion/react';
 
 const INPUT_STYLE = {
   width: '100%', padding: '10px 16px',
@@ -72,7 +73,21 @@ export default function RegisterPage() {
   // ── Post-registration screen ──────────────────────────────────────────────
   if (registered) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--background)', padding: '1.5rem' }}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background:
+            'radial-gradient(900px 420px at -20% -10%, rgba(99,102,241,0.16), transparent), radial-gradient(800px 340px at 120% 110%, rgba(99,102,241,0.12), transparent), var(--background)',
+          padding: '1.5rem',
+        }}
+      >
         <Helmet><title>Register | JobAssist AI</title></Helmet>
         <div style={{ width: '100%', maxWidth: '420px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem', textAlign: 'center' }}>
           {devLink ? (
@@ -124,26 +139,95 @@ export default function RegisterPage() {
             </>
           )}
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   // ── Registration form ─────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--background)', padding: '1.5rem' }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background:
+          'radial-gradient(900px 420px at -20% -10%, rgba(99,102,241,0.16), transparent), radial-gradient(800px 340px at 120% 110%, rgba(99,102,241,0.12), transparent), var(--background)',
+        padding: '1.5rem',
+      }}
+    >
       <Helmet><title>Register | JobAssist AI</title></Helmet>
-      {/* Title above card */}
-      <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.08 }}
+        style={{ textAlign: 'center', marginBottom: '1rem' }}
+      >
         <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.02em', marginBottom: '0.4rem' }}>
           Join JobAssist AI
         </h1>
         <p style={{ fontSize: '0.9rem', color: 'var(--muted-foreground)' }}>
           Create your account to start tracking
         </p>
-      </div>
+      </motion.div>
 
-      {/* Card */}
-      <div style={{ width: '100%', maxWidth: '420px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '2rem' }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.16 }}
+        style={{ width: '100%', maxWidth: '420px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '1.35rem' }}
+      >
+        <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              gap: '0.5rem',
+              padding: '4px',
+              background: 'var(--muted)',
+              borderRadius: '9999px',
+            }}
+          >
+            <Link
+              to="/login"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '8px 24px',
+                background: 'transparent',
+                color: 'var(--muted-foreground)',
+                border: '1px solid transparent',
+                borderRadius: '9999px',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                textDecoration: 'none',
+              }}
+              className="hover-link"
+            >
+              Sign in
+            </Link>
+            <button
+              type="button"
+              style={{
+                padding: '8px 24px',
+                background: '#202020',
+                color: 'var(--foreground)',
+                border: '1px solid #2e2e2e',
+                borderRadius: '9999px',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                cursor: 'default',
+                fontFamily: 'inherit',
+              }}
+            >
+              Sign up
+            </button>
+          </div>
+        </div>
+
         {error && (
           <div style={{ marginBottom: '1rem', padding: '10px 14px', borderRadius: '8px', fontSize: '0.82rem', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
             {error}
@@ -235,7 +319,7 @@ export default function RegisterPage() {
             Sign in
           </Link>
         </p>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

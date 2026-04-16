@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, Loader2 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
@@ -67,36 +68,126 @@ export default function LoginPage() {
     } finally { setResending(false); }
   };
 
+  const focus = (e) => {
+    e.target.style.borderColor = 'var(--primary)';
+  };
+
+  const blur = (e) => {
+    e.target.style.borderColor = 'var(--border)';
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '10px 16px',
+    background: 'var(--input)',
+    border: '1px solid var(--border)',
+    borderRadius: '9999px',
+    color: 'var(--foreground)',
+    fontSize: '0.9rem',
+    outline: 'none',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+  };
+
+  const labelStyle = {
+    display: 'block',
+    fontSize: '0.875rem',
+    fontWeight: 600,
+    color: 'var(--foreground)',
+    marginBottom: '0.5rem',
+  };
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'var(--background)',
-      padding: '1.5rem',
-    }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background:
+          'radial-gradient(900px 420px at -20% -10%, rgba(99,102,241,0.16), transparent), radial-gradient(800px 340px at 120% 110%, rgba(99,102,241,0.12), transparent), var(--background)',
+        padding: '1.5rem',
+      }}
+    >
       <Helmet><title>Login | JobAssist AI</title></Helmet>
-      {/* Title above card */}
-      <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.08 }}
+        style={{ textAlign: 'center', marginBottom: '1.2rem' }}
+      >
         <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.02em', marginBottom: '0.4rem' }}>
           JobAssist AI
         </h1>
         <p style={{ fontSize: '0.9rem', color: 'var(--muted-foreground)' }}>
           Track your job applications effortlessly
         </p>
-      </div>
+      </motion.div>
 
-      {/* Card */}
-      <div style={{
-        width: '100%',
-        maxWidth: '420px',
-        background: 'var(--card)',
-        border: '1px solid var(--border)',
-        borderRadius: '16px',
-        padding: '2rem',
-      }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.16 }}
+        style={{
+          width: '100%',
+          maxWidth: '420px',
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: '16px',
+          padding: '2rem',
+        }}
+      >
+        <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              gap: '0.5rem',
+              padding: '4px',
+              background: 'var(--muted)',
+              borderRadius: '9999px',
+            }}
+          >
+            <button
+              type="button"
+              style={{
+                padding: '8px 24px',
+                background: '#202020',
+                color: 'var(--foreground)',
+                border: '1px solid #2e2e2e',
+                borderRadius: '9999px',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                cursor: 'default',
+                fontFamily: 'inherit',
+              }}
+            >
+              Sign in
+            </button>
+            <Link
+              to="/register"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '8px 24px',
+                background: 'transparent',
+                color: 'var(--muted-foreground)',
+                border: '1px solid transparent',
+                borderRadius: '9999px',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                textDecoration: 'none',
+              }}
+              className="hover-link"
+            >
+              Sign up
+            </Link>
+          </div>
+        </div>
+
         {/* Error */}
         {error && (
           <div style={{
@@ -128,21 +219,15 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           {/* Email */}
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--foreground)', marginBottom: '0.5rem' }}>
+            <label style={labelStyle}>
               Email
             </label>
             <input
               type="email" value={email} onChange={e => setEmail(e.target.value)}
               placeholder="you@example.com" required autoFocus
-              style={{
-                width: '100%', padding: '10px 16px',
-                background: 'var(--input)', border: '1px solid var(--border)',
-                borderRadius: '9999px', color: 'var(--foreground)',
-                fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit',
-                boxSizing: 'border-box',
-              }}
-              onFocus={e => e.target.style.borderColor = 'var(--primary)'}
-              onBlur={e => e.target.style.borderColor = 'var(--border)'}
+              style={inputStyle}
+              onFocus={focus}
+              onBlur={blur}
             />
           </div>
 
@@ -160,15 +245,9 @@ export default function LoginPage() {
               <input
                 type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••" required
-                style={{
-                  width: '100%', padding: '10px 42px 10px 16px',
-                  background: 'var(--input)', border: '1px solid var(--border)',
-                  borderRadius: '9999px', color: 'var(--foreground)',
-                  fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit',
-                  boxSizing: 'border-box',
-                }}
-                onFocus={e => e.target.style.borderColor = 'var(--primary)'}
-                onBlur={e => e.target.style.borderColor = 'var(--border)'}
+                style={{ ...inputStyle, paddingRight: '42px' }}
+                onFocus={focus}
+                onBlur={blur}
               />
               <button
                 type="button"
@@ -221,8 +300,8 @@ export default function LoginPage() {
             Sign up
           </Link>
         </p>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
