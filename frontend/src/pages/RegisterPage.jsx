@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Eye, Mail, Loader2 } from 'lucide-react';
+import { motion } from 'motion/react';
 
 const INPUT_STYLE = {
   width: '100%', padding: '10px 16px',
