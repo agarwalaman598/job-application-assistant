@@ -486,8 +486,13 @@ class ScoreBreakdown(BaseModel):
 
 class MatchResponse(BaseModel):
     match_score: float
-    matched_skills: List[str]
-    missing_skills: List[str]
+    matched_skills: List[List[str]]
+    missing_skills: List[List[str]]
+    matched_required_skills: Optional[List[List[str]]] = []
+    missing_required_skills: Optional[List[List[str]]] = []
+    preferred_skills_matched: Optional[List[str]] = []
+    keyword_analysis: Optional[dict] = None
+    resume_fit_analysis: Optional[str] = ""
     breakdown: Optional[ScoreBreakdown] = None
     matched_keywords: Optional[List[str]] = []
     missing_keywords: Optional[List[str]] = []
@@ -511,12 +516,14 @@ class AnalyzeJDRequest(BaseModel):
 class AnalyzeJDResponse(BaseModel):
     title: str
     company: str
-    required_skills: List[str]
+    required_skills: List[List[str]]
+    preferred_skills: Optional[List[str]] = []
     nice_to_have_skills: List[str]
     experience_level: str
     summary: str
     key_responsibilities: Optional[List[str]] = []
     resume_fit: Optional[str] = ""
+    resume_fit_analysis: Optional[str] = ""
     resume_gaps: Optional[List[str]] = []
     resume_strengths: Optional[List[str]] = []
 

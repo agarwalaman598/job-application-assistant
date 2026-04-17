@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import api from '../api';
 import MatchScoreGauge from '../components/MatchScoreGauge';
-import { Search, CheckCircle, XCircle, Loader2, FileText, MessageSquare, Sparkles, FileCheck, Maximize2, X, Check, Target, Lightbulb, Hash } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Loader2, FileText, MessageSquare, Sparkles, FileCheck, Maximize2, X, Check, Target, Lightbulb } from 'lucide-react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Textarea } from '../components/ui/textarea';
 
@@ -26,6 +26,59 @@ export default function AnalyzePage() {
   const typingRef = useRef(null);
   const [genLoading, setGenLoading] = useState(false);
 
+  const normalizeSkillGroups = (value) => {
+    if (!Array.isArray(value)) return [];
+    return value
+      .map((group) => {
+        if (Array.isArray(group)) {
+          const cleaned = group.filter((s) => typeof s === 'string' && s.trim());
+          return cleaned.length ? cleaned : null;
+        }
+        if (typeof group === 'string' && group.trim()) {
+          return [group.trim()];
+        }
+        return null;
+      })
+      .filter(Boolean);
+  };
+
+  const formatSkillGroup = (group) => (Array.isArray(group) ? group.join(' / ') : String(group || ''));
+
+  const matchedSkills = normalizeSkillGroups(matchResult?.matched_skills);
+  const missingSkills = normalizeSkillGroups(matchResult?.missing_skills);
+  const matchedKeywords = Array.isArray(matchResult?.matched_keywords) ? matchResult.matched_keywords : [];
+  const missingKeywords = Array.isArray(matchResult?.missing_keywords) ? matchResult.missing_keywords : [];
+  const bonusSkillsMatched = Array.isArray(matchResult?.preferred_skills_matched) ? matchResult.preferred_skills_matched : [];
+  const suggestions = Array.isArray(matchResult?.suggestions) ? matchResult.suggestions : [];
+  const fallbackTopActions = [
+    'Add deployment experience (Docker / cloud)',
+    'Contribute to open-source or collaborative projects',
+    'Highlight measurable impact in your project outcomes',
+  ];
+  const actionPool = [
+    ...(Array.isArray(matchResult?.top_actions) ? matchResult.top_actions : suggestions),
+    ...fallbackTopActions,
+  ]
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean);
+  const topActions = [];
+  for (const action of actionPool) {
+    if (topActions.includes(action)) continue;
+    topActions.push(action);
+    if (topActions.length === 3) break;
+  }
+  const preferredSkills = Array.isArray(jdAnalysis?.preferred_skills)
+    ? jdAnalysis.preferred_skills
+    : (Array.isArray(jdAnalysis?.nice_to_have_skills) ? jdAnalysis.nice_to_have_skills : []);
+  const matchedRequiredCount = matchedSkills.length;
+  const totalRequiredCount = matchedSkills.length + missingSkills.length;
+  const missingRequiredPreview = missingSkills.slice(0, 2).map(formatSkillGroup).join(', ');
+  const matchedPreferredSet = new Set(bonusSkillsMatched.map((skill) => String(skill || '').trim().toLowerCase()));
+  const missingPreferredSkills = preferredSkills.filter((skill) => !matchedPreferredSet.has(String(skill || '').trim().toLowerCase()));
+  const requiredSkills = normalizeSkillGroups(jdAnalysis?.required_skills);
+  const resumeStrengths = Array.isArray(jdAnalysis?.resume_strengths) ? jdAnalysis.resume_strengths : [];
+  const resumeGaps = Array.isArray(jdAnalysis?.resume_gaps) ? jdAnalysis.resume_gaps : [];
+
   // Cleanup typing interval on unmount
   useEffect(() => () => { if (typingRef.current) clearInterval(typingRef.current); }, []);
 
@@ -47,6 +100,13 @@ export default function AnalyzePage() {
     }, 15);
   }, []);
   const [alertMsg, setAlertMsg] = useState(null);
+
+  const getJdWordCount = (text) => {
+    const matches = String(text || '').match(/[A-Za-z][A-Za-z0-9+#./-]*/g);
+    return matches ? matches.length : 0;
+  };
+
+  const isShortJd = jd.trim() && getJdWordCount(jd) < 20;
 
   const handleAnalyze = async () => {
     if (loading || !jd.trim()) return;
@@ -214,6 +274,12 @@ export default function AnalyzePage() {
           className="input-field" minRows={5} maxRows={18}
           placeholder="Paste the job description here, or click Expand for a larger editor..." />
 
+        {isShortJd && (
+          <p style={{ fontSize: '0.75rem', color: '#d4942e', marginTop: 8 }}>
+            This is a short JD. Results may be limited.
+          </p>
+        )}
+
         <button onClick={handleAnalyze} disabled={loading || !jd.trim()}
           className="btn-primary flex items-center gap-2 mt-3">
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
@@ -235,7 +301,8 @@ export default function AnalyzePage() {
 
       {/* Match results */}
       {matchResult && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+        <>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
           <div className="card p-5 flex flex-col items-center justify-center animate-enter">
             <MatchScoreGauge score={matchResult.match_score} />
           </div>
@@ -243,14 +310,14 @@ export default function AnalyzePage() {
           <div className="card p-5 animate-enter" style={{ animationDelay: '0.05s' }}>
             <div className="flex items-center gap-2 mb-3">
               <CheckCircle size={14} style={{ color: '#3eb370' }} />
-              <span className="section-label" style={{ color: '#3eb370' }}>Skills You Have</span>
+              <span className="section-label" style={{ color: '#3eb370' }}>Matched Required Skills</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {matchResult.matched_skills.length > 0 ? matchResult.matched_skills.map((s, i) => (
+                {matchedSkills.length > 0 ? matchedSkills.map((group, i) => (
                 <span key={i} style={{
                   padding: '3px 10px', borderRadius: '5px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)',
                   background: 'rgba(62, 179, 112, 0.08)', color: '#3eb370', border: '1px solid rgba(62, 179, 112, 0.15)',
-                }}>{s}</span>
+                }}>{formatSkillGroup(group)}</span>
               )) : (
                 <p style={{ fontSize: '0.75rem', color: '#5a5a63' }}>None matched. Add skills on Profile page.</p>
               )}
@@ -260,20 +327,124 @@ export default function AnalyzePage() {
           <div className="card p-5 animate-enter" style={{ animationDelay: '0.1s' }}>
             <div className="flex items-center gap-2 mb-3">
               <XCircle size={14} style={{ color: '#d94f4f' }} />
-              <span className="section-label" style={{ color: '#d94f4f' }}>Skills You're Missing</span>
+              <span className="section-label" style={{ color: '#d94f4f' }}>Missing Required Skills</span>
+            </div>
+            <div style={{ marginBottom: missingPreferredSkills.length > 0 ? '12px' : 0 }}>
+              <p style={{ fontSize: '0.7rem', color: '#d94f4f', marginBottom: '6px' }}>🔴 Critical Gaps (required)</p>
+              <div className="flex flex-wrap gap-1.5">
+                {missingSkills.length > 0 ? missingSkills.map((group, i) => (
+                  <span key={i} style={{
+                    padding: '3px 10px', borderRadius: '5px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)',
+                    background: 'rgba(217, 79, 79, 0.08)', color: '#d94f4f', border: '1px solid rgba(217, 79, 79, 0.15)',
+                  }}>{formatSkillGroup(group)}</span>
+                )) : (
+                  <p style={{ fontSize: '0.75rem', color: '#3eb370', margin: 0 }}>✔ You meet all required skills</p>
+                )}
+              </div>
+            </div>
+
+            {missingPreferredSkills.length > 0 && (
+              <div>
+                <p style={{ fontSize: '0.7rem', color: '#d4942e', marginBottom: '6px' }}>🟡 Optional Improvements (preferred)</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {missingPreferredSkills.map((skill, i) => (
+                    <span key={i} style={{
+                      padding: '3px 10px', borderRadius: '5px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)',
+                      background: 'rgba(212, 148, 46, 0.08)', color: '#d4942e', border: '1px solid rgba(212, 148, 46, 0.15)',
+                    }}>{skill}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="card p-5 animate-enter" style={{ animationDelay: '0.15s' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircle size={14} style={{ color: '#4f8ef7' }} />
+              <span className="section-label" style={{ color: '#4f8ef7' }}>Preferred Skills Matched (Bonus)</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {matchResult.missing_skills.length > 0 ? matchResult.missing_skills.map((s, i) => (
+              {bonusSkillsMatched.length > 0 ? bonusSkillsMatched.map((s, i) => (
                 <span key={i} style={{
                   padding: '3px 10px', borderRadius: '5px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)',
-                  background: 'rgba(217, 79, 79, 0.08)', color: '#d94f4f', border: '1px solid rgba(217, 79, 79, 0.15)',
+                  background: 'rgba(79, 142, 247, 0.08)', color: '#4f8ef7', border: '1px solid rgba(79, 142, 247, 0.18)',
                 }}>{s}</span>
               )) : (
-                <p style={{ fontSize: '0.75rem', color: '#5a5a63' }}>You cover everything!</p>
+                <p style={{ fontSize: '0.75rem', color: '#5a5a63' }}>No preferred bonus skills matched yet.</p>
               )}
             </div>
           </div>
         </div>
+
+        <div className="card p-5 mb-5 animate-enter" style={{ animationDelay: '0.16s' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <Lightbulb size={14} style={{ color: '#d4942e' }} />
+            <span className="section-label" style={{ color: '#d4942e' }}>🔥 Top 3 Actions to Improve Your Match</span>
+          </div>
+          {topActions.length > 0 ? (
+            <ol style={{ margin: 0, paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {topActions.map((action, index) => (
+                <li key={index} style={{ fontSize: '0.82rem', color: '#ececed', lineHeight: 1.6 }}>
+                  {action}
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p style={{ fontSize: '0.82rem', color: '#5a5a63', margin: 0 }}>No suggestions available yet.</p>
+          )}
+        </div>
+
+        <div className="card p-5 mb-5 animate-enter" style={{ animationDelay: '0.17s' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <Target size={14} style={{ color: 'var(--color-primary)' }} />
+            <span className="section-label">Why this score?</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <p style={{ fontSize: '0.82rem', color: '#ececed', margin: 0 }}>
+              ✔ Matched {matchedRequiredCount} out of {totalRequiredCount} required skills
+            </p>
+            <p style={{ fontSize: '0.82rem', color: '#ececed', margin: 0 }}>
+              ❌ Missing: {missingRequiredPreview || 'No major required gaps'}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+          <div className="card p-5 animate-enter" style={{ animationDelay: '0.18s' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircle size={14} style={{ color: '#3eb370' }} />
+              <span className="section-label" style={{ color: '#3eb370' }}>Matched Keywords</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {matchedKeywords.length > 0 ? matchedKeywords.map((keyword, i) => (
+                <span key={i} style={{
+                  padding: '3px 10px', borderRadius: '5px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)',
+                  background: 'rgba(62, 179, 112, 0.08)', color: '#3eb370', border: '1px solid rgba(62, 179, 112, 0.15)',
+                }}>{keyword}</span>
+              )) : (
+                <p style={{ fontSize: '0.75rem', color: '#5a5a63' }}>No required keywords matched yet.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="card p-5 animate-enter" style={{ animationDelay: '0.2s' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <XCircle size={14} style={{ color: '#d94f4f' }} />
+              <span className="section-label" style={{ color: '#d94f4f' }}>Missing Keywords</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {missingKeywords.length > 0 ? missingKeywords.map((keyword, i) => (
+                <span key={i} style={{
+                  padding: '3px 10px', borderRadius: '5px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)',
+                  background: 'rgba(217, 79, 79, 0.08)', color: '#d94f4f', border: '1px solid rgba(217, 79, 79, 0.15)',
+                }}>{keyword}</span>
+              )) : (
+                <p style={{ fontSize: '0.75rem', color: '#5a5a63' }}>No missing required keywords.</p>
+              )}
+            </div>
+          </div>
+        </div>
+        </>
       )}
 
       {/* Score Breakdown */}
@@ -318,73 +489,6 @@ export default function AnalyzePage() {
         </div>
       )}
 
-      {/* Keyword Analysis */}
-      {matchResult && (matchResult.matched_keywords?.length > 0 || matchResult.missing_keywords?.length > 0) && (
-        <div className="card p-5 mb-5 animate-enter" style={{ animationDelay: '0.17s' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Hash size={14} style={{ color: 'var(--color-primary)' }} />
-            <label className="section-label" style={{ margin: 0 }}>Keyword Analysis</label>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {matchResult.matched_keywords?.length > 0 && (
-              <div>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <CheckCircle size={12} style={{ color: '#3eb370' }} />
-                  <span style={{ fontSize: '0.7rem', color: '#3eb370', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Matched Keywords</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {matchResult.matched_keywords.map((kw, i) => (
-                    <span key={i} style={{
-                      padding: '3px 10px', borderRadius: '5px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)',
-                      background: 'rgba(62, 179, 112, 0.08)', color: '#3eb370', border: '1px solid rgba(62, 179, 112, 0.15)',
-                    }}>{kw}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {matchResult.missing_keywords?.length > 0 && (
-              <div>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <XCircle size={12} style={{ color: '#d94f4f' }} />
-                  <span style={{ fontSize: '0.7rem', color: '#d94f4f', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Missing Keywords</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {matchResult.missing_keywords.map((kw, i) => (
-                    <span key={i} style={{
-                      padding: '3px 10px', borderRadius: '5px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)',
-                      background: 'rgba(217, 79, 79, 0.08)', color: '#d94f4f', border: '1px solid rgba(217, 79, 79, 0.15)',
-                    }}>{kw}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Improvement Suggestions */}
-      {matchResult?.suggestions?.length > 0 && (
-        <div className="card p-5 mb-5 animate-enter" style={{ animationDelay: '0.22s' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Lightbulb size={14} style={{ color: '#d4942e' }} />
-            <label className="section-label" style={{ margin: 0 }}>Improvement Suggestions</label>
-          </div>
-          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {matchResult.suggestions.map((tip, i) => (
-              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{
-                  flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
-                  background: 'rgba(212, 148, 46, 0.12)', border: '1px solid rgba(212, 148, 46, 0.25)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.65rem', fontWeight: 700, color: '#d4942e',
-                }}>{i + 1}</span>
-                <span style={{ fontSize: '0.82rem', color: '#ececed', lineHeight: 1.6 }}>{tip}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {/* JD Analysis */}
       {jdAnalysis && (
         <div className="card p-5 mb-5 animate-enter" style={{ animationDelay: '0.15s' }}>
@@ -402,11 +506,11 @@ export default function AnalyzePage() {
               </div>
             ))}
           </div>
-          {jdAnalysis.required_skills?.length > 0 && (
+          {requiredSkills.length > 0 && (
             <div style={{ marginTop: '12px' }}>
               <p style={{ fontSize: '0.7rem', color: '#5a5a63', marginBottom: '6px' }}>Required Skills</p>
               <div className="flex flex-wrap gap-1.5">
-                {jdAnalysis.required_skills.map((s, i) => <span key={i} className="skill-tag">{s}</span>)}
+                {requiredSkills.map((group, i) => <span key={i} className="skill-tag">{formatSkillGroup(group)}</span>)}
               </div>
             </div>
           )}
@@ -414,7 +518,7 @@ export default function AnalyzePage() {
       )}
 
       {/* Resume Fit */}
-      {jdAnalysis && (jdAnalysis.resume_fit || jdAnalysis.resume_strengths?.length > 0 || jdAnalysis.resume_gaps?.length > 0) && (
+      {jdAnalysis && (jdAnalysis.resume_fit || resumeStrengths.length > 0 || resumeGaps.length > 0) && (
         <div className="card p-5 mb-5 animate-enter" style={{ animationDelay: '0.2s' }}>
           <div className="flex items-center gap-2 mb-4">
             <FileCheck size={14} style={{ color: 'var(--color-primary)' }} />
@@ -430,27 +534,27 @@ export default function AnalyzePage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {jdAnalysis.resume_strengths?.length > 0 && (
+            {resumeStrengths.length > 0 && (
               <div>
                 <div className="flex items-center gap-1.5 mb-2">
                   <CheckCircle size={12} style={{ color: '#3eb370' }} />
                   <span style={{ fontSize: '0.7rem', color: '#3eb370', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Strengths from your resume</span>
                 </div>
                 <ul style={{ margin: 0, paddingLeft: '14px' }}>
-                  {jdAnalysis.resume_strengths.map((s, i) => (
+                  {resumeStrengths.map((s, i) => (
                     <li key={i} style={{ fontSize: '0.8rem', color: '#8b8b92', marginBottom: '4px' }}>{s}</li>
                   ))}
                 </ul>
               </div>
             )}
-            {jdAnalysis.resume_gaps?.length > 0 && (
+            {resumeGaps.length > 0 && (
               <div>
                 <div className="flex items-center gap-1.5 mb-2">
                   <XCircle size={12} style={{ color: '#d94f4f' }} />
                   <span style={{ fontSize: '0.7rem', color: '#d94f4f', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Gaps to address</span>
                 </div>
                 <ul style={{ margin: 0, paddingLeft: '14px' }}>
-                  {jdAnalysis.resume_gaps.map((g, i) => (
+                  {resumeGaps.map((g, i) => (
                     <li key={i} style={{ fontSize: '0.8rem', color: '#8b8b92', marginBottom: '4px' }}>{g}</li>
                   ))}
                 </ul>
