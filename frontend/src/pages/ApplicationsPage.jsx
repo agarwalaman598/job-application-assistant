@@ -150,7 +150,7 @@ export default function ApplicationsPage() {
     });
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 max-w-6xl mx-auto">
+    <div className="applications-page px-4 py-6 md:px-8 md:py-8 max-w-6xl mx-auto">
       <Helmet><title>Applications | JobAssist AI</title></Helmet>
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
@@ -278,49 +278,57 @@ export default function ApplicationsPage() {
           </Button>}
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2.5">
           {displayedApps.map((app, i) => (
-            <div key={app.id} className="card px-5 py-4 flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-3 sm:gap-4 animate-fade-in"
+            <div key={app.id} className="card px-5 py-5 flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-4 sm:gap-5 animate-fade-in"
               style={{ animationDelay: `${i * 0.04}s` }}>
               {/* Serial number */}
               <div style={{
                 flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.8rem', fontWeight: 700, color: 'var(--muted-foreground)',
-                fontFamily: 'inherit', letterSpacing: '-0.01em', minWidth: 16,
+                fontSize: '1rem', fontWeight: 700, color: 'var(--muted-foreground)',
+                fontFamily: 'inherit', letterSpacing: '0', lineHeight: 1, minWidth: 20,
               }}>
                 {i + 1}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold text-[0.95rem] leading-tight truncate">{app.company}</p>
+                  <p className="font-semibold text-[1.125rem] leading-snug tracking-[-0.01em] truncate">{app.company}</p>
                   <StatusBadge status={app.status} />
                 </div>
-                <p className="text-sm text-[var(--muted-foreground)] mt-1 break-words">{app.position}</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
-                  {app.resume_filename && (
-                    <p
-                      className="text-xs text-[var(--muted-foreground)]"
-                      title={app.resume_filename}
-                      style={{
-                        minWidth: 0,
-                        maxWidth: '100%',
-                        overflowWrap: 'anywhere',
-                        wordBreak: 'break-word',
-                      }}
-                    >
-                      Resume: {app.resume_filename}
-                    </p>
-                  )}
-                  {app.resume_filename && app.applied_at && (
-                    <span style={{ color: 'var(--muted-foreground)', fontSize: '0.55rem' }}>●</span>
-                  )}
-                  {app.applied_at && (
-                    <p className="text-xs text-[var(--muted-foreground)]">
-                      {new Date(app.applied_at + 'Z').toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' })}
-                    </p>
-                  )}
-                </div>
+                <p className="text-[0.98rem] text-[var(--muted-foreground)] mt-1.5 leading-relaxed break-words">{app.position}</p>
+                {(app.resume_filename || app.applied_at) && (
+                  <div
+                    className="mt-3 w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2"
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.35rem' }}
+                  >
+                    {app.resume_filename && (
+                      <p
+                        className="text-[0.8rem] leading-snug text-[var(--muted-foreground)]"
+                        title={app.resume_filename}
+                        style={{
+                          minWidth: 0,
+                          maxWidth: '100%',
+                          overflowWrap: 'break-word',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        <span className="text-white/65 font-medium">Resume:</span>{' '}
+                        <span>{app.resume_filename}</span>
+                      </p>
+                    )}
+                    {app.resume_filename && app.applied_at && (
+                      <span className="w-full" style={{ height: '1px', background: 'rgba(255,255,255,0.12)' }} />
+                    )}
+                    {app.applied_at && (
+                      <div className="inline-flex items-center gap-1.5 text-[0.8rem] leading-snug text-[var(--muted-foreground)]">
+                        <span className="text-white/65 font-medium">Applied</span>
+                        <span className="text-white/35">•</span>
+                        <span>{new Date(app.applied_at + 'Z').toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Kolkata' })}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {app.notes && pinnedNotesId === app.id && (
                   <div
                     className="mt-2 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-[var(--muted-foreground)]"

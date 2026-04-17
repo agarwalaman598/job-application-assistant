@@ -200,30 +200,52 @@ export default function DashboardPage() {
                         {app.position}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 5, flexWrap: 'wrap' }}>
-                      {app.resume_filename && (
-                        <span
-                          title={app.resume_filename}
-                          style={{
-                            fontSize: '0.73rem',
-                            color: 'var(--muted-foreground)',
-                            fontFamily: 'inherit',
-                            overflowWrap: 'anywhere',
-                            wordBreak: 'break-word',
-                          }}
-                        >
-                          Resume: {app.resume_filename}
-                        </span>
-                      )}
-                      {app.resume_filename && dateStr && (
-                        <span style={{ color: 'var(--muted-foreground)', fontSize: '0.6rem' }}>●</span>
-                      )}
-                      {dateStr && (
-                        <span style={{ fontSize: '0.73rem', color: 'var(--muted-foreground)', fontFamily: 'inherit' }}>
-                          {dateStr}
-                        </span>
-                      )}
-                    </div>
+                    {(app.resume_filename || dateStr) && (
+                      <div
+                        style={{
+                          width: '100%',
+                          marginTop: 10,
+                          padding: '8px 12px',
+                          borderRadius: 10,
+                          border: '1px solid rgba(255,255,255,0.10)',
+                          background: 'rgba(255,255,255,0.02)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                          gap: '0.35rem',
+                        }}
+                      >
+                        {app.resume_filename && (
+                          <p
+                            title={app.resume_filename}
+                            style={{
+                              margin: 0,
+                              minWidth: 0,
+                              maxWidth: '100%',
+                              fontSize: '0.8rem',
+                              lineHeight: 1.35,
+                              color: 'var(--muted-foreground)',
+                              fontFamily: 'inherit',
+                              overflowWrap: 'break-word',
+                              wordBreak: 'break-word',
+                            }}
+                          >
+                            <span style={{ color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>Resume:</span>{' '}
+                            <span>{app.resume_filename}</span>
+                          </p>
+                        )}
+                        {app.resume_filename && dateStr && (
+                          <span style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.12)' }} />
+                        )}
+                        {dateStr && (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', lineHeight: 1.35, color: 'var(--muted-foreground)', fontFamily: 'inherit' }}>
+                            <span style={{ color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>Applied</span>
+                            <span style={{ color: 'rgba(255,255,255,0.35)' }}>•</span>
+                            <span>{dateStr}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                 </div>

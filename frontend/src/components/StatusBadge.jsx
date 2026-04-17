@@ -20,9 +20,9 @@ export function StatusBadge({ status, className }) {
       className={cn(className)}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 6,
-        padding: '4px 10px', borderRadius: 9999,
+        padding: '4px 11px', borderRadius: 9999,
         background: c.bg, whiteSpace: 'nowrap',
-        fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.03em',
+        fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.01em', lineHeight: 1.2,
         color: c.text,
       }}
     >

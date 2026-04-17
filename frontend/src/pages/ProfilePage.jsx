@@ -693,7 +693,7 @@ export default function ProfilePage() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="w-full sm:w-auto px-5 py-2 bg-white hover:bg-white/90 text-black rounded-lg font-semibold text-sm transition-all disabled:opacity-50"
+              className="self-start sm:self-auto px-5 py-2 bg-white hover:bg-white/90 text-black rounded-lg font-semibold text-sm transition-all disabled:opacity-50"
             >
               <span className="flex items-center gap-2">
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}

@@ -65,7 +65,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
 
   const sidebarContent = (
     <aside
-      className={cn('fixed inset-y-0 left-0 z-40 flex flex-col transition-all duration-200', w)}
+      className={cn('fixed inset-y-0 left-0 z-[60] flex flex-col transition-all duration-200', w)}
       style={{ background: 'var(--sidebar)', borderRight: '1px solid var(--sidebar-border)' }}
     >
       {/* Logo row */}
@@ -195,7 +195,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
     <>
       {/* Sign-out confirmation modal */}
       {confirming && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}>
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '1.75rem', width: '100%', maxWidth: '340px' }}>
             <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--foreground)' }}>Sign out?</h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)', marginBottom: '1.5rem', lineHeight: '1.5' }}>
@@ -243,7 +243,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onClo
       {/* Mobile overlay */}
       {mobileOpen && (
         <>
-          <div className="fixed inset-0 z-30 bg-black/60 md:hidden cursor-pointer" onClick={onClose} />
+          <div className="fixed inset-0 z-50 bg-black/60 md:hidden cursor-pointer" onClick={onClose} />
           <div className="md:hidden">{sidebarContent}</div>
         </>
       )}
