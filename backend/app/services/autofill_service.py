@@ -5,7 +5,7 @@ Form filling generates a pre-filled URL instead of using Playwright.
 import logging
 import re
 import json
-from typing import Dict
+from typing import Dict, Optional
 from urllib.parse import urlencode
 import httpx
 
@@ -43,6 +43,70 @@ _BROWSER_HEADERS = {
     "Sec-Fetch-Site": "none",
     "Upgrade-Insecure-Requests": "1",
 }
+
+
+def _extract_js_array_after_token(html: str, token: str) -> Optional[str]:
+    """Extract a top-level JS array literal assigned after token (e.g. FB_PUBLIC_LOAD_DATA_ = [...])."""
+    token_idx = html.find(token)
+    if token_idx == -1:
+        return None
+
+    assign_idx = html.find("=", token_idx)
+    if assign_idx == -1:
+        return None
+
+    start_idx = html.find("[", assign_idx)
+    if start_idx == -1:
+        return None
+
+    depth = 0
+    in_string = False
+    escape = False
+    quote_char = ""
+
+    for i in range(start_idx, len(html)):
+        ch = html[i]
+
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == quote_char:
+                in_string = False
+        else:
+            if ch == '"' or ch == "'":
+                in_string = True
+                quote_char = ch
+            elif ch == "[":
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+                if depth == 0:
+                    return html[start_idx:i + 1]
+
+    return None
+
+
+def _normalize_google_q_type(raw_q_type) -> Optional[int]:
+    """Normalize Google Forms type code from int/str/list-like values to int when possible."""
+    if isinstance(raw_q_type, int):
+        return raw_q_type
+    if isinstance(raw_q_type, str):
+        try:
+            return int(raw_q_type)
+        except ValueError:
+            return None
+    if isinstance(raw_q_type, list) and raw_q_type:
+        first = raw_q_type[0]
+        if isinstance(first, int):
+            return first
+        if isinstance(first, str):
+            try:
+                return int(first)
+            except ValueError:
+                return None
+    return None
 
 
 async def detect_fields(url: str) -> dict:
@@ -110,10 +174,10 @@ def _parse_google_forms(html: str) -> list:
     """
     fields = []
 
-    fb_match = re.search(r'FB_PUBLIC_LOAD_DATA_\s*=\s*(.*?);', html, re.DOTALL)
-    if fb_match:
+    fb_payload = _extract_js_array_after_token(html, "FB_PUBLIC_LOAD_DATA_")
+    if fb_payload:
         try:
-            data = json.loads(fb_match.group(1))
+            data = json.loads(fb_payload)
             if len(data) > 1 and data[1] and len(data[1]) > 1:
                 form_items = data[1][1]
                 for i, item in enumerate(form_items):
@@ -125,7 +189,7 @@ def _parse_google_forms(html: str) -> list:
                         continue
 
                     # item[3] is the type code directly
-                    q_type = item[3] if len(item) > 3 else None
+                    q_type = _normalize_google_q_type(item[3] if len(item) > 3 else None)
                     if q_type is None or q_type == 8:
                         # Section header / page break, skip
                         continue
@@ -354,14 +418,20 @@ async def fill_form(form_url: str, field_map: Dict[str, str]) -> dict:
     Google Forms support: ?entry.XXXXX=value&entry.YYYYY=value
     """
     try:
-        params = {}
+        params = []
         filled = 0
         for field_id, value in field_map.items():
             if not value or not value.strip():
                 continue
             # field_id is already in "entry.XXXXX" format from the parser
             if field_id.startswith("entry."):
-                params[field_id] = value
+                # Google Forms expects repeated entry params for multi-select values.
+                split_values = [v.strip() for v in value.split(",") if v.strip()]
+                if len(split_values) > 1:
+                    for sv in split_values:
+                        params.append((field_id, sv))
+                else:
+                    params.append((field_id, value.strip()))
                 filled += 1
             else:
                 # Non-Google Forms — can't pre-fill via URL
