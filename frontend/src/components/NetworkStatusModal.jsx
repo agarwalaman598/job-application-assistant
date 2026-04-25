@@ -13,7 +13,7 @@ export default function NetworkStatusModal() {
 
   const probeUrl = useMemo(() => {
     const raw = import.meta.env.VITE_API_URL || '/api';
-    return raw.replace(/\/+$/, '') || '/api';
+    return `${raw.replace(/\/+$/, '') || '/api'}/health`;
   }, []);
 
   const checkConnectivity = useCallback(async () => {

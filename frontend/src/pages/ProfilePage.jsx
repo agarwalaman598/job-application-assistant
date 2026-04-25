@@ -19,6 +19,9 @@ import {
   ExternalLink,
   Mail,
   Phone as PhoneIcon,
+  ArrowRightLeft,
+  CheckCircle2,
+  Check,
 } from 'lucide-react';
 import { ConfirmDialog, UnsavedChangesDialog } from '../components/ConfirmDialog';
 import { PageLoadingState } from '../components/PageLoadingState';
@@ -52,6 +55,403 @@ const CONTACT_TYPE_OPTIONS = [
   { value: 'url', label: 'URL' },
 ];
 
+const normalizeImportText = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+const normalizeSkillKey = (value) => normalizeImportText(value).toLowerCase();
+
+const uniqueImportedValues = (values = []) => {
+  const seen = new Set();
+  const items = [];
+  for (const value of values) {
+    const text = normalizeImportText(value);
+    const key = normalizeSkillKey(text);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    items.push(text);
+  }
+  return items;
+};
+
+const normalizeContactFieldForSave = (field) => {
+  if (!field || typeof field !== 'object') return null;
+
+  const label = normalizeImportText(field.label) || 'Custom Field';
+  const value = normalizeImportText(field.value);
+  if (!value) return null;
+
+  const normalizedLabel = label.toLowerCase();
+  let type = normalizeImportText(field.type).toLowerCase();
+  if (normalizedLabel === 'phone') type = 'phone';
+  else if (normalizedLabel === 'email') type = 'email';
+  else if (['linkedin', 'github', 'website'].includes(normalizedLabel)) type = 'url';
+  else if (!['text', 'email', 'phone', 'url'].includes(type)) type = 'text';
+
+  return {
+    id: Number.isFinite(Number(field.id)) ? Number(field.id) : undefined,
+    label,
+    value,
+    type,
+  };
+};
+
+const normalizeExperienceForSave = (item) => {
+  if (!item || typeof item !== 'object') return null;
+  const normalized = {
+    title: normalizeImportText(item.title),
+    company: normalizeImportText(item.company),
+    duration: normalizeImportText(item.duration),
+    description: normalizeImportText(item.description),
+    start_date: normalizeImportText(item.start_date || item.start),
+    end_date: normalizeImportText(item.end_date || item.end),
+  };
+
+  return Object.values(normalized).some(Boolean) ? normalized : null;
+};
+
+const normalizeEducationForSave = (item) => {
+  if (!item || typeof item !== 'object') return null;
+  const normalized = {
+    degree: normalizeImportText(item.degree),
+    institution: normalizeImportText(item.institution),
+    major: normalizeImportText(item.major),
+    start_year: normalizeImportText(item.start_year || item.start),
+    end_year: normalizeImportText(item.end_year || item.end),
+    year: normalizeImportText(item.year),
+    gpa: normalizeImportText(item.gpa),
+    gpa_scale: normalizeImportText(item.gpa_scale || item.scale),
+  };
+
+  return Object.values(normalized).some(Boolean) ? normalized : null;
+};
+
+const mergeImportedContactFields = (currentFields = [], resumeFields = []) => {
+  const merged = [];
+  const seen = new Set();
+  for (const field of [...currentFields, ...resumeFields]) {
+    if (!field || typeof field !== 'object') continue;
+    const label = normalizeImportText(field.label) || 'Custom Field';
+    const value = normalizeImportText(field.value);
+    const fieldType = normalizeImportText(field.type).toLowerCase() || 'text';
+    if (!value) continue;
+    const key = `${label.toLowerCase()}::${fieldType}::${normalizeSkillKey(value)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push({
+      ...field,
+      label,
+      value,
+      type: fieldType,
+    });
+  }
+  return merged;
+};
+
+const buildImportSkillSelectionState = (currentSkills = [], resumeSkills = []) => {
+  const selection = {};
+  for (const skill of uniqueImportedValues([...currentSkills, ...resumeSkills])) {
+    selection[normalizeSkillKey(skill)] = true;
+  }
+  return selection;
+};
+
+const getGroupedImportSkills = (currentSkills = [], resumeSkills = [], selectionState = {}) => {
+  const currentSet = new Set(uniqueImportedValues(currentSkills).map(normalizeSkillKey));
+  const resumeSet = new Set(uniqueImportedValues(resumeSkills).map(normalizeSkillKey));
+  const grouped = { matched: [], profile: [], resume: [] };
+
+  for (const skill of uniqueImportedValues([...currentSkills, ...resumeSkills])) {
+    const key = normalizeSkillKey(skill);
+    const isSelected = selectionState[key] !== false;
+    const inProfile = currentSet.has(key);
+    const inResume = resumeSet.has(key);
+    const entry = { skill, key, isSelected, inProfile, inResume };
+    if (inProfile && inResume) grouped.matched.push(entry);
+    else if (inProfile) grouped.profile.push(entry);
+    else grouped.resume.push(entry);
+  }
+
+  return grouped;
+};
+
+const makeDefaultImportSelections = (diff = []) => diff.reduce((acc, item) => {
+  acc[item.key] = item.recommended_action === 'use_resume';
+  return acc;
+}, {});
+
+const formatPreviewValue = (value) => {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return 'Not set';
+    return value.map((item, index) => {
+      if (typeof item === 'string') return normalizeImportText(item);
+      if (!item || typeof item !== 'object') return '';
+      const experienceDuration = normalizeImportText(item.duration);
+      const experienceStart = normalizeImportText(item.start_date || item.start);
+      const experienceEnd = normalizeImportText(item.end_date || item.end);
+      const experienceDurationFallback = (!experienceDuration && (experienceStart || experienceEnd))
+        ? `Duration: ${experienceStart || 'N/A'} - ${experienceEnd || 'Present'}`
+        : '';
+      const pairs = [
+        item.label && `Label: ${item.label}`,
+        item.value && `Value: ${item.value}`,
+        item.title && `Title: ${item.title}`,
+        item.company && `Company: ${item.company}`,
+        experienceDuration && `Duration: ${experienceDuration}`,
+        experienceDurationFallback,
+        item.description && `Description: ${item.description}`,
+        item.degree && `Degree: ${item.degree}`,
+        item.major && `Major: ${item.major}`,
+        item.institution && `Institution: ${item.institution}`,
+        item.start_year && `Start: ${item.start_year}`,
+        item.end_year && `End: ${item.end_year}`,
+        item.year && `Year: ${item.year}`,
+        item.gpa && `GPA: ${item.gpa}`,
+        item.gpa_scale && `Scale: ${item.gpa_scale}`,
+      ].filter(Boolean);
+      return pairs.length ? `${index + 1}. ${pairs.join(' | ')}` : '';
+    }).filter(Boolean).join('\n');
+  }
+
+  const text = normalizeImportText(value);
+  return text || 'Not set';
+};
+
+const parseEducationPreviewEntries = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => item && typeof item === 'object')
+      .map((item) => ({
+        degree: normalizeImportText(item.degree),
+        major: normalizeImportText(item.major),
+        institution: normalizeImportText(item.institution),
+        start: normalizeImportText(item.start_year),
+        end: normalizeImportText(item.end_year),
+        gpa: normalizeImportText(item.gpa),
+        scale: normalizeImportText(item.gpa_scale),
+      }))
+      .filter((entry) => Object.values(entry).some(Boolean));
+  }
+
+  const text = formatPreviewValue(value);
+  if (!text || text === 'Not set') return [];
+
+  return text
+    .split(/\s*(?=\d+\.\s)/)
+    .map((segment) => segment.replace(/^\d+\.\s*/, '').trim())
+    .filter(Boolean)
+    .map((segment) => {
+      const fields = segment.split(/\s*\|\s*/).reduce((acc, part) => {
+        const [rawKey, ...rawValue] = part.split(':');
+        if (!rawKey || rawValue.length === 0) return acc;
+        const key = rawKey.trim().toLowerCase();
+        const val = rawValue.join(':').trim();
+        acc[key] = val;
+        return acc;
+      }, {});
+
+      return {
+        degree: normalizeImportText(fields.degree),
+        major: normalizeImportText(fields.major),
+        institution: normalizeImportText(fields.institution),
+        start: normalizeImportText(fields.start),
+        end: normalizeImportText(fields.end),
+        gpa: normalizeImportText(fields.gpa),
+        scale: normalizeImportText(fields.scale),
+      };
+    })
+    .filter((entry) => Object.values(entry).some(Boolean));
+};
+
+const parseExperiencePreviewEntries = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => item && typeof item === 'object')
+      .map((item) => ({
+        title: normalizeImportText(item.title),
+        company: normalizeImportText(item.company),
+        duration: normalizeImportText(item.duration),
+        start: normalizeImportText(item.start_date || item.start),
+        end: normalizeImportText(item.end_date || item.end),
+        description: normalizeImportText(item.description),
+      }))
+      .filter((entry) => Object.values(entry).some(Boolean));
+  }
+
+  const text = formatPreviewValue(value);
+  if (!text || text === 'Not set') return [];
+
+  return text
+    .split(/\s*(?=\d+\.\s)/)
+    .map((segment) => segment.replace(/^\d+\.\s*/, '').trim())
+    .filter(Boolean)
+    .map((segment) => {
+      const fields = segment.split(/\s*\|\s*/).reduce((acc, part) => {
+        const [rawKey, ...rawValue] = part.split(':');
+        if (!rawKey || rawValue.length === 0) return acc;
+        const key = rawKey.trim().toLowerCase();
+        const val = rawValue.join(':').trim();
+        acc[key] = val;
+        return acc;
+      }, {});
+
+      return {
+        title: normalizeImportText(fields.title),
+        company: normalizeImportText(fields.company),
+        duration: normalizeImportText(fields.duration),
+        start: normalizeImportText(fields.start),
+        end: normalizeImportText(fields.end),
+        description: normalizeImportText(fields.description),
+      };
+    })
+    .filter((entry) => Object.values(entry).some(Boolean));
+};
+
+const formatExperienceDates = (entry) => {
+  const duration = normalizeImportText(entry.duration);
+  if (duration) return duration;
+  const start = normalizeImportText(entry.start);
+  const end = normalizeImportText(entry.end);
+  if (start || end) return `${start || 'N/A'} - ${end || 'Present'}`;
+  return 'Dates not set';
+};
+
+const isHundredScale = (scale) => {
+  const normalized = normalizeImportText(scale).replace(/[%\s]/g, '');
+  return normalized === '100' || normalized === '100.0' || normalized === '100.00';
+};
+
+const isPercentageLikeScore = (score, scale) => {
+  if (isHundredScale(scale)) return true;
+  const numeric = Number(String(score || '').trim());
+  return Number.isFinite(numeric) && numeric > 10;
+};
+
+const formatEducationScore = (entry) => {
+  if (!entry.gpa) return '';
+  if (isPercentageLikeScore(entry.gpa, entry.scale)) return ` | Marks: ${entry.gpa}%`;
+  if (entry.scale) return ` | GPA: ${entry.gpa}/${entry.scale}`;
+  return ` | GPA: ${entry.gpa}`;
+};
+
+const isPrimaryContactLabel = (label) => {
+  const normalized = normalizeImportText(label).toLowerCase();
+  return ['phone', 'email', 'linkedin', 'github', 'website'].includes(normalized);
+};
+
+const removePrimaryContactFields = (fields = []) => (Array.isArray(fields) ? fields : [])
+  .filter((field) => field && typeof field === 'object')
+  .filter((field) => !isPrimaryContactLabel(field.label));
+
+const buildPrimaryContactFields = ({ phone = '', linkedin = '', github = '', website = '', email = '' }) => {
+  const seeded = [
+    { id: 1, label: 'Phone', value: normalizeImportText(phone), type: 'phone' },
+    { id: 2, label: 'LinkedIn', value: normalizeImportText(linkedin), type: 'url' },
+    { id: 3, label: 'GitHub', value: normalizeImportText(github), type: 'url' },
+    { id: 4, label: 'Website', value: normalizeImportText(website), type: 'url' },
+    { id: 5, label: 'Email', value: normalizeImportText(email), type: 'email' },
+  ];
+  return seeded.filter((field) => field.value);
+};
+
+const getSecondaryContactFields = (fields = []) => (Array.isArray(fields) ? fields : [])
+  .filter((field) => field && typeof field === 'object')
+  .filter((field) => !isPrimaryContactLabel(field.label));
+
+const formatContactFieldLabel = (field) => {
+  if (!field || typeof field !== 'object') return 'Link';
+  const label = normalizeImportText(field.label);
+  if (!label) return 'Link';
+  return label.replace(/\s+/g, ' ');
+};
+
+const formatContactFieldValue = (field) => {
+  if (!field || typeof field !== 'object') return '';
+  return normalizeImportText(field.value);
+};
+
+const normalizeContactValueForCompare = (value) => {
+  const text = normalizeImportText(value);
+  if (!text) return '';
+  let normalized = text.toLowerCase();
+  normalized = normalized.replace(/^https?:\/\//, '');
+  normalized = normalized.replace(/^www\./, '');
+  normalized = normalized.replace(/\/$/, '');
+  return normalized;
+};
+
+const getSecondaryContactKey = (field) => {
+  const labelKey = normalizeImportText(field?.label).toLowerCase();
+  const valueKey = normalizeContactValueForCompare(field?.value);
+  return `secondary_contact::${labelKey}::${valueKey}`;
+};
+
+const getSecondaryContactDiffItems = (currentFields = [], resumeFields = []) => {
+  const currentSecondary = getSecondaryContactFields(currentFields);
+  const resumeSecondary = getSecondaryContactFields(resumeFields);
+  const currentByExact = new Map();
+  const currentByLabel = new Map();
+
+  for (const field of currentSecondary) {
+    currentByExact.set(getSecondaryContactKey(field), field);
+    const labelKey = normalizeImportText(field?.label).toLowerCase();
+    if (!currentByLabel.has(labelKey)) {
+      currentByLabel.set(labelKey, field);
+    }
+  }
+
+  return resumeSecondary.map((field) => {
+    const key = getSecondaryContactKey(field);
+    const labelKey = normalizeImportText(field?.label).toLowerCase();
+    const currentMatch = currentByExact.get(key) || currentByLabel.get(labelKey) || null;
+
+    return {
+      key,
+      label: formatContactFieldLabel(field),
+      resume_value: formatContactFieldValue(field),
+      current_value: currentMatch ? formatContactFieldValue(currentMatch) : '',
+      recommended_action: 'use_resume',
+      isSecondaryContact: true,
+    };
+  });
+};
+
+const buildMergedImportProfile = (currentProfile, importDraft, selections, skillSelections) => {
+  // Keep backend schema unchanged while allowing per-link preview decisions for secondary contacts.
+  const importedContactFields = (importDraft.contact_fields || []).filter((field) => {
+    if (isPrimaryContactLabel(field?.label)) return true;
+    return selections[getSecondaryContactKey(field)] !== false;
+  });
+
+  const nextPhone = selections.phone ? normalizeImportText(importDraft.phone) : normalizeImportText(currentProfile.phone);
+  const nextLinkedin = selections.linkedin ? normalizeImportText(importDraft.linkedin) : normalizeImportText(currentProfile.linkedin);
+  const nextGithub = selections.github ? normalizeImportText(importDraft.github) : normalizeImportText(currentProfile.github);
+  const nextWebsite = selections.website ? normalizeImportText(importDraft.website) : normalizeImportText(currentProfile.website);
+  const currentEmail = normalizeImportText(
+    (currentProfile.contact_fields || []).find((f) => normalizeImportText(f?.label).toLowerCase() === 'email')?.value,
+  );
+
+  const mergedContacts = mergeImportedContactFields(currentProfile.contact_fields || [], importedContactFields);
+  const secondaryContacts = removePrimaryContactFields(mergedContacts);
+  const primaryContacts = buildPrimaryContactFields({
+    phone: nextPhone,
+    linkedin: nextLinkedin,
+    github: nextGithub,
+    website: nextWebsite,
+    email: currentEmail,
+  });
+
+  return {
+    ...currentProfile,
+    summary: selections.summary ? normalizeImportText(importDraft.summary) : currentProfile.summary,
+    phone: nextPhone,
+    linkedin: nextLinkedin,
+    github: nextGithub,
+    website: nextWebsite,
+    contact_fields: [...primaryContacts, ...secondaryContacts],
+    skills: uniqueImportedValues([...(currentProfile.skills || []), ...(importDraft.skills || [])]).filter((skill) => skillSelections[normalizeSkillKey(skill)] !== false),
+    experience: selections.experience ? (importDraft.experience || []) : currentProfile.experience,
+    education: selections.education ? (importDraft.education || []) : currentProfile.education,
+  };
+};
+
 export default function ProfilePage() {
   const KNOWN_GPA_SCALES = new Set(['4', '10', '100']);
 
@@ -69,12 +469,15 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [skillInput, setSkillInput] = useState('');
+  const [resumes, setResumes] = useState([]);
 
   const [savedAnswers, setSavedAnswers] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [confirmAnswerId, setConfirmAnswerId] = useState(null);
   const [confirmEducationIndex, setConfirmEducationIndex] = useState(null);
+  const [confirmExperienceIndex, setConfirmExperienceIndex] = useState(null);
+  const [confirmContactFieldId, setConfirmContactFieldId] = useState(null);
   const [confirmDeleteAllOpen, setConfirmDeleteAllOpen] = useState(false);
   const [deletingAllAnswers, setDeletingAllAnswers] = useState(false);
   const [dragItem, setDragItem] = useState({ section: null, index: null });
@@ -97,6 +500,17 @@ export default function ProfilePage() {
     gpa: '',
     gpa_scale: '',
   });
+
+  const [importResumePickerOpen, setImportResumePickerOpen] = useState(false);
+  const [importPreviewOpen, setImportPreviewOpen] = useState(false);
+  const [importConfirmOpen, setImportConfirmOpen] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importProgressMessage, setImportProgressMessage] = useState('');
+  const [importError, setImportError] = useState('');
+  const [pendingImportResumeIds, setPendingImportResumeIds] = useState([]);
+  const [importPreview, setImportPreview] = useState(null);
+  const [importSelections, setImportSelections] = useState({});
+  const [importSkillSelections, setImportSkillSelections] = useState({});
 
   const cleanProfileRef = useRef(null);
   const autosavingOrderRef = useRef(false);
@@ -341,11 +755,16 @@ export default function ProfilePage() {
           education: res.data.education || [],
         };
         setProfile(p);
+
         cleanProfileRef.current = JSON.stringify(p);
         setIsDirty(false);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
+
+    api.get('/resumes')
+      .then((res) => setResumes(Array.isArray(res.data) ? res.data : []))
+      .catch(console.error);
 
     api.get('/profile/saved-answers')
       .then((res) => setSavedAnswers(res.data))
@@ -359,8 +778,23 @@ export default function ProfilePage() {
       return (match?.value || '').trim();
     };
 
+    const normalizedContactFields = contactFields
+      .map(normalizeContactFieldForSave)
+      .filter(Boolean);
+
+    const normalizedExperience = Array.isArray(sourceProfile.experience)
+      ? sourceProfile.experience.map(normalizeExperienceForSave).filter(Boolean)
+      : [];
+
+    const normalizedEducation = Array.isArray(sourceProfile.education)
+      ? sourceProfile.education.map(normalizeEducationForSave).filter(Boolean)
+      : [];
+
     return {
       ...sourceProfile,
+      contact_fields: normalizedContactFields,
+      experience: normalizedExperience,
+      education: normalizedEducation,
       phone: findValue((f) => f.type === 'phone' && f.value),
       linkedin: findValue((f) => f.label?.trim().toLowerCase() === 'linkedin' && f.value),
       github: findValue((f) => f.label?.trim().toLowerCase() === 'github' && f.value),
@@ -407,6 +841,155 @@ export default function ProfilePage() {
       setSaving(false);
     }
   }, [saving, profile, buildPersistableProfile]);
+
+  const getDefaultResume = useCallback(() => {
+    if (!resumes.length) return null;
+    return resumes.find((resume) => resume.is_default) || resumes[0] || null;
+  }, [resumes]);
+
+  const openImportPreview = useCallback(async (resumeIds = []) => {
+    const selectedIds = (resumeIds || []).filter((id) => resumes.some((resume) => resume.id === id));
+    const fallbackResume = getDefaultResume();
+    const targetResume = selectedIds.length ? resumes.find((resume) => resume.id === selectedIds[0]) : fallbackResume;
+    if (!targetResume) {
+      toast.error('Upload a resume first to use Map from Resume.');
+      return;
+    }
+
+    setImportLoading(true);
+    setImportProgressMessage('Generating preview from selected resumes...');
+    setImportError('');
+    try {
+      const payload = selectedIds.length ? { resume_ids: selectedIds, resume_id: selectedIds[0] } : { resume_id: targetResume.id };
+      const response = await api.post('/ai/profile-import-preview', payload);
+      const secondaryContactSelections = getSecondaryContactDiffItems(profile.contact_fields || [], response.data.resume_draft?.contact_fields || [])
+        .reduce((acc, item) => {
+          acc[item.key] = true;
+          return acc;
+        }, {});
+      setImportPreview(response.data);
+      setImportSelections({
+        ...makeDefaultImportSelections(response.data.diff || []),
+        ...secondaryContactSelections,
+      });
+      setImportSkillSelections(buildImportSkillSelectionState(profile.skills || [], response.data.resume_draft?.skills || []));
+      setImportPreviewOpen(true);
+      setPendingImportResumeIds(selectedIds.length ? selectedIds : [targetResume.id]);
+    } catch (error) {
+      console.error(error);
+      setImportError('Unable to preview resume import right now.');
+      toast.error('Unable to preview resume import.');
+    } finally {
+      setImportLoading(false);
+      setImportProgressMessage('');
+    }
+  }, [resumes, getDefaultResume, profile.skills]);
+
+  const startResumeImport = useCallback(() => {
+    const defaultResume = getDefaultResume();
+    if (!defaultResume) {
+      toast.error('Upload a resume first to use Map from Resume.');
+      return;
+    }
+
+    setPendingImportResumeIds([defaultResume.id]);
+    setImportResumePickerOpen(true);
+  }, [getDefaultResume]);
+
+  const togglePendingResumeSelection = useCallback((resumeId) => {
+    setPendingImportResumeIds((current) => {
+      if (current.includes(resumeId)) {
+        if (current.length === 1) return current;
+        return current.filter((id) => id !== resumeId);
+      }
+      return [...current, resumeId];
+    });
+  }, []);
+
+  const selectAllPendingResumes = useCallback(() => {
+    setPendingImportResumeIds(resumes.map((resume) => resume.id));
+  }, [resumes]);
+
+  const selectFirstTwoPendingResumes = useCallback(() => {
+    const firstTwo = resumes.slice(0, 2).map((resume) => resume.id);
+    if (firstTwo.length) {
+      setPendingImportResumeIds(firstTwo);
+    }
+  }, [resumes]);
+
+  const confirmResumeSelection = useCallback(() => {
+    if (!pendingImportResumeIds.length) {
+      toast.error('Select at least one resume to continue.');
+      return;
+    }
+    setImportResumePickerOpen(false);
+    void openImportPreview(pendingImportResumeIds);
+  }, [pendingImportResumeIds, openImportPreview]);
+
+  const toggleImportSkillSelection = useCallback((skillKey) => {
+    setImportSkillSelections((current) => ({
+      ...current,
+      [skillKey]: current[skillKey] === false,
+    }));
+  }, []);
+
+  const toggleImportSkillGroup = useCallback((groupKey, shouldSelect) => {
+    if (!importPreview) return;
+    const grouped = getGroupedImportSkills(profile.skills || [], importPreview.resume_draft?.skills || [], importSkillSelections);
+    const targetItems = grouped[groupKey] || [];
+    if (!targetItems.length) return;
+
+    setImportSkillSelections((current) => {
+      const next = { ...current };
+      for (const item of targetItems) {
+        next[item.key] = shouldSelect;
+      }
+      return next;
+    });
+  }, [importPreview, profile.skills, importSkillSelections]);
+
+  const toggleImportSelection = useCallback((key) => {
+    setImportSelections((current) => ({ ...current, [key]: !current[key] }));
+  }, []);
+
+  const saveImportedProfile = useCallback(async () => {
+    if (!importPreview) return;
+    if (saving) return;
+
+    const mergedProfile = buildMergedImportProfile(profile, importPreview.resume_draft, importSelections, importSkillSelections);
+    const previewSnapshot = importPreview;
+    const selectionSnapshot = importSelections;
+    const skillSelectionSnapshot = importSkillSelections;
+    setSaving(true);
+    setImportConfirmOpen(false);
+    setImportPreviewOpen(false);
+    setImportPreview(null);
+    try {
+      const payloadProfile = buildPersistableProfile(mergedProfile);
+      const response = await api.put('/profile', payloadProfile);
+      const savedProfile = buildPersistableProfile({ ...payloadProfile, ...(response.data || {}) });
+      setProfile(savedProfile);
+      cleanProfileRef.current = JSON.stringify(savedProfile);
+      setIsDirty(false);
+      setImportPreviewOpen(false);
+      setImportConfirmOpen(false);
+      setImportPreview(null);
+      setImportSelections({});
+      setImportSkillSelections({});
+      setPendingImportResumeIds([]);
+      toast.success('Profile updated from resume.');
+    } catch (error) {
+      console.error(error);
+      const detail = error?.response?.data?.detail || error?.response?.data?.message || error?.message || 'Please try again.';
+      toast.error(`Failed to save imported profile. ${detail}`);
+      setImportPreview(previewSnapshot);
+      setImportSelections(selectionSnapshot);
+      setImportSkillSelections(skillSelectionSnapshot);
+      setImportPreviewOpen(true);
+    } finally {
+      setSaving(false);
+    }
+  }, [importPreview, importSelections, importSkillSelections, profile, saving, buildPersistableProfile]);
 
   const handleSaveAndLeave = useCallback(async () => {
     try {
@@ -480,8 +1063,14 @@ export default function ProfilePage() {
     setProfile((p) => ({ ...p, experience: exp }));
   };
 
-  const removeExperience = (index) => {
-    setProfile((p) => ({ ...p, experience: p.experience.filter((_, i) => i !== index) }));
+  const requestRemoveExperience = (index) => {
+    setConfirmExperienceIndex(index);
+  };
+
+  const removeExperience = () => {
+    if (confirmExperienceIndex === null) return;
+    setProfile((p) => ({ ...p, experience: p.experience.filter((_, i) => i !== confirmExperienceIndex) }));
+    setConfirmExperienceIndex(null);
   };
 
   const addEducation = () => {
@@ -530,12 +1119,17 @@ export default function ProfilePage() {
     }));
   };
 
-  const removeContactField = (id) => {
-    if (!window.confirm('Delete this contact field?')) return;
+  const requestRemoveContactField = (id) => {
+    setConfirmContactFieldId(id);
+  };
+
+  const removeContactField = () => {
+    if (confirmContactFieldId === null) return;
     setProfile((p) => ({
       ...p,
-      contact_fields: p.contact_fields.filter((field) => field.id !== id),
+      contact_fields: p.contact_fields.filter((field) => field.id !== confirmContactFieldId),
     }));
+    setConfirmContactFieldId(null);
   };
 
   const openEducationModal = (index = null) => {
@@ -657,6 +1251,7 @@ export default function ProfilePage() {
   };
 
   const visibleAnswers = showAllAnswers ? savedAnswers : savedAnswers.slice(0, answersToShow);
+  const importSkillGroups = importPreview ? getGroupedImportSkills(profile.skills || [], importPreview.resume_draft?.skills || [], importSkillSelections) : { matched: [], profile: [], resume: [] };
 
   if (loading) {
     return (
@@ -670,6 +1265,35 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
       <Helmet><title>Profile | JobAssist AI</title></Helmet>
+
+      {importLoading ? (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/60 backdrop-blur-md px-4">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/12 bg-[#101010]/95 shadow-2xl shadow-black/45">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+
+            <div className="p-7 sm:p-8">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.03] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/55">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-white/60" />
+                Preparing preview
+              </div>
+
+              <div className="mt-5 flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/14 bg-white/[0.04]">
+                  <Loader2 className="h-5 w-5 animate-spin text-white/90" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xl font-semibold leading-tight text-white">
+                    {importProgressMessage || 'Generating preview from selected resumes...'}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-white/55">
+                    Creating a preview first so you can review everything before any profile data is saved.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <UnsavedChangesDialog
         open={dialogOpen}
@@ -690,16 +1314,27 @@ export default function ProfilePage() {
               <h1 className="text-2xl font-bold text-white tracking-tight">Professional Profile</h1>
               <p className="text-sm text-white/40 mt-0.5">Build your career story</p>
             </div>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="self-start sm:self-auto px-5 py-2 bg-white hover:bg-white/90 text-black rounded-lg font-semibold text-sm transition-all disabled:opacity-50"
-            >
-              <span className="flex items-center gap-2">
-                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                {saving ? 'Saving...' : 'Save'}
-              </span>
-            </button>
+            <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+              <button
+                onClick={startResumeImport}
+                className="px-5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg font-semibold text-sm transition-all"
+              >
+                <span className="flex items-center gap-2">
+                  <ArrowRightLeft className="w-3.5 h-3.5" />
+                  Map from Resume
+                </span>
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="self-start sm:self-auto px-5 py-2 bg-white hover:bg-white/90 text-black rounded-lg font-semibold text-sm transition-all disabled:opacity-50"
+              >
+                <span className="flex items-center gap-2">
+                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  {saving ? 'Saving...' : 'Save'}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -842,7 +1477,7 @@ export default function ProfilePage() {
                                 <GripVertical className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={() => removeExperience(i)}
+                                onClick={() => requestRemoveExperience(i)}
                                 className="p-1.5 text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                                 title="Delete"
                               >
@@ -1054,6 +1689,34 @@ export default function ProfilePage() {
             <section className="lg:sticky lg:top-24 relative bg-[#111111] border border-white/[0.08] rounded-2xl p-5 sm:p-6 shadow-2xl shadow-black/20">
               <div className="flex items-center gap-3 mb-5">
                 <div className="p-2 bg-white/5 rounded-lg border border-white/10 text-white/70">
+                  <ArrowRightLeft className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Resume import</h2>
+                  <p className="text-xs text-white/40 mt-0.5">Compare your profile against a resume</p>
+                </div>
+              </div>
+
+              <p className="text-sm text-white/55 leading-relaxed">
+                Use the selected resume to map profile fields without overwriting anything until you explicitly confirm it.
+              </p>
+
+              <button
+                onClick={startResumeImport}
+                className="mt-5 w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black rounded-xl text-sm font-semibold transition-all hover:bg-white/90"
+              >
+                <ArrowRightLeft className="w-4 h-4" />
+                Map from Resume
+              </button>
+
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/60">
+                {resumes.length > 0 ? `${resumes.length} resume${resumes.length === 1 ? '' : 's'} available.` : 'Upload a resume to enable import.'}
+              </div>
+            </section>
+
+            <section className="lg:sticky lg:top-24 relative bg-[#111111] border border-white/[0.08] rounded-2xl p-5 sm:p-6 shadow-2xl shadow-black/20">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-2 bg-white/5 rounded-lg border border-white/10 text-white/70">
                   <Globe className="w-5 h-5" />
                 </div>
                 <div>
@@ -1100,7 +1763,7 @@ export default function ProfilePage() {
                           ))}
                         </select>
                         <button
-                          onClick={() => removeContactField(field.id)}
+                          onClick={() => requestRemoveContactField(field.id)}
                           className="p-1 text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded transition-all opacity-0 group-hover/field:opacity-100"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -1321,6 +1984,413 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {importResumePickerOpen ? (
+        <div className="fixed inset-0 z-[1100] bg-black/60 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-white/12 bg-[#101010]/95 shadow-2xl shadow-black/40">
+            <div className="border-b border-white/10 px-6 py-5">
+              <h3 className="text-xl font-semibold text-white tracking-tight">Choose Resumes For Import</h3>
+              <p className="text-sm text-white/55 mt-1.5">Select one, two, or all resumes to build a combined profile preview.</p>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[60vh] overflow-auto">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={selectAllPendingResumes}
+                  className="rounded-lg border border-white/12 bg-white/4 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.12em] text-white/75 hover:bg-white/8"
+                >
+                  Select all
+                </button>
+                <button
+                  type="button"
+                  onClick={selectFirstTwoPendingResumes}
+                  className="rounded-lg border border-white/12 bg-white/4 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.12em] text-white/75 hover:bg-white/8"
+                >
+                  Select first two
+                </button>
+                <p className="ml-auto rounded-lg border border-white/18 bg-white/10 text-white px-3 py-1 text-xs font-semibold tracking-[0.12em] uppercase">
+                  {pendingImportResumeIds.length}/{resumes.length} selected
+                </p>
+              </div>
+
+              <div className="space-y-2.5">
+                {resumes.map((resume) => {
+                  const selected = pendingImportResumeIds.includes(resume.id);
+                  return (
+                    <button
+                      key={resume.id}
+                      type="button"
+                      onClick={() => togglePendingResumeSelection(resume.id)}
+                      className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${selected ? 'border-white/30 bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' : 'border-white/10 bg-black/20 text-white/90 hover:bg-white/6 hover:border-white/20'}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-semibold">{resume.filename || `Resume ${resume.id}`}</p>
+                          <p className={`text-xs mt-1 ${selected ? 'text-white/65' : 'text-white/45'}`}>
+                            {resume.is_default ? 'Default resume' : 'Uploaded resume'}
+                          </p>
+                        </div>
+                        <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full border ${selected ? 'border-white/30 bg-white text-black' : 'border-white/20 bg-white/6'}`}>
+                          {selected ? <Check className="h-3.5 w-3.5" /> : null}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="border-t border-white/10 px-6 py-4 flex flex-col sm:flex-row gap-2 sm:justify-end bg-white/[0.02] rounded-b-2xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setImportResumePickerOpen(false);
+                  setPendingImportResumeIds([]);
+                }}
+                className="px-4 py-2 rounded-lg border border-white/12 text-white/75 hover:text-white hover:bg-white/6"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmResumeSelection}
+                className="px-4 py-2 rounded-lg bg-white/92 text-black font-semibold hover:bg-white"
+              >
+                Continue to preview
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <ConfirmDialog
+        open={importConfirmOpen}
+        title="Save imported profile changes"
+        message="Review the preview one last time, then confirm to save the selected profile values. Saved answers remain unchanged."
+        confirmLabel={saving ? 'Saving...' : 'Save Changes'}
+        danger={false}
+        isLoading={saving}
+        onConfirm={saveImportedProfile}
+        onCancel={() => !saving && setImportConfirmOpen(false)}
+      />
+
+      {importPreviewOpen && importPreview && (
+        <div className="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-2xl border border-white/10 bg-[#111111] shadow-2xl shadow-black/50 flex flex-col">
+            <div className="px-5 sm:px-7 py-5 border-b border-white/10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-white">
+                  <CheckCircle2 className="w-5 h-5 text-green-400" />
+                  <h3 className="text-lg font-bold">Resume import preview</h3>
+                </div>
+                <p className="text-sm text-white/45 mt-1">
+                  Compare your current profile with data extracted from {importPreview.resume_filename || 'the selected resume'}.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setImportPreviewOpen(false);
+                    setImportConfirmOpen(false);
+                    setImportPreview(null);
+                    setImportSelections({});
+                    setImportSkillSelections({});
+                    setImportProgressMessage('');
+                    setPendingImportResumeIds([]);
+                  }}
+                  className="px-4 py-2 rounded-lg border border-white/10 text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => setImportConfirmOpen(true)}
+                  className="px-4 py-2 rounded-lg bg-white text-black font-semibold hover:bg-white/90 transition-all"
+                >
+                  Review and save
+                </button>
+              </div>
+            </div>
+
+            {importError ? (
+              <div className="m-5 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                {importError}
+              </div>
+            ) : null}
+
+            <div className="flex-1 overflow-auto p-5 sm:p-7 space-y-4">
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h4 className="text-sm font-semibold uppercase tracking-[0.22em] text-white/45">Skills</h4>
+                    <p className="text-xs text-white/35 mt-1">Select the bubbles you want to keep from your profile and resume.</p>
+                  </div>
+                  {(() => {
+                    const allSkills = uniqueImportedValues([...(profile.skills || []), ...(importPreview.resume_draft?.skills || [])]);
+                    const selectedCount = allSkills.filter((skill) => importSkillSelections[normalizeSkillKey(skill)] !== false).length;
+                    const unselectedCount = allSkills.length - selectedCount;
+                    return (
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-lg border border-emerald-400/30 bg-emerald-500/20 px-3 py-1 text-xs font-bold tracking-[0.12em] uppercase text-emerald-100">
+                          {selectedCount}/{allSkills.length} selected
+                        </span>
+                        <span className="rounded-lg border border-red-400/20 bg-red-500/15 px-3 py-1 text-xs font-bold tracking-[0.12em] uppercase text-red-100">
+                          {unselectedCount} removed
+                        </span>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div className="mt-4 grid gap-4 md:grid-cols-3">
+                  {[
+                    ['matched', 'Matched in profile and resume', 'border-emerald-500/20 bg-emerald-500/10 text-emerald-50'],
+                    ['profile', 'Only in profile', 'border-sky-500/20 bg-sky-500/10 text-sky-50'],
+                    ['resume', 'Only in resume', 'border-amber-500/20 bg-amber-500/10 text-amber-50'],
+                  ].map(([groupKey, title, tone]) => {
+                    const items = importSkillGroups[groupKey] || [];
+                    const selectedCount = items.filter((item) => item.isSelected).length;
+                    return (
+                      <div key={groupKey} className="rounded-2xl border border-white/10 bg-black/30 p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/40">{title}</p>
+                          <span
+                            className={`rounded-full border px-3 py-1 text-xs font-black tracking-[0.08em] shadow-lg ${
+                              groupKey === 'matched'
+                                ? 'border-emerald-300/60 bg-emerald-400/25 text-emerald-50 shadow-emerald-500/35'
+                                : groupKey === 'profile'
+                                  ? 'border-sky-300/60 bg-sky-400/25 text-sky-50 shadow-sky-500/35'
+                                  : 'border-amber-300/60 bg-amber-400/25 text-amber-50 shadow-amber-500/35'
+                            }`}
+                          >
+                            {selectedCount}/{items.length}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleImportSkillGroup(groupKey, true)}
+                            className="rounded-lg border border-white/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] text-white/60 hover:bg-white/10 hover:text-white"
+                          >
+                            Keep section
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleImportSkillGroup(groupKey, false)}
+                            className="rounded-lg border border-white/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] text-white/60 hover:bg-white/10 hover:text-white"
+                          >
+                            Remove section
+                          </button>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {items.length ? items.map((item) => (
+                            <button
+                              key={item.key}
+                              type="button"
+                              onClick={() => toggleImportSkillSelection(item.key)}
+                              className={`group relative rounded-full border px-3 py-1.5 text-sm font-medium transition-all ${item.isSelected ? tone : 'border-white/10 bg-white/5 text-white/45 hover:bg-white/10 hover:text-white/75'}`}
+                              title={item.isSelected ? 'Click to remove this skill' : 'Click to keep this skill'}
+                            >
+                              <span className="pr-4">{item.skill}</span>
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {item.isSelected ? <X className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                              </span>
+                            </button>
+                          )) : <p className="text-sm text-white/30">None</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {(() => {
+                const baseDiffItems = (importPreview.diff || []).filter((item) => !['skills', 'contact_fields'].includes(item.key));
+                const secondaryContactItems = getSecondaryContactDiffItems(
+                  profile.contact_fields || [],
+                  importPreview.resume_draft?.contact_fields || [],
+                );
+
+                const primaryContactKeys = ['phone', 'linkedin', 'github', 'website'];
+                let insertAt = -1;
+                for (let i = baseDiffItems.length - 1; i >= 0; i -= 1) {
+                  if (primaryContactKeys.includes(baseDiffItems[i]?.key)) {
+                    insertAt = i + 1;
+                    break;
+                  }
+                }
+
+                const orderedItems =
+                  insertAt >= 0
+                    ? [
+                      ...baseDiffItems.slice(0, insertAt),
+                      ...secondaryContactItems,
+                      ...baseDiffItems.slice(insertAt),
+                    ]
+                    : [...baseDiffItems, ...secondaryContactItems];
+
+                return orderedItems;
+              })().map((item) => {
+                const useResume = importSelections[item.key] !== false;
+                const isEducation = item.key === 'education';
+                const isExperience = item.key === 'experience';
+                const resumeEducationEntries = isEducation ? (
+                  (importPreview.resume_draft?.education || []).length
+                    ? importPreview.resume_draft.education
+                    : parseEducationPreviewEntries(item.resume_value)
+                ) : [];
+                const currentEducationEntries = isEducation ? parseEducationPreviewEntries(item.current_value) : [];
+                const resumeExperienceEntries = isExperience ? (
+                  (importPreview.resume_draft?.experience || []).length
+                    ? importPreview.resume_draft.experience
+                    : parseExperiencePreviewEntries(item.resume_value)
+                ) : [];
+                const currentExperienceEntries = isExperience ? parseExperiencePreviewEntries(item.current_value) : [];
+                return (
+                  <div key={item.key} className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0e0e0f] p-4 sm:p-5">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent opacity-70" />
+                    <div className="flex flex-col gap-4">
+                      <div className="flex-1 space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2.5">
+                          <h3 className="text-base font-semibold tracking-tight text-white">{item.label}</h3>
+                          <span className="rounded-full border border-white/12 bg-white/[0.03] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-white/55">
+                            {item.recommended_action === 'use_resume' ? 'Recommended' : 'Keep existing'}
+                          </span>
+                        </div>
+                        
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <div>
+                            <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-white/45">Resume</p>
+                            <div className={`rounded-xl border px-3.5 py-3 transition-colors duration-200 ${useResume ? 'border-white/20 bg-white/[0.05]' : 'border-white/10 bg-white/[0.015]'}`}>
+                              {isEducation ? (
+                                resumeEducationEntries.length ? (
+                                  <div className="space-y-2.5">
+                                    {resumeEducationEntries.map((entry, index) => (
+                                      <div key={`resume-edu-${index}`} className="rounded-lg border border-white/10 bg-black/20 p-3">
+                                        <p className={`text-sm font-semibold ${useResume ? 'text-white/94' : 'text-white/86'}`}>
+                                          {entry.degree || 'Degree not set'}
+                                          {entry.major ? ` - ${entry.major}` : ''}
+                                        </p>
+                                        <p className="mt-1 text-sm text-white/70 break-all [overflow-wrap:anywhere]">{entry.institution || 'Institution not set'}</p>
+                                        <p className="mt-1 text-xs text-white/55">
+                                          {(entry.start || entry.end) ? `${entry.start || 'N/A'} - ${entry.end || 'Present'}` : 'Dates not set'}
+                                          {formatEducationScore(entry)}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className={`text-[15px] leading-7 ${useResume ? 'text-white/93' : 'text-white/83'}`}>Not set</p>
+                                )
+                              ) : isExperience ? (
+                                resumeExperienceEntries.length ? (
+                                  <div className="space-y-2.5">
+                                    {resumeExperienceEntries.map((entry, index) => (
+                                      <div key={`resume-exp-${index}`} className="rounded-lg border border-white/10 bg-black/20 p-3">
+                                        <p className={`text-sm font-semibold ${useResume ? 'text-white/94' : 'text-white/86'}`}>
+                                          {normalizeImportText(entry.title) || 'Role not set'}
+                                        </p>
+                                        <p className="mt-1 text-sm text-white/70 break-all [overflow-wrap:anywhere]">
+                                          {normalizeImportText(entry.company) || 'Company not set'}
+                                        </p>
+                                        <p className="mt-1 text-xs text-white/55">{formatExperienceDates(entry)}</p>
+                                        {normalizeImportText(entry.description) ? (
+                                          <p className="mt-2 text-sm leading-6 text-white/70 whitespace-pre-wrap break-words">
+                                            {normalizeImportText(entry.description)}
+                                          </p>
+                                        ) : null}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className={`text-[15px] leading-7 ${useResume ? 'text-white/93' : 'text-white/83'}`}>Not set</p>
+                                )
+                              ) : (
+                                <p className={`text-[15px] leading-7 whitespace-pre-wrap break-all [overflow-wrap:anywhere] ${useResume ? 'text-white/93' : 'text-white/83'}`}>{formatPreviewValue(item.resume_value)}</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-white/45">Current</p>
+                            <div className="rounded-xl border border-white/10 bg-white/[0.015] px-3.5 py-3">
+                              {isEducation ? (
+                                currentEducationEntries.length ? (
+                                  <div className="space-y-2.5">
+                                    {currentEducationEntries.map((entry, index) => (
+                                      <div key={`current-edu-${index}`} className="rounded-lg border border-white/10 bg-black/20 p-3">
+                                        <p className="text-sm font-semibold text-white/88">
+                                          {entry.degree || 'Degree not set'}
+                                          {entry.major ? ` - ${entry.major}` : ''}
+                                        </p>
+                                        <p className="mt-1 text-sm text-white/70 break-all [overflow-wrap:anywhere]">{entry.institution || 'Institution not set'}</p>
+                                        <p className="mt-1 text-xs text-white/55">
+                                          {(entry.start || entry.end) ? `${entry.start || 'N/A'} - ${entry.end || 'Present'}` : 'Dates not set'}
+                                          {formatEducationScore(entry)}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-[15px] leading-7 text-white/78">Not set</p>
+                                )
+                              ) : isExperience ? (
+                                currentExperienceEntries.length ? (
+                                  <div className="space-y-2.5">
+                                    {currentExperienceEntries.map((entry, index) => (
+                                      <div key={`current-exp-${index}`} className="rounded-lg border border-white/10 bg-black/20 p-3">
+                                        <p className="text-sm font-semibold text-white/88">
+                                          {normalizeImportText(entry.title) || 'Role not set'}
+                                        </p>
+                                        <p className="mt-1 text-sm text-white/70 break-all [overflow-wrap:anywhere]">
+                                          {normalizeImportText(entry.company) || 'Company not set'}
+                                        </p>
+                                        <p className="mt-1 text-xs text-white/55">{formatExperienceDates(entry)}</p>
+                                        {normalizeImportText(entry.description) ? (
+                                          <p className="mt-2 text-sm leading-6 text-white/70 whitespace-pre-wrap break-words">
+                                            {normalizeImportText(entry.description)}
+                                          </p>
+                                        ) : null}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-[15px] leading-7 text-white/78">Not set</p>
+                                )
+                              ) : (
+                                <p className="text-[15px] leading-7 text-white/78 whitespace-pre-wrap break-all [overflow-wrap:anywhere]">{formatPreviewValue(item.current_value)}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="w-full rounded-xl border border-white/10 bg-white/[0.015] p-2.5">
+                        <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.16em] text-white/45">Use value</p>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <button
+                            type="button"
+                            onClick={() => setImportSelections((current) => ({ ...current, [item.key]: true }))}
+                            className={`rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all duration-200 ${useResume ? 'bg-white text-black shadow-[0_8px_24px_rgba(255,255,255,0.12)]' : 'border border-white/12 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white/88'}`}
+                          >
+                            Use resume
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setImportSelections((current) => ({ ...current, [item.key]: false }))}
+                            className={`rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all duration-200 ${!useResume ? 'bg-white text-black shadow-[0_8px_24px_rgba(255,255,255,0.12)]' : 'border border-white/12 bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white/88'}`}
+                          >
+                            Keep current
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       <ConfirmDialog
         open={confirmAnswerId !== null}
         title="Delete saved answer"
@@ -1329,6 +2399,26 @@ export default function ProfilePage() {
         danger
         onConfirm={deleteAnswer}
         onCancel={() => setConfirmAnswerId(null)}
+      />
+
+      <ConfirmDialog
+        open={confirmExperienceIndex !== null}
+        title="Delete experience entry"
+        message="This experience entry will be permanently removed."
+        confirmLabel="Delete"
+        danger
+        onConfirm={removeExperience}
+        onCancel={() => setConfirmExperienceIndex(null)}
+      />
+
+      <ConfirmDialog
+        open={confirmContactFieldId !== null}
+        title="Delete contact field"
+        message="This contact field will be permanently removed."
+        confirmLabel="Delete"
+        danger
+        onConfirm={removeContactField}
+        onCancel={() => setConfirmContactFieldId(null)}
       />
 
       <ConfirmDialog

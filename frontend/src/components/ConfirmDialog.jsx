@@ -135,6 +135,7 @@ export function ConfirmDialog({
   confirmLabel = 'Delete',
   danger = false,
   isLoading = false,
+  zIndex = 1100,
   onConfirm,
   onCancel,
 }) {
@@ -173,7 +174,7 @@ export function ConfirmDialog({
       className={closing ? 'animate-modal-bg-out' : 'animate-modal-bg'}
       onClick={onCancel ? handleCancel : handleConfirm}
       style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
+        position: 'fixed', inset: 0, zIndex,
         background: 'rgba(0,0,0,0.6)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         backdropFilter: 'blur(4px)',

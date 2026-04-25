@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator, model_validator, EmailStr
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator, EmailStr
 from typing import Optional, List, Literal
 from datetime import datetime
 
@@ -159,6 +159,8 @@ class ProfileOut(BaseModel):
     experience: list
     education: list
     summary: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SavedAnswerUpdate(BaseModel):
@@ -556,6 +558,40 @@ class FillFormResponse(BaseModel):
     filled_count: int
     errors: List[str]
     prefilled_url: Optional[str] = None
+
+
+class ProfileImportPreviewRequest(BaseModel):
+    resume_id: Optional[int] = None
+    resume_ids: List[int] = []
+
+
+class ProfileImportDiffItem(BaseModel):
+    key: str
+    label: str
+    current_value: str = ""
+    resume_value: str = ""
+    recommended_action: Literal['keep_existing', 'use_resume'] = 'keep_existing'
+
+
+class ProfileImportDraft(BaseModel):
+    summary: str = ""
+    phone: str = ""
+    linkedin: str = ""
+    github: str = ""
+    website: str = ""
+    contact_fields: List[ContactFieldItem] = []
+    skills: List[str] = []
+    experience: List[ExperienceItem] = []
+    education: List[EducationItem] = []
+
+
+class ProfileImportPreviewResponse(BaseModel):
+    has_existing_profile_data: bool
+    resume_id: Optional[int] = None
+    resume_filename: Optional[str] = None
+    profile: ProfileOut
+    resume_draft: ProfileImportDraft
+    diff: List[ProfileImportDiffItem] = []
 
 
 # ── AI Router Request Bodies ──────────────────────────

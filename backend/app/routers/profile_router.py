@@ -13,7 +13,10 @@ router = APIRouter(prefix="/api/profile", tags=["Profile"])
 def get_profile(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
     if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found")
+        profile = Profile(user_id=current_user.id)
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
 
     contact_fields = profile.contact_fields or []
     if not contact_fields:

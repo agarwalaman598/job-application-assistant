@@ -6,6 +6,7 @@ import logging
 import os
 import json
 import re
+from urllib.parse import urlsplit
 from typing import List, Optional, Tuple, Dict, Any
 
 logger = logging.getLogger(__name__)
@@ -1774,4 +1775,795 @@ Experience:
         for f in fields:
             mapping[f["field_id"]] = ""
         return {"field_values": mapping}
+
+
+def _normalize_resume_url(value: str) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    parsed = urlsplit(raw)
+    if not parsed.netloc and parsed.path:
+        parsed = urlsplit("https://" + raw)
+    netloc = parsed.netloc.lower().removeprefix("www.")
+    path = parsed.path.rstrip("/")
+    return f"{netloc}{path}" if netloc else _compact_spaces(raw).casefold()
+
+
+def _coerce_profile_import_items(raw_items, keys: Tuple[str, ...]) -> List[Dict[str, str]]:
+    items: List[Dict[str, str]] = []
+    for item in raw_items or []:
+        if not isinstance(item, dict):
+            continue
+        normalized = {key: _compact_spaces(item.get(key, "")) for key in keys}
+        if any(normalized.values()):
+            items.append(normalized)
+    return items
+
+
+def _coerce_profile_import_contact_fields(raw_items) -> List[Dict[str, str]]:
+    items: List[Dict[str, str]] = []
+    seen = set()
+    allowed_types = {"text", "email", "phone", "url"}
+    for item in raw_items or []:
+        if not isinstance(item, dict):
+            continue
+        label = _compact_spaces(item.get("label", ""))
+        value = _compact_spaces(item.get("value", ""))
+        field_type = _compact_spaces(item.get("type", "text")).casefold() or "text"
+        if field_type not in allowed_types:
+            field_type = "url" if value.startswith(("http://", "https://", "www.")) else "text"
+        if not label and not value:
+            continue
+        key = (label.casefold(), _normalize_resume_url(value) if field_type == "url" else value.casefold())
+        if key in seen:
+            continue
+        seen.add(key)
+        items.append({"label": label or "Custom Field", "value": value, "type": field_type})
+    return items
+
+
+def _contact_label_for_url(url: str) -> str:
+    normalized = _normalize_resume_url(url)
+    if not normalized:
+        return ""
+    if "linkedin.com" in normalized:
+        return "LinkedIn"
+    if "github.com" in normalized:
+        return "GitHub"
+    if "leetcode.com" in normalized:
+        return "LeetCode"
+    if "codeforces.com" in normalized:
+        return "Codeforces"
+    if "hackerrank.com" in normalized:
+        return "HackerRank"
+    if "hackerearth.com" in normalized:
+        return "HackerEarth"
+    if "atcoder.jp" in normalized:
+        return "AtCoder"
+    if "codechef.com" in normalized:
+        return "CodeChef"
+    if "codolio" in normalized:
+        return "Codolio"
+    if "kaggle.com" in normalized:
+        return "Kaggle"
+    if "stackoverflow.com" in normalized:
+        return "Stack Overflow"
+    if "gitlab.com" in normalized:
+        return "GitLab"
+    if "x.com" in normalized or "twitter.com" in normalized:
+        return "X"
+    if "dribbble.com" in normalized:
+        return "Dribbble"
+    if "behance.net" in normalized:
+        return "Behance"
+    if "medium.com" in normalized:
+        return "Medium"
+    if "dev.to" in normalized:
+        return "Dev.to"
+    if "linktr.ee" in normalized:
+        return "Linktree"
+    return ""
+
+
+def _extract_contact_fields_from_text(resume_text: str) -> List[Dict[str, str]]:
+    text = str(resume_text or "")
+    candidates = re.findall(
+        r"https?://[^\s)\]]+|www\.[^\s)\]]+|(?:linkedin|github|x|twitter|dribbble|behance|medium|dev\.to|linktr\.ee|leetcode|codeforces|hackerrank|hackerearth|atcoder|codechef|codolio|kaggle|stackoverflow|gitlab)\.[^\s)\]]+",
+        text,
+        re.IGNORECASE,
+    )
+    fields: List[Dict[str, str]] = []
+    seen = set()
+    for candidate in candidates:
+        url = _compact_spaces(candidate)
+        normalized = _normalize_resume_url(url)
+        if not normalized:
+            continue
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        label = _contact_label_for_url(url)
+        if not label:
+            continue
+        fields.append({"label": label, "value": url, "type": "url"})
+    return fields
+
+
+def _is_plausible_experience_entry(entry: object) -> bool:
+    if not isinstance(entry, dict):
+        return False
+
+    title = _compact_spaces(entry.get("title", ""))
+    company = _compact_spaces(entry.get("company", ""))
+    duration = _compact_spaces(entry.get("duration", ""))
+    description = _compact_spaces(entry.get("description", ""))
+    combined = " ".join(part for part in [title, company, duration, description] if part).casefold()
+
+    if not combined:
+        return False
+
+    heading_markers = [
+        "education", "academic", "qualification", "skills", "projects", "certifications",
+        "achievements", "summary", "contact", "responsibilities", "experience",
+    ]
+    # Reject obvious section headers, but do not drop longer role lines that may include words
+    # like "responsibilities" due to noisy PDF extraction.
+    if len(combined.split()) <= 6 and any(marker in combined for marker in heading_markers):
+        return False
+
+    if re.search(r"(?:19|20)\d{2}", combined):
+        return True
+
+    if re.search(r"\b(intern|internship|developer|engineer|analyst|associate|lead|founder|cofounder|manager|scientist|researcher|student)\b", combined):
+        return True
+
+    if re.search(r"\b(at|for)\b", combined) and len(combined.split()) <= 18:
+        return True
+
+    return len(title.split()) >= 2 and len(combined) >= 18
+
+
+def _generate_resume_summary(full_name: str, fallback: Dict[str, Any], extracted: Dict[str, Any], resume_text: str) -> str:
+    pieces = []
+    if full_name:
+        pieces.append(f"Name: {full_name}")
+    if fallback.get("education"):
+        edu = fallback["education"][0]
+        edu_bits = [edu.get("degree", ""), edu.get("major", ""), edu.get("institution", "")]
+        pieces.append(f"Education: {' | '.join(bit for bit in edu_bits if bit)}")
+    if fallback.get("experience"):
+        exp = fallback["experience"][0]
+        exp_bits = [exp.get("title", ""), exp.get("company", ""), exp.get("duration", "")]
+        pieces.append(f"Experience: {' | '.join(bit for bit in exp_bits if bit)}")
+    if fallback.get("skills"):
+        pieces.append(f"Skills: {', '.join(fallback['skills'][:10])}")
+    if extracted.get("contact_fields"):
+        social_labels = [field.get("label", "") for field in extracted.get("contact_fields", []) if isinstance(field, dict)]
+        if social_labels:
+            pieces.append(f"Socials: {', '.join(dict.fromkeys(label for label in social_labels if label))}")
+
+    system_prompt = (
+        "Rewrite this as a strong resume-style summary for an SDE internship candidate. "
+        "Requirements: first-person professional tone; no third-person voice; remove vague words like skilled/expert/well-equipped; "
+        "replace generic claims with concrete proof from projects, technologies, systems built, outcomes, or measurable scale. "
+        "Mention tech stack and problem-solving experience (DSA/hackathons) when available in the input. "
+        "Keep it concise: maximum 4 to 5 lines. "
+        "Avoid buzzwords unless backed by concrete work. "
+        "Return plain text only."
+    )
+    user_prompt = "\n".join(pieces) if pieces else f"Resume text:\n{resume_text[:3000]}"
+    try:
+        generated = _llm_call(system_prompt, user_prompt, max_tokens=220, temperature=0.35)
+        summary = _compact_spaces(generated)
+        if summary:
+            return summary
+    except Exception as exc:
+        logger.warning(f"[AI] Resume summary generation fell back to heuristics: {exc}")
+
+    fallback_summary_parts = ["I am building hands-on software projects focused on backend systems and practical product outcomes."]
+    if fallback.get("education"):
+        edu = fallback["education"][0]
+        degree = _compact_spaces(edu.get("degree", ""))
+        institution = _compact_spaces(edu.get("institution", ""))
+        major = _compact_spaces(edu.get("major", ""))
+        edu_phrase = ""
+        if degree and institution:
+            edu_phrase = f"with {degree} from {institution}"
+        elif degree:
+            edu_phrase = f"with a background in {degree}"
+        elif institution:
+            edu_phrase = f"with academic experience from {institution}"
+        if major:
+            edu_phrase = f"{edu_phrase} focused on {major}" if edu_phrase else f"focused on {major}"
+        if edu_phrase:
+            fallback_summary_parts.append(edu_phrase)
+    if fallback.get("skills"):
+        fallback_summary_parts.append(f"I have worked with {', '.join(fallback['skills'][:6])} across academic and project work.")
+    if fallback.get("experience"):
+        exp = fallback["experience"][0]
+        title = _compact_spaces(exp.get("title", ""))
+        company = _compact_spaces(exp.get("company", ""))
+        if title and company:
+            fallback_summary_parts.append(f"I have delivered project work in roles similar to {title} at {company}.")
+        elif title:
+            fallback_summary_parts.append(f"I have built and shipped work aligned with {title} responsibilities.")
+
+    return _compact_spaces(" ".join(fallback_summary_parts))
+
+
+def _fallback_profile_import_draft(resume_text: str) -> Dict[str, Any]:
+    text = str(resume_text or "")
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+
+    email_match = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text)
+    phone_match = re.search(r"(?:\+?\d[\d\-\s().]{7,}\d)", text)
+    linkedin_match = re.search(r"https?://(?:www\.)?linkedin\.com(?:/[\w\-./?=&%]+)?|linkedin\.com(?:/[\w\-./?=&%]+)?", text, re.IGNORECASE)
+    github_match = re.search(r"https?://(?:www\.)?github\.com(?:/[\w\-./?=&%]+)?|github\.com(?:/[\w\-./?=&%]+)?", text, re.IGNORECASE)
+
+    website = ""
+
+    summary = ""
+    for line in lines[:6]:
+        if len(line) > 40 and not re.search(r"@|https?://|linkedin|github", line, re.IGNORECASE):
+            summary = line
+            break
+
+    skills = _extract_candidate_skills([], text, text)
+    contact_fields = _extract_contact_fields_from_text(text)
+
+    if not linkedin_match:
+        linkedin_field = next((field for field in contact_fields if "linkedin.com" in _normalize_resume_url(field.get("value", ""))), None)
+        if linkedin_field:
+            linkedin_match = re.search(r".+", linkedin_field.get("value", ""))
+    if not github_match:
+        github_field = next((field for field in contact_fields if "github.com" in _normalize_resume_url(field.get("value", ""))), None)
+        if github_field:
+            github_match = re.search(r".+", github_field.get("value", ""))
+
+    experience: List[Dict[str, str]] = []
+    education: List[Dict[str, str]] = []
+    education_lines: List[str] = []
+    capture = None
+    stop_markers = {
+        "skills", "skill", "projects", "project", "education", "academic", "qualification",
+        "certifications", "certification", "achievements", "summary", "contact", "objective",
+    }
+    for line in lines:
+        lowered = line.casefold()
+        if any(term in lowered for term in ["experience", "employment", "work history", "internship"]):
+            tail = re.split(r"experience|employment|work history|internship", line, maxsplit=1, flags=re.IGNORECASE)[-1].strip(" :-|\t")
+            capture = "experience"
+            if tail and _is_plausible_experience_entry({"title": tail}) and len(experience) < 3:
+                experience.append({"title": tail[:120], "company": "", "duration": "", "description": ""})
+            continue
+        if any(term in lowered for term in ["education", "academic", "qualification"]):
+            tail = re.split(r"education|academic|qualification", line, maxsplit=1, flags=re.IGNORECASE)[-1].strip(" :-|\t")
+            capture = "education"
+            if tail and len(education_lines) < 40:
+                education_lines.append(tail)
+            continue
+        if capture == "experience":
+            if any(marker in lowered for marker in stop_markers):
+                capture = None
+                continue
+            if _is_plausible_experience_entry({"title": line}) and len(experience) < 3:
+                experience.append({"title": line[:120], "company": "", "duration": "", "description": ""})
+        elif capture == "education" and len(education_lines) < 40:
+            education_lines.append(line)
+
+    degree_pattern = re.compile(
+        r"(b\.?(tech|e|sc|ca|com|a)|m\.?(tech|e|sc|ca|ba)|bachelor|master|ph\.?d|diploma|12th|10th|higher secondary|senior secondary|intermediate)[^,;|]*",
+        re.IGNORECASE,
+    )
+    institution_pattern = re.compile(r"(university|institute|college|school|academy|iit|nit|iiit|kiit)[^,;|]*", re.IGNORECASE)
+    gpa_pattern = re.compile(r"(?:cgpa|gpa|sgpa|percentage|marks|%)\s*[:\-]?\s*([0-9]+(?:\.[0-9]+)?)", re.IGNORECASE)
+    year_pattern = re.compile(r"(?:19|20)\d{2}")
+
+    def _parse_education_line(raw_line: str) -> Dict[str, str]:
+        line = _compact_spaces(raw_line)
+        if not line:
+            return {}
+
+        degree_match = degree_pattern.search(line)
+        institution_match = institution_pattern.search(line)
+        years = year_pattern.findall(line)
+
+        gpa_value = ""
+        gpa_scale = ""
+
+        frac_match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*/\s*(100|10|4)", line)
+        pct_match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*%", line)
+        labeled_gpa_match = gpa_pattern.search(line)
+
+        if frac_match:
+            gpa_value = _compact_spaces(frac_match.group(1))
+            gpa_scale = _compact_spaces(frac_match.group(2))
+        elif pct_match:
+            gpa_value = _compact_spaces(pct_match.group(1))
+            gpa_scale = "100"
+        elif labeled_gpa_match:
+            gpa_value = _compact_spaces(labeled_gpa_match.group(1))
+            if "%" in line or re.search(r"percentage|marks", line, re.IGNORECASE):
+                gpa_scale = "100"
+            elif re.search(r"/\s*10\b|\bout of\s*10\b", line, re.IGNORECASE):
+                gpa_scale = "10"
+            elif re.search(r"/\s*4\b|\bout of\s*4\b", line, re.IGNORECASE):
+                gpa_scale = "4"
+
+        major = ""
+        if " in " in line.casefold():
+            maybe_major = line.split(" in ", 1)[-1]
+            if len(maybe_major.split()) <= 8:
+                major = _compact_spaces(maybe_major)
+
+        entry = {
+            "degree": _compact_spaces(degree_match.group(0)) if degree_match else "",
+            "institution": _compact_spaces(institution_match.group(0)) if institution_match else "",
+            "major": major,
+            "start_year": years[0] if len(years) >= 2 else "",
+            "end_year": years[1] if len(years) >= 2 else "",
+            "year": years[0] if len(years) == 1 else "",
+            "gpa": gpa_value,
+            "gpa_scale": gpa_scale,
+        }
+
+        if any(entry.values()):
+            return entry
+        return {}
+
+    candidate_education_lines = list(education_lines)
+    if not candidate_education_lines:
+        candidate_education_lines = [
+            line for line in lines
+            if re.search(
+                r"b\.?tech|bachelor|master|ph\.?d|diploma|12th|10th|higher secondary|senior secondary|intermediate|university|institute|college|school|academy|cgpa|gpa|percentage|marks|%",
+                line,
+                re.IGNORECASE,
+            )
+        ]
+
+    seen_education = set()
+    for raw_line in candidate_education_lines[:80]:
+        parsed = _parse_education_line(raw_line)
+        if not parsed:
+            continue
+        key = (
+            parsed.get("degree", "").casefold(),
+            parsed.get("institution", "").casefold(),
+            parsed.get("start_year", ""),
+            parsed.get("end_year", ""),
+            parsed.get("year", ""),
+            parsed.get("gpa", ""),
+            parsed.get("gpa_scale", ""),
+        )
+        if key in seen_education:
+            continue
+        seen_education.add(key)
+        education.append(parsed)
+
+    if not education:
+        for line in candidate_education_lines[:3]:
+            education.append({"degree": line[:120], "institution": "", "major": "", "start_year": "", "end_year": "", "year": "", "gpa": "", "gpa_scale": ""})
+
+    experience = [entry for entry in experience if _is_plausible_experience_entry(entry)]
+
+    return {
+        "summary": summary,
+        "phone": phone_match.group(0).strip() if phone_match else "",
+        "linkedin": linkedin_match.group(0).strip() if linkedin_match else "",
+        "github": github_match.group(0).strip() if github_match else "",
+        "website": website,
+        "contact_fields": contact_fields,
+        "skills": skills,
+        "experience": experience,
+        "education": education,
+        "email": email_match.group(0).strip() if email_match else "",
+    }
+
+
+def _prepare_resume_text_for_prompt(resume_text: str, max_chars: int = 7000) -> str:
+    text = str(resume_text or "").strip()
+    if len(text) <= max_chars:
+        return text
+    if max_chars <= 32:
+        return text[:max_chars]
+
+    marker = "\n\n...[middle content omitted for extraction]...\n\n"
+    head_len = int(max_chars * 0.62)
+    tail_len = max_chars - head_len - len(marker)
+    if tail_len < 24:
+        tail_len = 24
+        head_len = max(0, max_chars - tail_len - len(marker))
+
+    return f"{text[:head_len].rstrip()}{marker}{text[-tail_len:].lstrip()}"
+
+
+def _extract_experience_global_candidates(resume_text: str, max_items: int = 5) -> List[Dict[str, str]]:
+    text = str(resume_text or "")
+    if not text:
+        return []
+
+    lines = [_compact_spaces(line) for line in text.splitlines() if _compact_spaces(line)]
+    if not lines:
+        return []
+
+    role_hint_pattern = re.compile(
+        r"\b(intern|internship|developer|engineer|analyst|associate|lead|manager|consultant|founder|cofounder|research|sde|software|director|deputy)\b",
+        re.IGNORECASE,
+    )
+    month_pattern = r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*"
+    date_range_pattern = re.compile(
+        rf"((?:{month_pattern}\s+)?(?:19|20)\d{{2}}\s*(?:-|–|—|to)\s*(?:(?:{month_pattern}\s+)?(?:19|20)\d{{2}}|present|current|now))",
+        re.IGNORECASE,
+    )
+    year_pattern = re.compile(r"(?:19|20)\d{2}")
+    stop_markers = {
+        "education", "academic", "qualification", "skills", "skill", "projects", "project",
+        "certifications", "certification", "achievements", "summary", "contact", "objective",
+        "technical skills", "profile", "about",
+    }
+
+    def _looks_like_section_heading(text_line: str) -> bool:
+        compact = re.sub(r"[^a-z0-9\s&]", " ", text_line.casefold())
+        compact = _compact_spaces(compact)
+        if not compact:
+            return True
+        # Exact section titles should be skipped.
+        if compact in stop_markers:
+            return True
+        # Very short header-like lines containing section words should also be skipped.
+        return len(compact.split()) <= 4 and any(marker in compact for marker in stop_markers)
+
+    entries: List[Dict[str, str]] = []
+    seen = set()
+
+    for raw_line in lines:
+        line = re.sub(r"^[\-*\u2022\s]+", "", raw_line).strip()
+        if not line:
+            continue
+
+        # If extraction merged heading + role into one line, strip heading prefix first.
+        line = re.sub(
+            r"^(leadership\s*&\s*responsibilities|work\s+experience|professional\s+experience|experience)\s*[:\-–—]*\s*",
+            "",
+            line,
+            flags=re.IGNORECASE,
+        ).strip()
+        if not line:
+            continue
+
+        lowered = line.casefold()
+
+        if _looks_like_section_heading(line):
+            continue
+        if len(line.split()) < 2:
+            continue
+        if len(line) > 180:
+            continue
+
+        has_role_hint = bool(role_hint_pattern.search(line))
+        duration_match = date_range_pattern.search(line)
+        years_in_line = year_pattern.findall(line)
+        has_duration = bool(duration_match or years_in_line)
+        has_at_or_pipe = " at " in lowered or "|" in line
+
+        if not (has_role_hint or has_duration or has_at_or_pipe):
+            continue
+
+        if duration_match:
+            duration = _compact_spaces(duration_match.group(1))
+        elif len(years_in_line) >= 2:
+            duration = f"{years_in_line[0]} - {years_in_line[1]}"
+        elif years_in_line:
+            duration = years_in_line[0]
+        else:
+            duration = ""
+
+        start_date = ""
+        end_date = ""
+        if duration:
+            years = year_pattern.findall(duration)
+            if years:
+                start_date = years[0]
+                end_date = years[1] if len(years) > 1 else ""
+            if not end_date and re.search(r"present|current|now", duration, re.IGNORECASE):
+                end_date = "Present"
+
+        title = ""
+        company = ""
+        if " at " in lowered:
+            parts = re.split(r"\bat\b", line, maxsplit=1, flags=re.IGNORECASE)
+            title = _compact_spaces(parts[0])
+            company = _compact_spaces(parts[1]) if len(parts) > 1 else ""
+        elif "|" in line:
+            parts = [_compact_spaces(part) for part in line.split("|") if _compact_spaces(part)]
+            title = parts[0] if parts else ""
+            company = parts[1] if len(parts) > 1 else ""
+        else:
+            title = _compact_spaces(line)
+
+        if duration:
+            title = _compact_spaces(title.replace(duration, ""))
+            company = _compact_spaces(company.replace(duration, ""))
+            if duration_match:
+                title = _compact_spaces(title.replace(_compact_spaces(duration_match.group(1)), ""))
+                company = _compact_spaces(company.replace(_compact_spaces(duration_match.group(1)), ""))
+
+        entry = {
+            "title": title[:120],
+            "company": company[:120],
+            "duration": duration,
+            "description": "",
+            "start_date": start_date,
+            "end_date": end_date,
+        }
+        if not _is_plausible_experience_entry(entry):
+            continue
+
+        dedupe_key = (
+            entry["title"].casefold(),
+            entry["company"].casefold(),
+            entry["duration"],
+            entry["start_date"],
+            entry["end_date"],
+        )
+        if dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        entries.append(entry)
+
+        if len(entries) >= max_items:
+            break
+
+    return entries
+
+
+def _extract_education_global_candidates(resume_text: str) -> List[Dict[str, str]]:
+    text = str(resume_text or "")
+    if not text:
+        return []
+
+    degree_anchor = re.compile(
+        r"\b(b\.?tech|b\.?e|b\.?sc|bachelor|m\.?tech|m\.?e|m\.?sc|master|ph\.?d|diploma|12th|10th|higher secondary|senior secondary|intermediate)\b",
+        re.IGNORECASE,
+    )
+    institution_pattern = re.compile(r"(university|institute|college|school|academy|iit|nit|iiit|kiit)[^,;|]*", re.IGNORECASE)
+    year_pattern = re.compile(r"(?:19|20)\d{2}")
+
+    matches = list(degree_anchor.finditer(text))
+    if not matches:
+        return []
+
+    entries: List[Dict[str, str]] = []
+    seen = set()
+
+    for idx, match in enumerate(matches):
+        start = match.start()
+        end = matches[idx + 1].start() if idx + 1 < len(matches) else min(len(text), start + 260)
+        segment = _compact_spaces(text[start:end])
+        if not segment:
+            continue
+
+        degree_match = re.search(
+            r"(b\.?tech|b\.?e|b\.?sc|bachelor[^,;|]*|m\.?tech|m\.?e|m\.?sc|master[^,;|]*|ph\.?d[^,;|]*|diploma[^,;|]*|12th[^,;|]*|10th[^,;|]*|higher secondary[^,;|]*|senior secondary[^,;|]*|intermediate[^,;|]*)",
+            segment,
+            re.IGNORECASE,
+        )
+        institution_match = institution_pattern.search(segment)
+        years = year_pattern.findall(segment)
+
+        gpa = ""
+        gpa_scale = ""
+        frac = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*/\s*(100|10|4)\b", segment)
+        pct = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*%", segment)
+        marked = re.search(r"(?:cgpa|gpa|sgpa|percentage|marks?)\s*[:\-]?\s*([0-9]+(?:\.[0-9]+)?)", segment, re.IGNORECASE)
+        if frac:
+            gpa = _compact_spaces(frac.group(1))
+            gpa_scale = _compact_spaces(frac.group(2))
+        elif pct:
+            gpa = _compact_spaces(pct.group(1))
+            gpa_scale = "100"
+        elif marked:
+            gpa = _compact_spaces(marked.group(1))
+            if re.search(r"percentage|marks|%", segment, re.IGNORECASE):
+                gpa_scale = "100"
+
+        entry = {
+            "degree": _compact_spaces(degree_match.group(0)) if degree_match else "",
+            "institution": _compact_spaces(institution_match.group(0)) if institution_match else "",
+            "major": "",
+            "start_year": years[0] if len(years) >= 2 else "",
+            "end_year": years[1] if len(years) >= 2 else "",
+            "year": years[0] if len(years) == 1 else "",
+            "gpa": gpa,
+            "gpa_scale": gpa_scale,
+        }
+        if not any(entry.values()):
+            continue
+
+        key = (
+            entry["degree"].casefold(),
+            entry["institution"].casefold(),
+            entry["start_year"],
+            entry["end_year"],
+            entry["year"],
+            entry["gpa"],
+            entry["gpa_scale"],
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        entries.append(entry)
+
+    return entries
+
+
+def _normalize_education_entries_from_text(entries: List[Dict[str, str]], resume_text: str) -> List[Dict[str, str]]:
+    text = str(resume_text or "")
+    lines = [_compact_spaces(line) for line in text.splitlines() if _compact_spaces(line)]
+    normalized_entries: List[Dict[str, str]] = []
+
+    for raw_entry in entries or []:
+        if not isinstance(raw_entry, dict):
+            continue
+
+        entry = {key: _compact_spaces(raw_entry.get(key, "")) for key in ("degree", "institution", "major", "start_year", "end_year", "year", "gpa", "gpa_scale")}
+
+        entry_tokens = [
+            _compact_spaces(entry.get("degree", "")),
+            _compact_spaces(entry.get("institution", "")),
+            _compact_spaces(entry.get("major", "")),
+        ]
+        entry_tokens = [token for token in entry_tokens if token]
+
+        candidate_lines = []
+        if entry_tokens:
+            for line in lines:
+                lowered = line.casefold()
+                if any(token.casefold()[:10] and token.casefold()[:10] in lowered for token in entry_tokens):
+                    candidate_lines.append(line)
+        else:
+            candidate_lines = lines[:]
+
+        candidate_lines = candidate_lines or lines[:]
+
+        score_value = _compact_spaces(entry.get("gpa", ""))
+        score_scale = _compact_spaces(entry.get("gpa_scale", ""))
+
+        for line in candidate_lines[:8]:
+            frac_match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*/\s*(100|10|4)\b", line)
+            pct_match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*%", line)
+            labeled_match = re.search(r"(?:cgpa|gpa|sgpa|percentage|marks?)\s*[:\-]?\s*([0-9]+(?:\.[0-9]+)?)", line, re.IGNORECASE)
+
+            if frac_match:
+                score_value = _compact_spaces(frac_match.group(1))
+                score_scale = _compact_spaces(frac_match.group(2))
+                break
+
+            if pct_match:
+                score_value = _compact_spaces(pct_match.group(1))
+                score_scale = "100"
+                break
+
+            if labeled_match:
+                candidate = _compact_spaces(labeled_match.group(1))
+                if re.search(r"percentage|marks|%", line, re.IGNORECASE):
+                    score_value = candidate
+                    score_scale = "100"
+                    break
+                if re.search(r"/\s*10\b|\bout of\s*10\b", line, re.IGNORECASE):
+                    score_value = candidate
+                    score_scale = "10"
+                    break
+                if re.search(r"/\s*4\b|\bout of\s*4\b", line, re.IGNORECASE):
+                    score_value = candidate
+                    score_scale = "4"
+                    break
+
+        if score_value:
+            try:
+                numeric_score = float(score_value)
+                if not score_scale and numeric_score > 10:
+                    score_scale = "100"
+                elif not score_scale and numeric_score <= 10 and numeric_score.is_integer() and numeric_score >= 4:
+                    # Keep small values as GPA, no scale implied.
+                    score_scale = ""
+            except Exception:
+                pass
+
+        entry["gpa"] = score_value
+        entry["gpa_scale"] = score_scale
+        normalized_entries.append(entry)
+
+    return normalized_entries
+
+
+def extract_profile_import_draft(resume_text: str, full_name: str = "", email: str = "") -> Dict[str, Any]:
+    """Extract a profile-shaped draft from resume text for preview/import."""
+    resume_text = str(resume_text or "").strip()
+    if not resume_text:
+        return {
+            "summary": "",
+            "phone": "",
+            "linkedin": "",
+            "github": "",
+            "website": "",
+            "skills": [],
+            "experience": [],
+            "education": [],
+            "email": email or "",
+        }
+
+    system_prompt = (
+        "You extract a structured professional profile from a resume. "
+        "Return ONLY valid JSON with these keys: summary, phone, linkedin, github, website, contact_fields, skills, experience, education. "
+        "Use empty strings or empty arrays when a field is not clearly present. "
+        "Do not invent facts. "
+        "experience must be an array of objects with title, company, duration, description, start_date, end_date. "
+        "education must be an array of objects with degree, institution, major, start_year, end_year, year, gpa, gpa_scale. "
+        "contact_fields must be an array of objects with label, value, and type, capturing any social links or portfolio links that appear in the resume."
+    )
+    llm_resume_text = _prepare_resume_text_for_prompt(resume_text, max_chars=7000)
+
+    user_prompt = (
+        f"FULL NAME: {full_name or ''}\n"
+        f"EMAIL: {email or ''}\n\n"
+        f"RESUME TEXT:\n{llm_resume_text}"
+    )
+
+    extracted: Dict[str, Any] = {}
+    try:
+        raw = _llm_call(system_prompt, user_prompt, max_tokens=1200, temperature=0.15)
+        extracted = _extract_json(raw)
+    except Exception as exc:
+        logger.warning(f"[AI] Resume import extraction fell back to heuristics: {exc}")
+        extracted = {}
+
+    if not isinstance(extracted, dict):
+        extracted = {}
+
+    fallback = _fallback_profile_import_draft(resume_text)
+
+    summary = _generate_resume_summary(full_name, fallback, extracted, resume_text)
+    phone = _compact_spaces(extracted.get("phone", "")) or fallback["phone"]
+    linkedin = _compact_spaces(extracted.get("linkedin", "")) or fallback["linkedin"]
+    github = _compact_spaces(extracted.get("github", "")) or fallback["github"]
+    website = ""
+    contact_fields = _coerce_profile_import_contact_fields(extracted.get("contact_fields", [])) or fallback["contact_fields"]
+
+    if not linkedin:
+        linkedin = next((field.get("value", "") for field in contact_fields if "linkedin.com" in _normalize_resume_url(field.get("value", ""))), "")
+    if not github:
+        github = next((field.get("value", "") for field in contact_fields if "github.com" in _normalize_resume_url(field.get("value", ""))), "")
+
+    skills = _normalize_skill_list(extracted.get("skills", [])) or fallback["skills"]
+    experience = _coerce_profile_import_items(
+        extracted.get("experience", []),
+        ("title", "company", "duration", "description", "start_date", "end_date"),
+    ) or fallback["experience"]
+    experience = [entry for entry in experience if _is_plausible_experience_entry(entry)]
+    if not experience:
+        experience = _extract_experience_global_candidates(resume_text)
+    education = _coerce_profile_import_items(
+        extracted.get("education", []),
+        ("degree", "institution", "major", "start_year", "end_year", "year", "gpa", "gpa_scale"),
+    ) or fallback["education"]
+
+    if not education:
+        education = _extract_education_global_candidates(resume_text)
+
+    education = _normalize_education_entries_from_text(education, resume_text)
+
+    return {
+        "summary": summary,
+        "phone": phone,
+        "linkedin": linkedin,
+        "github": github,
+        "website": website,
+        "contact_fields": contact_fields,
+        "skills": skills,
+        "experience": experience,
+        "education": education,
+        "email": fallback.get("email", email or ""),
+    }
 
