@@ -62,22 +62,38 @@ def google_login(
         raise HTTPException(status_code=500, detail="Google login is not configured")
 
     try:
-        token_info = id_token.verify_oauth2_token(
-            payload.credential,
-            google_requests.Request(),
-            audience=GOOGLE_CLIENT_ID,
-        )
+        if payload.credential.startswith("ya29."):
+            import httpx
+            with httpx.Client() as client:
+                res = client.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {payload.credential}"}
+                )
+            if res.status_code != 200:
+                raise Exception("Failed to fetch user info from Google")
+            token_info = res.json()
+        else:
+            token_info = id_token.verify_oauth2_token(
+                payload.credential,
+                google_requests.Request(),
+                audience=GOOGLE_CLIENT_ID,
+            )
     except TransportError:
         raise HTTPException(status_code=503, detail="Could not reach Google to verify the token. Please try again.")
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid Google credential")
 
-    issuer = token_info.get("iss")
-    if issuer not in _VALID_ISSUERS:
-        raise HTTPException(status_code=401, detail="Invalid Google token issuer")
+    # The userinfo endpoint returns different keys than the id_token
+    # id_token: 'iss', 'sub', 'email', 'name', 'picture', 'email_verified'
+    # userinfo: 'sub', 'email', 'name', 'picture', 'email_verified'
+    
+    if not payload.credential.startswith("ya29."):
+        issuer = token_info.get("iss")
+        if issuer not in _VALID_ISSUERS:
+            raise HTTPException(status_code=401, detail="Invalid Google token issuer")
 
     email = (token_info.get("email") or "").strip().lower()
-    sub = (token_info.get("sub") or "").strip()
+    sub = str(token_info.get("sub") or "").strip()
     full_name = (token_info.get("name") or "").strip()
     avatar_url = (token_info.get("picture") or "").strip() or None
 
