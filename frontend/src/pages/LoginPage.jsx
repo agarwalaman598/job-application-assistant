@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 import api from '../api';
 
 function getSafeNextPath(rawNext) {
@@ -55,6 +56,17 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = () => {
+    const next = getSafeNextPath(searchParams.get('next'));
+    navigate(next, { replace: true });
+  };
+
+  const handleGoogleError = (msg) => {
+    if (!msg) return; // null = user cancelled the popup — don't show an error
+    setError(msg);
+    setMessage('');
   };
 
   const handleResend = async () => {
@@ -294,12 +306,15 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.875rem', color: 'var(--muted-foreground)' }}>
-          Don&apos;t have an account?{' '}
-          <Link to="/register" className="hover-link" style={{ textDecoration: 'none' }}>
-            Sign up
-          </Link>
-        </p>
+        <div style={{ marginTop: '1.1rem', marginBottom: '0.15rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.85rem' }}>
+            <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+            <span style={{ fontSize: '0.9rem', letterSpacing: '0.06em', color: '#b7b7b7' }}>OR</span>
+            <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+          </div>
+          <GoogleSignInButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+        </div>
+
       </motion.div>
     </motion.div>
   );

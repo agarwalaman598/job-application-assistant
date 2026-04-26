@@ -3,6 +3,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -24,7 +25,7 @@ IS_DEV = APP_ENV == "development"
 def register(request: Request, payload: UserCreate, db: Session = Depends(get_db)):
     if len(payload.password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
-    existing = db.query(User).filter(User.email == payload.email).first()
+    existing = db.query(User).filter(func.lower(User.email) == payload.email.lower()).first()
     if existing:
         if existing.is_verified:
             raise HTTPException(status_code=400, detail="Email already registered")
@@ -88,7 +89,16 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
 @limiter.limit("5/minute")
 def login(request: Request, payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
-    if not user or not verify_password(payload.password, user.hashed_password):
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    if not user.hashed_password:
+        raise HTTPException(
+            status_code=401,
+            detail="This account uses Google Sign-In. Please use the Google button.",
+        )
+
+    if not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     if not user.is_verified:

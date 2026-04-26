@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Eye, Mail, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 
 const INPUT_STYLE = {
   width: '100%', padding: '10px 16px',
@@ -30,6 +31,7 @@ export default function RegisterPage() {
   const [registered, setRegistered]   = useState(false);
   const [devLink, setDevLink]         = useState('');
   const { register } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,6 +71,15 @@ export default function RegisterPage() {
       if (e.key === ' ' || e.key === 'Enter') setter(false);
     },
   });
+
+  const handleGoogleSuccess = () => {
+    navigate('/dashboard', { replace: true });
+  };
+
+  const handleGoogleError = (msg) => {
+    if (!msg) return; // null = user cancelled the popup — don't show an error
+    setError(msg);
+  };
 
   // ── Post-registration screen ──────────────────────────────────────────────
   if (registered) {
@@ -313,12 +324,16 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.875rem', color: 'var(--muted-foreground)' }}>
-          Already have an account?{' '}
-          <Link to="/login" className="hover-link" style={{ textDecoration: 'none' }}>
-            Sign in
-          </Link>
-        </p>
+        <div style={{ marginTop: '1.1rem', marginBottom: '0.15rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.85rem' }}>
+            <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+            <span style={{ fontSize: '0.9rem', letterSpacing: '0.06em', color: '#b7b7b7' }}>OR</span>
+            <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+          </div>
+          <GoogleSignInButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+        </div>
+
+
       </motion.div>
     </motion.div>
   );

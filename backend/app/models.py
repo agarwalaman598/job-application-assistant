@@ -9,8 +9,11 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
-    hashed_password = Column(String(255), nullable=False)
+    hashed_password = Column(String(255), nullable=True)
     full_name = Column(String(255), nullable=False)
+    google_id = Column(String(128), unique=True, index=True, nullable=True)
+    avatar_url = Column(String(500), nullable=True)
+    auth_provider = Column(String(20), default="local", server_default="local", nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     # Email verification

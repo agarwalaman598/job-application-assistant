@@ -86,8 +86,12 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired verification token.")
 
-    if user.verification_token_expires and user.verification_token_expires < datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Verification link has expired. Please request a new one.")
+    if user.verification_token_expires:
+        db_time = user.verification_token_expires
+        if db_time.tzinfo is None:
+            db_time = db_time.replace(tzinfo=timezone.utc)
+        if db_time < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="Verification link has expired. Please request a new one.")
 
     user.is_verified = True
     user.verification_token = None
@@ -127,8 +131,12 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token.")
 
-    if user.reset_token_expires and user.reset_token_expires < datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Reset link has expired. Please request a new one.")
+    if user.reset_token_expires:
+        db_time = user.reset_token_expires
+        if db_time.tzinfo is None:
+            db_time = db_time.replace(tzinfo=timezone.utc)
+        if db_time < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="Reset link has expired. Please request a new one.")
 
     if len(payload.new_password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
@@ -136,6 +144,9 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     user.hashed_password = hash_password(payload.new_password)
     user.reset_token = None
     user.reset_token_expires = None
+    # If this was a Google-only account, it now has a password too
+    if user.auth_provider == "google":
+        user.auth_provider = "both"
     db.commit()
 
     return {"detail": "Password reset successfully. You can now log in with your new password."}

@@ -71,6 +71,17 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class GoogleAuthRequest(BaseModel):
+    credential: str
+
+    @field_validator('credential')
+    @classmethod
+    def _check_credential_len(cls, v):
+        if len(v) > 4096:
+            raise ValueError('credential token is too long')
+        return v
+
+
 # ── Profile ───────────────────────────────────────────
 class ExperienceItem(BaseModel):
     title: str = ""

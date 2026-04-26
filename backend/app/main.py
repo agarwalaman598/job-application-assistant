@@ -17,6 +17,7 @@ from app.database import engine, Base, SessionLocal, get_db
 from app.rate_limit import limiter
 from app.routers import auth_router, profile_router, resume_router, application_router, ai_router, contact_router, job_router
 from app.routers.auth_email_router import router as auth_email_router
+from app.routers.oauth_router import router as oauth_router
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,7 @@ app.add_middleware(_TimeoutMiddleware)
 
 # Mount routers
 app.include_router(auth_router.router)
+app.include_router(oauth_router)
 app.include_router(auth_email_router)          # email verification + password reset
 app.include_router(profile_router.router)
 app.include_router(resume_router.router)
