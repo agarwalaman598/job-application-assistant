@@ -38,6 +38,7 @@ export default function ContactsPage() {
   const [deletingId, setDeletingId] = useState(null);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [hoveredFilter, setHoveredFilter] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [confirmId, setConfirmId] = useState(null);
@@ -200,18 +201,30 @@ export default function ContactsPage() {
 
       <div className="flex items-center gap-1 mb-4 p-1 rounded-lg" style={{ background: 'var(--muted)', width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
         {['', ...CONTACT_TYPES].map((t) => (
-          <button
-            key={t}
-            onClick={() => setTypeFilter(t)}
-            className="px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border-none"
-            style={{
-              background: typeFilter === t ? 'var(--card)' : 'transparent',
-              color: typeFilter === t ? 'var(--foreground)' : 'var(--muted-foreground)',
-              boxShadow: typeFilter === t ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
-            }}
-          >
-            {t ? formatType(t) : 'All'}
-          </button>
+          (() => {
+            const isActive = typeFilter === t;
+            const isHovered = hoveredFilter === t;
+            return (
+              <button
+                key={t}
+                onClick={() => setTypeFilter(t)}
+                onMouseEnter={() => setHoveredFilter(t)}
+                onMouseLeave={() => setHoveredFilter('')}
+                className="px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border-none"
+                style={{
+                  background: isActive ? 'var(--card)' : isHovered ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  color: isActive ? 'var(--foreground)' : isHovered ? 'var(--foreground)' : 'var(--muted-foreground)',
+                  boxShadow: isActive
+                    ? '0 1px 4px rgba(0,0,0,0.3)'
+                    : isHovered
+                      ? 'inset 0 0 0 1px rgba(255,255,255,0.08)'
+                      : 'none',
+                }}
+              >
+                {t ? formatType(t) : 'All'}
+              </button>
+            );
+          })()
         ))}
       </div>
 

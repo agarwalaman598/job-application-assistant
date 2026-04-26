@@ -1,13 +1,14 @@
-import { createElement, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
-import { Briefcase, FileText, TrendingUp, Award, ArrowRight, Plus } from 'lucide-react';
+import { Briefcase, ArrowRight, Plus } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 import { PageLoadingState } from '../components/PageLoadingState';
+import { DashboardIconSet } from '../components/ui/DashboardIconSet';
 
-function StatCard({ label, value, icon: Icon, color, bg, loading, sub }) {
+function StatCard({ label, value, iconName, color, bg, loading, sub, iconSize = 34, showIconBox = true }) {
   return (
     <div
       style={{
@@ -31,11 +32,16 @@ function StatCard({ label, value, icon: Icon, color, bg, loading, sub }) {
           {label}
         </span>
         <div style={{
-          height: 52, width: 52, borderRadius: 14,
-          background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          height: 52,
+          width: 52,
+          borderRadius: 14,
+          background: showIconBox ? bg : 'transparent',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           flexShrink: 0,
         }}>
-          {createElement(Icon, { style: { height: 28, width: 28, color }, strokeWidth: 1.75 })}
+          <DashboardIconSet name={iconName} style={{ height: iconSize, width: iconSize }} />
         </div>
       </div>
 
@@ -110,10 +116,10 @@ export default function DashboardPage() {
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total"      value={stats.total}     icon={Briefcase}  color="#818cf8" bg="rgba(99,102,241,0.18)"  sub="Applications sent"    loading={loading} />
-        <StatCard label="Interviews" value={stats.interview} icon={TrendingUp} color="#fbbf24" bg="rgba(245,158,11,0.18)"  sub="Rounds scheduled"     loading={loading} />
-        <StatCard label="Offers"     value={stats.offer}     icon={Award}      color="#34d399" bg="rgba(16,185,129,0.18)"  sub="Offers received"      loading={loading} />
-        <StatCard label="Resumes"    value={stats.resumes}   icon={FileText}   color="#818cf8" bg="rgba(99,102,241,0.18)"  sub="Uploaded resumes"     loading={loading} />
+        <StatCard label="Total"      value={stats.total}     iconName="briefcase" color="#818cf8" bg="rgba(99,102,241,0.12)"  sub="Applications sent"    loading={loading} iconSize="clamp(2.25rem, 1.95rem + 0.65vw, 2.7rem)" />
+        <StatCard label="Interviews" value={stats.interview} iconName="growth"    color="#fbbf24" bg="rgba(245,158,11,0.12)"  sub="Rounds scheduled"     loading={loading} iconSize="clamp(2.25rem, 1.95rem + 0.65vw, 2.7rem)" />
+        <StatCard label="Offers"     value={stats.offer}     iconName="badge"     color="#34d399" bg="rgba(16,185,129,0.12)"  sub="Offers received"      loading={loading} iconSize="clamp(2.25rem, 1.95rem + 0.65vw, 2.7rem)" />
+        <StatCard label="Resumes"    value={stats.resumes}   iconName="profile"   color="#818cf8" bg="rgba(99,102,241,0.12)"  sub="Uploaded resumes"     loading={loading} iconSize="clamp(2.25rem, 1.95rem + 0.65vw, 2.7rem)" />
       </div>
 
       {/* Recent applications */}
